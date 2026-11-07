@@ -1477,6 +1477,7 @@ public:
 protected:
 
   double _time_of_last_alt = -1;
+  QPoint _lalt_press_cursor_pos;
   bool menu_was_active_at_least_key_press = false;
   bool last_released_key_was_lalt = false;  
   bool last_key_was_lalt = false;
@@ -1573,6 +1574,19 @@ protected:
       bool must_return_true = false;
 
       bool menu_is_active = GFX_MenuActive();
+
+      if (modifier==EVENT_ALT_L) {
+        if (is_key_press) {
+          if (tevent_autorepeat==false)
+            _lalt_press_cursor_pos = QCursor::pos();
+        } else if (g_last_pressed_key==EVENT_ALT_L) {
+          // The window manager grabs the pointer when left alt is used as a modifier to
+          // drag a window (e.g. Alt+drag on X11). Qt might not see the mouse press then, so
+          // use mouse movement to detect that this was a drag and not a plain alt tap.
+          if ((QCursor::pos() - _lalt_press_cursor_pos).manhattanLength() > 5)
+            CancelMaybeNavigateMenus();
+        }
+      }
       
       //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d. Scancode: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press, OS_SYSTEM_get_scancode(event));
 
@@ -1595,7 +1609,12 @@ protected:
           GFX_CloseHamburgerPopup();
         }
 
-      } else if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
+      } else if (modifier==EVENT_ALT_L
+                 && (OS_GFX_main_window_has_focus()
+                     // Also open the hamburger popup when the sequencer or mixer runs in its
+                     // own window and has keyboard focus.
+                     || (SETTINGS_read_bool("show_main_menu_bar", false)==false
+                         && GFX_ActiveWindowHasHamburgerButton()))){
 
         //printf(   " last_key_was_alt: %d. Time now: %f. last time: %f. press: %d. Menu active: %d.  Duration: %f\n", last_released_key_was_lalt, TIME_get_ms(), _time_of_last_alt, is_key_press, GFX_MenuActive(), TIME_get_ms()- _time_of_last_alt);
 
@@ -2276,6 +2295,14 @@ protected:
       
     case QEvent::Wheel:
       CancelMaybeNavigateMenus();
+      break;
+
+    case QEvent::Move:
+    case QEvent::Resize:
+      // A window manager may grab the pointer when left alt is used as a modifier to move
+      // or resize a window (e.g. Alt+drag on X11). Don't open the main menus after that.
+      if (obj->isWidgetType() && static_cast<QWidget*>(obj)->isWindow())
+        CancelMaybeNavigateMenus();
       break;
 
     case QEvent::Close:

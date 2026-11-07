@@ -764,8 +764,13 @@ static void schedule_flush_pending_menu_callbacks(void)
   // the popup menu is placed above it with the bottom edge at the top edge of the button.
   static bool g_pending_popup_position_is_hamburger = false;
 
-  // The hamburger button in the main window's bottom bar. Used when opening the popup menu with left alt.
+  // The hamburger button in the main window's bottom bar. Used as a fallback when opening the
+  // popup menu with left alt if the focused window doesn't have a hamburger button.
   static QPointer<QWidget> g_hamburger_button;
+
+  // The hamburger buttons in all bottom bars (the main window, the sequencer window, and the
+  // mixer window). Used to open the popup menu at the hamburger of the focused window.
+  static QVector<QPointer<QWidget>> g_hamburger_buttons;
 
   // The root menu of the open hamburger popup menu. Used so that left alt can close it.
   static QPointer<QMenu> g_hamburger_popup;
@@ -2754,9 +2759,38 @@ void GFX_set_hamburger_button(QWidget *button)
 	g_hamburger_button = button;
 }
 
+// Registers a hamburger button in a bottom bar. Every bottom bar has one, so that left alt can
+// open the popup menu in whichever window (main, sequencer, or mixer) has keyboard focus.
+void GFX_register_hamburger_button(QWidget *button)
+{
+	g_hamburger_buttons.push_back(button);
+}
+
+// Returns the hamburger button of the window that currently has keyboard focus, or NULL if the
+// focused window doesn't have one (e.g. a plugin GUI or a dialog).
+static QWidget *get_hamburger_button_for_active_window(void)
+{
+	QWidget *active_window = QApplication::activeWindow();
+	if (active_window == NULL)
+		return NULL;
+
+	for (auto &button : g_hamburger_buttons) {
+		if (!button.isNull() && button->isVisible() && button->window() == active_window)
+			return button;
+	}
+
+	return NULL;
+}
+
+// Returns true if the window that currently has keyboard focus has a hamburger button.
+bool GFX_ActiveWindowHasHamburgerButton(void)
+{
+	return get_hamburger_button_for_active_window() != NULL;
+}
+
 // Opens the hamburger popup menu at the position of the provided button, or, if button is
-// NULL, at the position of the registered hamburger button in the main window's bottom bar.
-// Falls back to opening at the mouse position if no button is available.
+// NULL, at the position of the hamburger button in the focused window. Falls back to the
+// main window's hamburger button if no button is available.
 void GFX_open_hamburger_popup_menu(QWidget *button)
 {
 	if (GFX_HamburgerPopupIsOpen())
@@ -2769,6 +2803,9 @@ void GFX_open_hamburger_popup_menu(QWidget *button)
 		SETTINGS_write_bool("main_menu_popup_has_been_opened", true);
 		GFX_OS_hamburger_menu_was_opened();
 	}
+
+	if (button == NULL)
+		button = get_hamburger_button_for_active_window();
 
 	if (button == NULL)
 		button = g_hamburger_button;

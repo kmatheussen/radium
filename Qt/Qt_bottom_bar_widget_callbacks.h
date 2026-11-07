@@ -703,6 +703,7 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
     ret->horizontalLayout_2->insertWidget(0, hamburger_button);
     ret->horizontalLayout_2->insertSpacing(1, 2 * g_gfx_scale); // Some space between the hamburger and the status line.
     ret->_hamburger_button = hamburger_button;
+    GFX_register_hamburger_button(hamburger_button);
   }
   
   {
