@@ -7429,7 +7429,7 @@ void gui_setFont(int64_t guinum, const_char* char_fontdescr){
     return;
   }
 
-  if(fontdescr==gui->_fontstring)
+  if(fontdescr==gui->_fontstring && painter->font()==font)
     return;
   
   gui->_fontstring = fontdescr;
