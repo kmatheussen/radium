@@ -1904,6 +1904,83 @@
         (push-back! *plugin-registry-submenu-cache* (list key parsed))
         parsed)))
 
+(define *track-instrument-plugin-submenu-cache-generation* -1)
+(define *track-instrument-plugin-submenu-cache* '())
+
+;; The "(click me)"/F12 "Instruments/effects" sub menu assigns the selected plugin to
+;; a track, unlike the mixer version which inserts it after an instrument. The track and
+;; the list of instruments that existed when the menu was opened are read from these
+;; variables when a menu entry is selected, so the parsed sub menu can be reused for all
+;; tracks. Only one popup menu is open at a time.
+(define *track-instrument-plugin-target-tracknum* -1)
+(define *track-instrument-plugin-target-instruments-before* '())
+
+(define (track-instrument-plugin-use-description descr)
+  (assign-instrument-for-track *track-instrument-plugin-target-tracknum*
+                               (lambda ()
+                                 (<ra> :create-audio-instrument-from-description descr))
+                               (copy *track-instrument-plugin-target-instruments-before*)))
+
+;; Same caching as get-cached-plugin-registry-submenu above, but for the
+;; "(click me)"/F12 menu. This is the menu that used to spend a noticeable amount of
+;; time looking up keybindings for every plugin the first time it was opened.
+(define (get-cached-track-instrument-plugin-submenu instrconf)
+  (define generation (<ra> :get-sound-plugin-registry-generation))
+  (when (not (= generation *track-instrument-plugin-submenu-cache-generation*))
+    (set! *track-instrument-plugin-submenu-cache-generation* generation)
+    (set! *track-instrument-plugin-submenu-cache* '()))
+
+  (define key (list (instrconf :include-load-preset)
+                    (instrconf :must-have-inputs)
+                    (instrconf :must-have-outputs)
+                    (instrconf :parentgui)
+                    (<ra> :instrument-preset-in-clipboard)))
+
+  (define cached (assoc key *track-instrument-plugin-submenu-cache*))
+  (if cached
+      (cadr cached)
+      (let ((parsed (parse-popup-menu-options
+                     (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                                instrconf
+                                                (lambda (entry)
+                                                  (spr-entry->instrument-description entry instrconf track-instrument-plugin-use-description))
+                                                #f
+                                                assign-new-instrument-for-track))))
+        (when (>= (length *track-instrument-plugin-submenu-cache*) 16)
+          (set! *track-instrument-plugin-submenu-cache* (take *track-instrument-plugin-submenu-cache* 15)))
+        (push-back! *track-instrument-plugin-submenu-cache* (list key parsed))
+        parsed)))
+
+(define *plugin-registry-submenu-keybindings* #f)
+(define *plugin-registry-submenu-has-been-prewarmed* #f)
+
+(define (prewarm-track-instrument-popup-menu)
+  (get-cached-track-instrument-plugin-submenu
+   (make-instrument-conf :connect-to-main-pipe #t
+                         :parentgui -1))
+  (set! *plugin-registry-submenu-has-been-prewarmed* #t)
+  (set! *plugin-registry-submenu-keybindings* (get-keybindings-as-assoc-list)))
+
+;; Shortcut labels are part of the parsed menus. Clear both plugin sub menu caches when
+;; the keybindings actually change (not merely when they are reloaded with the same
+;; contents), so the cached menus don't display outdated shortcuts. If the menus were
+;; already prewarmed during startup, warm them again immediately. Otherwise the reloads
+;; that happen shortly after startup would clear the prewarmed cache.
+(define (clear-plugin-registry-submenu-caches)
+  (set! *plugin-registry-submenu-cache-generation* -1)
+  (set! *plugin-registry-submenu-cache* '())
+  (set! *track-instrument-plugin-submenu-cache-generation* -1)
+  (set! *track-instrument-plugin-submenu-cache* '()))
+
+(add-reload-keybindings-callback
+ (lambda ()
+   (define keybindings (get-keybindings-as-assoc-list))
+   (when (not (equal? keybindings *plugin-registry-submenu-keybindings*))
+     (clear-plugin-registry-submenu-caches)
+     (set! *plugin-registry-submenu-keybindings* keybindings)
+     (when *plugin-registry-submenu-has-been-prewarmed*
+       (prewarm-track-instrument-popup-menu)))))
+
 (delafina (get-insert-plugin-entry :instrument-id
                                    :enabled #t
                                    :is-top-instrument #t
@@ -2942,6 +3019,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))
   (define instruments-before (get-all-audio-instruments))
+
+  ;; Used by the cached "Instruments/effects" sub menu when a plugin is selected.
+  (set! *track-instrument-plugin-target-tracknum* tracknum)
+  (set! *track-instrument-plugin-target-instruments-before* instruments-before)
   
   (define-macro (LOAD . code)
     `(assign-instrument-for-track ,tracknum
@@ -3008,12 +3089,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
            (pmg-start instr-conf callback)))
    
    (list "Instruments/effects"
-         (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
-                                    instr-conf
-                                    (lambda (entry)
-                                      (spr-entry->instrument-description entry instr-conf callback))
-                                    #f
-                                    assign-new-instrument-for-track))
+         (make-parsed-submenu (get-cached-track-instrument-plugin-submenu instr-conf)))
    
    ;;"From list of favourites" (lambda ()
    ;;                            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
