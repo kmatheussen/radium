@@ -3,7 +3,10 @@
 #ifndef RADIUM_COMMON_VALIDATE_MEM_PROC_H
 #define RADIUM_COMMON_VALIDATE_MEM_PROC_H
 
+#include <stdio.h>
+
 #include "threading_lowlevel.h"
+#include "../crashreporter/crashreporter_proc.h"
 
 
 #if 0
@@ -136,9 +139,37 @@ static inline void assert_allowed_to_alloc(void){
 #endif
   
 #else // 0 -> !0
-  
-  R_ASSERT(!PLAYER_current_thread_has_lock());
-  R_ASSERT(!THREADING_is_runner_thread());
+
+  const bool has_lock = PLAYER_current_thread_has_lock();
+  const bool is_runner = THREADING_is_runner_thread();
+
+  if (has_lock || is_runner){
+
+    if (CRASHREPORTER_is_processing_plugin()){
+
+      // Plugins are outside our control and may allocate on an RT thread
+      // (e.g. JUCE's VST3 HostBufferMapper). Print an error instead of
+      // asserting in that case. Only print once per thread to avoid flooding
+      // the terminal (many plugins allocate on every processBlock).
+      static __thread bool has_warned = false;
+
+      if (!has_warned){
+        has_warned = true;
+        fprintf(stderr,
+                "\033[31m"
+                "Error: Memory allocation from an RT thread while processing a plugin.\n"
+                "This is not allowed in Radium, but the allocation was most likely\n"
+                "done by the plugin, so it is not treated as an assertion failure.\n"
+                "\033[0m");
+      }
+
+    }else{
+
+      R_ASSERT(!has_lock);
+      R_ASSERT(!is_runner);
+
+    }
+  }
 
   #if 0
     #if !defined(FOR_MACOSX)

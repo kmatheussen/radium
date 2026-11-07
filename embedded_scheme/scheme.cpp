@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include <unistd.h>
+#include <stdlib.h>
 
 #include "s7.h"
 #include "../bin/s7webserver/s7webserver.h"
@@ -30,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include <QRegExp>
 #include <QStringList>
 #include <QDebug>
+#include <QSaveFile>
+#include <QTextStream>
 
 #include <qhttpserver.h>
 #include <qhttprequest.h>
@@ -2692,6 +2695,41 @@ int SCHEME_get_webserver_port(void){
   return s7webserver_get_portnumber(s7webserver);
 }
 
+static int get_control_port_start(void){
+  const char *port_string = getenv("RADIUM_CONTROL_PORT");
+
+  if (port_string != NULL && port_string[0] != '\0'){
+    const int port = atoi(port_string);
+    if (port > 0 && port < 65536)
+      return port;
+    fprintf(stderr, "RADIUM_CONTROL_PORT: Invalid port number \"%s\". Using 5080.\n", port_string);
+  }
+
+  return 5080;
+}
+
+// Write the port the webserver actually bound to. This lets several Radium
+// instances run at the same time without clients having to guess whether an
+// instance got 5080, 5081, etc.
+static void write_control_port_file(int port){
+  const char *filename = getenv("RADIUM_CONTROL_PORT_FILE");
+
+  if (filename == NULL || filename[0] == '\0')
+    return;
+
+  QSaveFile file(filename);
+  if (file.open(QIODevice::WriteOnly | QIODevice::Text)==false){
+    fprintf(stderr, "RADIUM_CONTROL_PORT_FILE: Unable to open \"%s\" for writing: %s\n", filename, file.errorString().toUtf8().constData());
+    return;
+  }
+
+  QTextStream stream(&file);
+  stream << port << "\n";
+
+  if (file.commit()==false)
+    fprintf(stderr, "RADIUM_CONTROL_PORT_FILE: Unable to write \"%s\": %s\n", filename, file.errorString().toUtf8().constData());
+}
+
 static s7_pointer getHistory(s7_scheme *radiums7_sc, s7_pointer radiums7_args){
   return s7_history(radiums7_sc);
 }
@@ -2724,11 +2762,13 @@ void SCHEME_init1(void){
   
   g_eat_errors_failed = find_and_protect_scheme_value("*eat-errors-failed-return-value*");
 
-  s7webserver = s7webserver_create2(s7, 5080, controlPortOpenForRemoteConnections(), true);
+  s7webserver = s7webserver_create2(s7, get_control_port_start(), controlPortOpenForRemoteConnections(), true);
   s7webserver_set_verbose(s7webserver, true);
 #if !defined(RELEASE)
   s7webserver_set_very_verbose(s7webserver, true);
 #endif
+
+  write_control_port_file(s7webserver_get_portnumber(s7webserver));
 
   g_scheme_has_inited1 = true;
 }
