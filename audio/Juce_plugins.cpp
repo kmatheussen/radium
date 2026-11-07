@@ -1735,8 +1735,12 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 #endif
 
   // Add events to the midi buffer created by the virtual keyboard.
-  data->keyboardState.processNextMidiBuffer(data->midi_buffer, 0, num_frames, true);
-
+  {
+	  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
+		  data->keyboardState.processNextMidiBuffer(data->midi_buffer, 0, num_frames, true);
+	  }CRASHREPORTER_unset_plugin_name(pos);
+  }
+  
   // 1. Process audio
 
   juce::AudioPluginInstance *instance = data->audio_instance;
