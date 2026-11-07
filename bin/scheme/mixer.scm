@@ -283,6 +283,69 @@
   (<ra> :create-instrument-description-popup-menu descr))
 
 
+(define *mixer-insert-sound-object-plugin-submenu-cache-generation* -1)
+(define *mixer-insert-sound-object-plugin-submenu-cache* '())
+(define *mixer-insert-sound-object-menu-keybindings* #f)
+(define *mixer-insert-sound-object-menu-has-been-prewarmed* #f)
+
+;; The position is read from here when a plugin is selected, so the expensive parsed
+;; "Instruments/effects" sub menu can be reused for every right-click position.
+(define *mixer-insert-sound-object-target-instrconf* #f)
+
+(define (mixer-insert-sound-object-use-description descr)
+  (create-instrument-from-description *mixer-insert-sound-object-target-instrconf* descr))
+
+;; Parsing the whole plugin registry every time the empty mixer area is right-clicked
+;; takes a noticeable amount of time. Cache the parsed sub menu, like the other plugin
+;; registry menus.
+(define (get-cached-mixer-insert-sound-object-plugin-submenu instrconf)
+  (define generation (<ra> :get-sound-plugin-registry-generation))
+  (when (not (= generation *mixer-insert-sound-object-plugin-submenu-cache-generation*))
+    (set! *mixer-insert-sound-object-plugin-submenu-cache-generation* generation)
+    (set! *mixer-insert-sound-object-plugin-submenu-cache* '()))
+
+  (define key (list (instrconf :include-load-preset)
+                    (instrconf :must-have-inputs)
+                    (instrconf :must-have-outputs)
+                    (instrconf :parentgui)
+                    (<ra> :instrument-preset-in-clipboard)))
+
+  (define cached (assoc key *mixer-insert-sound-object-plugin-submenu-cache*))
+  (if cached
+      (cadr cached)
+      (let ((parsed (parse-popup-menu-options
+                     (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                                instrconf
+                                                (lambda (entry)
+                                                  (spr-entry->instrument-description entry instrconf mixer-insert-sound-object-use-description))
+                                                #f
+                                                create-instrument))))
+        (when (>= (length *mixer-insert-sound-object-plugin-submenu-cache*) 16)
+          (set! *mixer-insert-sound-object-plugin-submenu-cache* (take *mixer-insert-sound-object-plugin-submenu-cache* 15)))
+        (push-back! *mixer-insert-sound-object-plugin-submenu-cache* (list key parsed))
+        parsed)))
+
+(define (prewarm-mixer-insert-sound-object-popup-menu)
+  (get-cached-mixer-insert-sound-object-plugin-submenu
+   (make-instrument-conf :connect-to-main-pipe #f
+                         :do-autoconnect #t
+                         :include-load-preset #t
+                         :must-have-inputs #f
+                         :must-have-outputs #f
+                         :parentgui (<gui> :get-main-mixer-gui)))
+  (set! *mixer-insert-sound-object-menu-has-been-prewarmed* #t)
+  (set! *mixer-insert-sound-object-menu-keybindings* (get-keybindings-as-assoc-list)))
+
+(add-reload-keybindings-callback
+ (lambda ()
+   (define keybindings (get-keybindings-as-assoc-list))
+   (when (not (equal? keybindings *mixer-insert-sound-object-menu-keybindings*))
+     (set! *mixer-insert-sound-object-plugin-submenu-cache-generation* -1)
+     (set! *mixer-insert-sound-object-plugin-submenu-cache* '())
+     (set! *mixer-insert-sound-object-menu-keybindings* keybindings)
+     (when *mixer-insert-sound-object-menu-has-been-prewarmed*
+       (prewarm-mixer-insert-sound-object-popup-menu)))))
+
 (define (get-insert-sound-object-submenu-entries x y)
   (define instrconf (make-instrument-conf :x x
                                           :y y
@@ -292,17 +355,14 @@
                                           :must-have-inputs #f
                                           :must-have-outputs #f
                                           :parentgui (<gui> :get-main-mixer-gui)))
+  ;; Used by the cached "Instruments/effects" sub menu when a plugin is selected.
+  (set! *mixer-insert-sound-object-target-instrconf* instrconf)
   (define (create descr)
     (create-instrument-from-description instrconf descr))
   (define favourites (get-favourite-plugin-menu-entries create create-instrument))
   (list
    (list "Instruments/effects"
-         (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
-                                    instrconf
-                                    (lambda (entry)
-                                      (spr-entry->instrument-description entry instrconf create))
-                                    #f
-                                    create-instrument))
+         (make-parsed-submenu (get-cached-mixer-insert-sound-object-plugin-submenu instrconf)))
    (list "Most used instruments"
          (if (null? favourites)
              (list (list "(None)" :enabled #f (lambda () #f)))

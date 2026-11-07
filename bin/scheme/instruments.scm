@@ -1961,6 +1961,17 @@
   (set! *plugin-registry-submenu-has-been-prewarmed* #t)
   (set! *plugin-registry-submenu-keybindings* (get-keybindings-as-assoc-list)))
 
+;; Pre-build the "Insert plugin" sub menu used when right-clicking a module in the
+;; modular mixer. get-insert-plugin-entry uses parentgui -2 and must-have-inputs #t,
+;; while must-have-outputs depends on whether the module has outgoing connections.
+(define (prewarm-module-insert-plugin-popup-menu)
+  (for-each (lambda (must-have-outputs)
+              (get-cached-plugin-registry-submenu
+               (make-instrument-conf :must-have-inputs #t
+                                     :must-have-outputs must-have-outputs
+                                     :parentgui -2)))
+            (list #f #t)))
+
 ;; Shortcut labels are part of the parsed menus. Clear both plugin sub menu caches when
 ;; the keybindings actually change (not merely when they are reloaded with the same
 ;; contents), so the cached menus don't display outdated shortcuts. If the menus were
@@ -1979,7 +1990,8 @@
      (clear-plugin-registry-submenu-caches)
      (set! *plugin-registry-submenu-keybindings* keybindings)
      (when *plugin-registry-submenu-has-been-prewarmed*
-       (prewarm-track-instrument-popup-menu)))))
+       (prewarm-track-instrument-popup-menu)
+       (prewarm-module-insert-plugin-popup-menu)))))
 
 (delafina (get-insert-plugin-entry :instrument-id
                                    :enabled #t

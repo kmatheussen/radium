@@ -523,7 +523,11 @@
   (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list))
   ;; Pre-build the (click me)/F12 "Instruments/effects" sub menu, so opening that menu
   ;; for the first time doesn't have to look up keybindings for every plugin.
-  (prewarm-track-instrument-popup-menu))
+  (prewarm-track-instrument-popup-menu)
+  ;; Pre-build the modular mixer's "Insert plugin" sub menu for the same reason.
+  (prewarm-module-insert-plugin-popup-menu)
+  ;; Pre-build the mixer's "Instruments/effects" sub menu for the same reason.
+  (prewarm-mixer-insert-sound-object-popup-menu))
 
 #!!
 
