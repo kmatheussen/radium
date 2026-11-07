@@ -641,7 +641,7 @@ namespace{
     int num_output_channels;
 
     juce::MidiBuffer midi_buffer;
-    //juce::AudioSampleBuffer buffer;
+    juce::AudioSampleBuffer buffer;
 
     Listener listener;
 
@@ -671,11 +671,10 @@ namespace{
       return ::is_vst(audio_instance);
     }
     */
-    Data(juce::AudioPluginInstance *audio_instance, SoundPlugin *plugin, TypeData *type_data)
+    Data(juce::AudioPluginInstance *audio_instance, SoundPlugin *plugin, TypeData *type_data, int block_size)
       : audio_instance(audio_instance)
       , _plugin(plugin)
       , playHead(audio_instance->getPluginDescription().name, plugin)
-        //, buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
       , listener(plugin)
     {
       
@@ -686,6 +685,12 @@ namespace{
         const bool isAU = fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit";
         findMaxTotalChannels(audio_instance, isAU, num_input_channels, num_output_channels);
       }
+
+      // Used instead of referring to the audio buffers directly when the plugin
+      // has so many channels that JUCE's AudioBuffer has to allocate a channel
+      // pointer array. (See RT_process.) Must be allocated here, on the
+      // message thread, and not from the RT thread.
+      buffer.setSize(R_MAX(num_input_channels, num_output_channels), block_size);
       
       g_num_data++;
       audio_instance->addListener(&listener);
@@ -1711,6 +1716,14 @@ int RT_MIDI_send_msg_to_patch(struct SeqTrack *seqtrack, struct Patch *patch, co
 }
 
 
+// Process one audio block with the JUCE plugin instance. ('plugin', 'data'
+// and 'instance' are local variables in RT_process.)
+#define RT_JUCE_PROCESS_BLOCK(buffer) do {                                      \
+    int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{                \
+      instance->processBlock((buffer), data->midi_buffer);                       \
+    }CRASHREPORTER_unset_plugin_name(pos);                                       \
+  } while(0)
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
 
   Data *data = (Data*)plugin->data;
@@ -1727,36 +1740,52 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   // 1. Process audio
 
   juce::AudioPluginInstance *instance = data->audio_instance;
-  //juce::AudioSampleBuffer &buffer = data->buffer;
 
   int num_channels = R_MAX(data->num_input_channels, data->num_output_channels);
-  float **floatbuffers = RT_ALLOC_ARRAY_STACK(float*, num_channels);
-  
-  for(int ch=0 ; ch<num_channels ; ch++){
-    
-    if(ch < data->num_output_channels) 
-      floatbuffers[ch] = outputs[ch];
-    else
-      floatbuffers[ch] = inputs[ch];
-    
-    if (ch < data->num_input_channels)
-      if (floatbuffers[ch] != inputs[ch])
-        memcpy(floatbuffers[ch], inputs[ch], sizeof(float)*num_frames);
+
+  // An AudioBuffer constructed from external channel pointers has room for 32
+  // channel pointers internally (preallocatedChannelSpace in
+  // juce_AudioSampleBuffer.h). With 32 channels or more, JUCE would therefore
+  // allocate a new channel pointer array. That is not allowed on the RT thread,
+  // so in that case we use the buffer that was preallocated in the Data
+  // constructor instead, and copy the audio to and from it.
+  constexpr int JUCE_PREALLOCATED_CHANNELS = 32;
+
+  if (num_channels < JUCE_PREALLOCATED_CHANNELS) {
+
+    float **floatbuffers = RT_ALLOC_ARRAY_STACK(float*, num_channels);
+
+    for(int ch=0 ; ch<num_channels ; ch++){
+
+      if(ch < data->num_output_channels)
+        floatbuffers[ch] = outputs[ch];
+      else
+        floatbuffers[ch] = inputs[ch];
+
+      if (ch < data->num_input_channels)
+        if (floatbuffers[ch] != inputs[ch])
+          memcpy(floatbuffers[ch], inputs[ch], sizeof(float)*num_frames);
+    }
+
+    juce::AudioSampleBuffer buffer(floatbuffers, num_channels, num_frames);
+
+    RT_JUCE_PROCESS_BLOCK(buffer);
+
+  } else {
+
+    juce::AudioSampleBuffer &buffer = data->buffer;
+
+    buffer.setNotClear();
+    buffer.setSize(num_channels, num_frames, false, false, true); // avoid reallocating.
+
+    for(int ch=0 ; ch<data->num_input_channels ; ch++)
+      memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
+
+    RT_JUCE_PROCESS_BLOCK(buffer);
+
+    for(int ch=0 ; ch<data->num_output_channels ; ch++)
+      memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
   }
-
-  juce::AudioSampleBuffer buffer(floatbuffers, num_channels, num_frames);
-
-  /*
-  for(int ch=0; ch<data->num_input_channels ; ch++)
-    memcpy(buffer.getWritePointer(ch), inputs[ch], sizeof(float)*num_frames);
-  */
-  
-  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
-    instance->processBlock(buffer, data->midi_buffer);
-  }CRASHREPORTER_unset_plugin_name(pos);
-  
-  //  for(int ch=0; ch<data->num_output_channels ; ch++)
-  //    memcpy(outputs[ch], buffer.getReadPointer(ch), sizeof(float)*num_frames);
 
   // 2. Send out midi
   if (!data->midi_buffer.isEmpty()){
@@ -1828,6 +1857,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 
 }
+
+#undef RT_JUCE_PROCESS_BLOCK
 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
@@ -2488,8 +2519,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 
     State state2(state); // (don't need to check if state==NULL here.)
     
-    run_on_message_thread([audio_instance_pointer, plugin, type_data, state2, is_loading]() {
-      plugin->data = new Data(audio_instance_pointer, plugin, type_data);
+    run_on_message_thread([audio_instance_pointer, plugin, type_data, state2, is_loading, block_size]() {
+      plugin->data = new Data(audio_instance_pointer, plugin, type_data, block_size);
       recreate_from_state(plugin, state2, is_loading);
       });
     
