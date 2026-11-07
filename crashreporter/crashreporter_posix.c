@@ -100,6 +100,11 @@ void run_main_loop(void);
 void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time){
 #define NUM_LINES 100
 
+  // backtrace_symbols (libbfd) and CRASHREPORTER_send_message allocate
+  // memory. Ignore those allocations in the ASAN malloc/free hooks in case we
+  // are running on a realtime thread.
+  CRASHREPORTER_push_ignore_malloc_free_checks();
+
   char **strings;
 
 #if 1 //defined(FOR_LINUX)
@@ -123,10 +128,17 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
     const char *message="no backtrace availabe\n";
     CRASHREPORTER_send_message(additional_information, &message,1,crash_type,time);
   }
+
+  CRASHREPORTER_pop_ignore_malloc_free_checks();
 }
 
 //static void crash(int sig){
 static void crash(int sig, siginfo_t *siginfo, void *secret) {
+
+  // The crash reporter itself allocates memory (backtrace_symbols, Qt
+  // strings, temporary files, ...). Ignore those allocations in the ASAN
+  // malloc/free hooks, since this handler can run on a realtime thread.
+  CRASHREPORTER_push_ignore_malloc_free_checks();
 
   //fprintf(stderr,"\n\nCrashreporter got signal %d. genpid: %d, this pid: %d. Sending message to external process\n\n",sig,(int)siginfo->si_pid,(int)getpid());
 
@@ -161,6 +173,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
 #if defined(FOR_LINUX)
    
+  CRASHREPORTER_pop_ignore_malloc_free_checks();
   _Exit(1); // We don't get system crashlog on OSX when doing this.
 
   if (0)
@@ -168,6 +181,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
 #else
   
+  CRASHREPORTER_pop_ignore_malloc_free_checks();
   abort();
   
   if((now_time-start_time) > 3000 || num_crash_reports>3){

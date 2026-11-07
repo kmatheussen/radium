@@ -440,6 +440,9 @@
 !!#
 
 
+(define (get-keybindings-as-assoc-list)
+  (hash-table->alist (<ra> :get-keybindings-from-keys)))
+
 (define *reload-keybindings-callbacks* '())
 
 (define (add-reload-keybindings-callback func)

@@ -217,6 +217,10 @@ void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *f
   abort();
 }
 
+bool CRASHREPORTER_is_processing_plugin(void){
+  return false;
+}
+
 bool g_rt_message_internal_is_error = true;
 
 void RT_message_internal(const char *fmt,...){

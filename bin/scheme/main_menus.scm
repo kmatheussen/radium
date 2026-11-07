@@ -451,9 +451,6 @@
                          (open-main-menu-search-popup-from-options menus-options generation)))))
                 #f)))))
 
-(define (get-keybindings-as-assoc-list)
-  (hash-table->alist (<ra> :get-keybindings-from-keys)))
-
 ;; The keybindings that the cached search popup data (*main-menu-search-options* and
 ;; *main-menu-search-popup-args*) was built from. #f means it hasn't been built yet.
 (define *main-menu-search-keybindings* #f)
@@ -523,7 +520,14 @@
   (set! *main-menu-search-options* menus-options)
   ;; Also build the search popup args now, so the first open of the hamburger menu doesn't have to wait.
   (make-main-menu-search-popup-args menus-options)
-  (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list)))
+  (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list))
+  ;; Pre-build the (click me)/F12 "Instruments/effects" sub menu, so opening that menu
+  ;; for the first time doesn't have to look up keybindings for every plugin.
+  (prewarm-track-instrument-popup-menu)
+  ;; Pre-build the modular mixer's "Insert plugin" sub menu for the same reason.
+  (prewarm-module-insert-plugin-popup-menu)
+  ;; Pre-build the mixer's "Instruments/effects" sub menu for the same reason.
+  (prewarm-mixer-insert-sound-object-popup-menu))
 
 #!!
 

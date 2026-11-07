@@ -128,6 +128,7 @@ public:
     //QVector<QLabel*> status_labels;
 
     radium::Splitter *xsplitter;
+    QWidget *xsplitter_grow_widget = NULL;
     //QSplitter *ysplitter;
 
     int get_editor_width(){

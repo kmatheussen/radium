@@ -717,6 +717,8 @@
 
 
 (<declare-variable> get-delete-all-pauses-menu-entry) ;; in sequencer.scm
+(<declare-variable> *show-transport-bar*) ;; in transport_buttons.scm
+(<declare-variable> set-show-playlist-transport-bar!) ;; in transport_buttons.scm
 
 (define (get-blocklist/playlist-common-entries)
   (list
@@ -727,7 +729,18 @@
    show-set-current-seqtrack-menu
 
    "Show blocklist"
-   ra:show-blocklist-gui))
+   ra:show-blocklist-gui
+
+   "---------------"
+
+   (list "Transport bar visible"
+         :check *show-transport-bar*
+         :shortcut (list show-hide-playlist-transport-bar)
+         (lambda (val)
+           (set-show-playlist-transport-bar! val)))
+
+   "-------------"
+   "Help keybindings" show-keybinding-help-window))
 
              
 
@@ -1190,4 +1203,3 @@
 
 
   
-

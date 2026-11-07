@@ -607,10 +607,14 @@
     (car (area :get-sub-areas)))
   
   (area :add-mouse-cycle! (lambda (button x* y*)
-                            (and (delete-button? button)
+                            ;; Playlist entries have their own context menus. This catches
+                            ;; right-clicks on the unused playlist background, where there
+                            ;; is no entry to handle the click.
+                            (and (or (delete-button? button)
+                                     (= button *right-button*))
                                  (begin
-                                   (FROM_C-show-playlist-popup-menu)
-                                   #t))))
+                                    (FROM_C-show-playlist-popup-menu)
+                                    #t))))
 
   (area :add-method! :recreate (lambda ()
                                  (define state (area :get-state))
@@ -785,13 +789,18 @@
 
   (define button-mid (average x1 x2))
 
-  (define transport-gap-height (max 1 (round (* button-height 0.15))))
+  ;; *show-transport-bar* is defined in transport_buttons.scm.
+  (define transport-gap-height (if *show-transport-bar*
+                                   (max 1 (round (* button-height 0.15)))
+                                   0))
 
   (define transport-margin (max 1 (round (* button-height 0.1))))
   (define transport-row-height (* 2 button-height))
-  (define transport-height (+ (* 3 transport-row-height)
-                              (* 2 *transport-button-gap*)
-                              (* 2 *transport-border-padding*)))
+  (define transport-height (if *show-transport-bar*
+                               (+ (* 3 transport-row-height)
+                                  (* 2 *transport-button-gap*)
+                                  (* 2 *transport-border-padding*))
+                               0))
   
   (define list-height (max 1
                           (/ (- height
@@ -838,10 +847,11 @@
   (define playlist (create-playlist-area gui x1 playlist-y1 x2 playlist-y2 #f))
   (set! *playlist-area* playlist)
 
-  (define transport (<new> :transport-buttons-area gui
-                           transport-x1 transport-y1
-                           transport-x2 transport-y2
-                           :paint-border #t))
+  (define transport (and *show-transport-bar*
+                         (<new> :transport-buttons-area gui
+                                transport-x1 transport-y1
+                                transport-x2 transport-y2
+                                :paint-border #t)))
 
   ;;(c-display blocklist-y1 blocklist-y2 playlist-y1 playlist-y2 "button-height:" button-height ". list-height:" list-height ". y1/y2:" y1 y2)
 
@@ -889,7 +899,8 @@
 
   
   (add-sub-area-plain! blocklist)
-  (add-sub-area-plain! transport)
+  (when transport
+    (add-sub-area-plain! transport))
   (add-sub-area-plain! playlist)
 
   ;;(<gui> :set-background-color gui "low_background") doesn't work on osx. (really strange)
@@ -1055,4 +1066,3 @@
   ;;         recreate-seqtracks-config-area)
   ;;    (recreate-seqtracks-config-area))
   )
-

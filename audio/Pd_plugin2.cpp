@@ -518,6 +518,12 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
 		else
 			real_value = value;
 
+		// Integer controls are sent into Pd patches, where [int] truncates
+		// fractional values. Round after scaling so normalized edits land on
+		// the nearest requested integer instead of one unit below it.
+		if(controller->type == EFFECT_FORMAT_INT)
+			real_value = roundf(real_value);
+
 		safe_float_write(&controller->value, real_value);
 
 		has_name = strcmp(controller->name, "") != 0;

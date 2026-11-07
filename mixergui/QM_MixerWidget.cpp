@@ -2631,10 +2631,12 @@ void GFX_ShowMixer(void){
     setMixerKeyboardFocus(true);
     g_mixer_widget->show();
   }GL_unlock();
+  GFX_update_main_x_splitter_grow_widget();
 }
 void GFX_HideMixer(void){
   g_mixer_widget->hide();
   set_editor_focus();
+  GFX_update_main_x_splitter_grow_widget();
 }
 
 void GFX_showHideMixerWidget(void){
@@ -2661,6 +2663,7 @@ void GFX_showHideMixerWidget(void){
     }
   }GL_unlock();
   set_editor_focus();
+  GFX_update_main_x_splitter_grow_widget();
 }
 
 static const instrument_t g_main_pipe_patch_id = make_instrument(0);

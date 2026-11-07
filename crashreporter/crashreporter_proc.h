@@ -44,6 +44,16 @@ extern "C"{
   void CRASHREPORTER_init(void);
   int CRASHREPORTER_set_plugin_name(const char *plugin_name);
   void CRASHREPORTER_unset_plugin_name(int pos);
+  bool CRASHREPORTER_is_processing_plugin(void); // Returns true if the current thread is executing a plugin callback.
+
+  // Allocations done while the crash reporter creates a report (backtrace, Qt
+  // strings, temporary files, ...) must not be treated as allocations from a
+  // realtime thread, even if the report is triggered by one. These functions
+  // maintain a per-thread counter saying that the crash reporter is running.
+  void CRASHREPORTER_push_ignore_malloc_free_checks(void);
+  void CRASHREPORTER_pop_ignore_malloc_free_checks(void);
+  bool CRASHREPORTER_ignore_malloc_free_checks(void);
+
   void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, enum Crash_Type crash_type, double time);
   void CRASHREPORTER_send_message_with_backtrace(const char *additional_information, enum Crash_Type crash_type, double time);
 

@@ -734,6 +734,11 @@ double g_last_midi_receive_time = 0;
 static DEFINE_ATOMIC(const char **, g_plugin_names);
 //static QString g_plugin_name=g_no_plugin_name;
 
+// Number of plugin callbacks currently being executed by this thread. Used to
+// know whether an allocation done on an RT thread originates from a plugin
+// (which we can't control) or from Radium itself (which is a bug).
+static __thread int g_num_processing_plugins = 0;
+
 __attribute__((constructor)) static void initialize_g_plugin_names() {
 	ATOMIC_NAME(g_plugin_names) = (const char**)calloc(MAX_NUM_PLUGIN_NAMES, sizeof(const char*));
   
@@ -746,6 +751,8 @@ __attribute__((constructor)) static void initialize_g_plugin_names() {
 int CRASHREPORTER_set_plugin_name(const char *plugin_name){
   //fprintf(stderr,"plugin_name: -%s-\n",plugin_name);
 
+  g_num_processing_plugins++;
+
   int pos = ATOMIC_ADD_RETURN_OLD(g_plugin_name_pos, 1) % MAX_NUM_PLUGIN_NAMES;
 
   ATOMIC_SET_ARRAY(g_plugin_names, pos, plugin_name);
@@ -755,6 +762,13 @@ int CRASHREPORTER_set_plugin_name(const char *plugin_name){
 
 void CRASHREPORTER_unset_plugin_name(int pos){
   ATOMIC_SET_ARRAY(g_plugin_names, pos, g_no_plugin_name);
+
+  R_ASSERT_NON_RELEASE(g_num_processing_plugins > 0);
+  g_num_processing_plugins--;
+}
+
+bool CRASHREPORTER_is_processing_plugin(void){
+  return g_num_processing_plugins > 0;
 }
 
 static QString get_plugin_names(void){
@@ -1034,10 +1048,14 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   // start process
   {
+    // Note: We might not be in the main thread here (for instance when aborting from the audio thread).
+    // OS_get_full_program_file_path(const char*) calls STRING_create with use_gc_alloc=true, which asserts
+    // when called from a non-main thread. OS_get_full_program_file_path2 is the function the filepath_t
+    // version delegates to, so use it directly to avoid the (unnecessary) GC-allocated temporary string.
 #ifdef FOR_WINDOWS
-    QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_crashreporter.exe").id);
+    QString program = OS_get_full_program_file_path2("radium_crashreporter.exe");
 #else
-    QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_crashreporter").id);
+    QString program = OS_get_full_program_file_path2("radium_crashreporter");
 #endif
 
 #if defined(FOR_WINDOWS)
@@ -1140,6 +1158,27 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 
 static DEFINE_ATOMIC(bool, g_is_currently_sending);
 
+// Number of currently active crash reporter calls in this thread. While a
+// report is being created (backtrace, Qt strings, temporary files, ...), the
+// crash reporter allocates memory. If the report is triggered by a realtime
+// thread (e.g. an assert in the audio callback), those allocations must not be
+// mistaken for RT allocations by the ASAN malloc/free hooks, or the crash
+// reporter would stop in getchar() and never finish.
+static __thread int g_num_ignore_malloc_free_checks = 0;
+
+void CRASHREPORTER_push_ignore_malloc_free_checks(void){
+  g_num_ignore_malloc_free_checks++;
+}
+
+void CRASHREPORTER_pop_ignore_malloc_free_checks(void){
+  if (g_num_ignore_malloc_free_checks > 0)
+    g_num_ignore_malloc_free_checks--;
+}
+
+bool CRASHREPORTER_ignore_malloc_free_checks(void){
+  return g_num_ignore_malloc_free_checks > 0;
+}
+
 bool CRASHREPORTER_is_currently_sending_assert_message(void){
 	return ATOMIC_GET(g_is_currently_sending);
 }
@@ -1152,6 +1191,8 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 
   if (ATOMIC_GET(g_dont_report))
     return;
+
+  CRASHREPORTER_push_ignore_malloc_free_checks();
 
 #if 0
   static int last_time = -10000;
@@ -1212,6 +1253,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 #endif
   
  exit:
+  CRASHREPORTER_pop_ignore_malloc_free_checks();
   ATOMIC_SET(g_is_currently_sending, false);
 }
 
