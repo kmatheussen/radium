@@ -140,22 +140,22 @@ private:
 public:
 
   double _last_reported_samplerate = -1;
-  double _samplerate;
-  int _buffer_size;
+  double _samplerate = 44100;
+  int _buffer_size = 1024;
   bool _is_running = false;
   juce::String _last_error;
   
   double _time_cycle_start = 0;
   //DEFINE_ATOMIC(double, _time_cycle_start) = 0;
 
-  JucePlayer(JUCE_audio_device_callback callback, void *callback_data, const wchar_t *settings_string, std::function<void(int,float)> called_before_starting_audio)
+  JucePlayer(JUCE_audio_device_callback callback, void *callback_data, std::function<void(int,float)> called_before_starting_audio)
     : _callback(callback)
     , _callback_data(callback_data)
     , _called_before_starting_audio(called_before_starting_audio) 
   {
-    _audio_device_manager.addChangeListener(this);
-    
-    _is_running = initJuceAudio(settings_string);
+	// The audio device is started from initJuceAudio(), which must be called after
+	// g_juce_player has been set (see JUCE_init_audio_device).
+	_audio_device_manager.addChangeListener(this);
   }
 
   ~JucePlayer(){
@@ -648,11 +648,17 @@ bool JUCE_audio_set_normal_thread_priority(radium_thread_t thread){
 }
   
 double JUCE_audio_get_sample_rate(void){
-  return g_juce_player->_samplerate;
+  if (g_juce_player==NULL)
+    return 44100;
+  else
+    return g_juce_player->_samplerate;
 }
 
 int JUCE_audio_get_buffer_size(void){
-  return g_juce_player->_buffer_size;
+  if (g_juce_player==NULL)
+    return 1024;
+  else
+    return g_juce_player->_buffer_size;
 };
 
 const char *JUCE_audio_get_last_error(void){
@@ -706,7 +712,15 @@ bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_
 #endif
 
   run_on_message_thread([&](){
-    g_juce_player = new radium::JucePlayer(callback, callback_data, settings_string, called_before_starting_audio);
+    radium::JucePlayer *player = new radium::JucePlayer(callback, callback_data, called_before_starting_audio);
+
+    // The device thread calls our callback as soon as the device is opened inside
+    // initJuceAudio(), and that callback calls JUCE_audio_time_at_cycle_start(), which
+    // reads g_juce_player. Therefore g_juce_player must be set before initializing the
+    // audio device.
+    g_juce_player = player;
+
+    player->_is_running = player->initJuceAudio(settings_string);
   });
   
   return g_juce_player->_is_running;

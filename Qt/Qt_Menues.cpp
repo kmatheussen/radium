@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenuBar>
 #include <QApplication>
 #include <QStack>
+#include <QTimer>
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
@@ -31,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Menues_proc.h"
 #include "Qt_PopupMenu_proc.h"
+#include "Qt_MainWindow_proc.h"
 
 
 extern QApplication *qapplication;
@@ -402,6 +404,10 @@ void GFX_ShowMenu(struct Tracker_Windows *tvisual){
     g_main_menu_bar_right->show();
     //editor->main_window->menuBar()->show();
   }GL_unlock();
+
+  // The transport bar moves down when the menu bar is shown, so the notch
+  // gap above it must be recalculated.
+  QTimer::singleShot(0, []{ update_transport_bar_notch_gap(); });
 }
 
 void GFX_HideMenu(struct Tracker_Windows *tvisual){
@@ -413,7 +419,11 @@ void GFX_HideMenu(struct Tracker_Windows *tvisual){
   
   g_main_menu_bar->hide();
   g_main_menu_bar_right->hide();
-  
+
+  // The transport bar moves up when the menu bar is hidden, so the notch
+  // gap above it must be recalculated.
+  QTimer::singleShot(0, []{ update_transport_bar_notch_gap(); });
+
   //EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
   QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Escape, Qt::NoModifier);
   qApp->postEvent(g_main_menu_bar,eve1);

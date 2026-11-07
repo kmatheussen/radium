@@ -1,0 +1,26 @@
+--- a/pure-data/src/s_inter.c
++++ b/pure-data/src/s_inter.c
+@@ -1503,14 +1503,16 @@
+                         bundled_wish, libdir, PDGUIDIR, portno);
+             }
+ #else /* __APPLE__ */
+-            /* sprintf the wish command with needed environment variables.
+-            For some reason the wish script fails if HOME isn't defined so
+-            if necessary we put that in here too. */
++            /* Radium: always run the self-contained wish bundled in
++            <libdir>/bin/wish (see bin/packages/build_tcltk_wish_linux.sh),
++            and never a "wish" found in PATH. The bundled wish embeds Tcl and
++            Tk's script libraries (zipfs), so TCL_LIBRARY/TK_LIBRARY must not
++            be set. For some reason the wish script fails if HOME isn't
++            defined, so if necessary we put that in here too. */
+             sprintf(cmdbuf,
+-  "TCL_LIBRARY=\"%s/lib/tcl/library\" TK_LIBRARY=\"%s/lib/tk/library\"%s \
+-  " WISH " \"%s/" PDGUIDIR "/pd-gui.tcl\" %d\n",
+-                 libdir, libdir, (getenv("HOME") ? "" : " HOME=/tmp"),
+-                    libdir, portno);
++  "%s\"%s/" PDBINDIR "wish\" \"%s/" PDGUIDIR "/pd-gui.tcl\" %d\n",
++                 (getenv("HOME") ? "" : " HOME=/tmp"),
++                    libdir, libdir, portno);
+ #endif /* __APPLE__ */
+             guicmd = cmdbuf;
+         }

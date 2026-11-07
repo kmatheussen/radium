@@ -140,6 +140,7 @@ FROM_C-create-editor-lower-part-gui
 FROM_C-reconfigure-sequencer-left-part
 FROM_C-reconfigure-sequencer-right-part
 FROM_C-reconfigure-sequencer-timing-part
+FROM_C-set-transport-bar-top-gap
 mid-horizontal-layout
 FROM_C-create-mixer-strips-gui
 FROM_C-mixer-strips-get-num-rows
@@ -1028,6 +1029,7 @@ FROM_C-show-select-instrument-right-click
   (my-require 'sequencer_upper_part.scm)
   (my-require 'seqtrack-headers.scm)
   (my-require 'seqtracks_config.scm)
+  (my-require 'transport_buttons.scm)
   (my-require 'sequencer_right_part.scm)
   (my-require 'seqblock-paint.scm)
   (my-require 'seqblock_audio.scm)

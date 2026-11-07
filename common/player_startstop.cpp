@@ -48,6 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_proc.h"
 
 #include "player_proc.h"
+#include "player_pause_proc.h"
 
 
 // Safer (and simpler) if set to 1, except that we might run out of memory while playing.
@@ -209,6 +210,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
 }
 
 static void play_stop(bool called_from_jack_transport){
+  PC_clearTransportPaused();
+
   g_player_was_stopped_manually = true;
   g_player_was_stopped_because_it_reached_sequencer_loop_end = false;
 
@@ -241,6 +244,8 @@ void PlayStop_from_jack_transport(void){
 
 
 static void start_player(int playtype, bool do_loop, double abstime, int64_t absabstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+  PC_clearTransportPaused();
+
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
   
   if (playtype==PLAYSONG)

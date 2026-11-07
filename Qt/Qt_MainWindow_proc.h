@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma once
 
+class QWidget;
+
 #ifdef QFONT_H
 
 extern QFont g_initial_editor_font;
@@ -24,6 +26,14 @@ extern QFont g_initial_editor_font;
 void add_upper_left_widget(struct Tracker_Windows *tvisual);
 
 void SetupMainWindow(void);
+
+// Reserves empty space above the transport bar when the main window is full
+// screen on a mac display with a notch that would otherwise cover it.
+void update_transport_bar_notch_gap(void);
+
+// Rechecks the notch gap above the transport bar whenever the widget holding
+// the transport bar is moved or resized.
+void install_transport_bar_notch_gap_updater(QWidget *widget);
 
 // Brings the main window to the front and makes it the key window again
 // (also activates the Radium application on macOS). Used when another

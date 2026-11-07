@@ -195,6 +195,7 @@ static inline void init_player_state(void){
   ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
   ATOMIC_DOUBLE_SET(pc->song_abstime, 0);
   pc->last_song_starttime = 0;
+  pc->playtype = PLAYSONG;
 }
 
 

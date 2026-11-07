@@ -3694,6 +3694,10 @@ static void set_main_window_fullscreen(QWidget *toplevel)
   force_fullscreen_layout(toplevel);
   update_main_menu_notch_gap(true);
 
+  // Run after the layout has settled, since the transport bar position
+  // depends on whether the menu bar is visible.
+  QTimer::singleShot(0, []{ update_transport_bar_notch_gap(); });
+
   // The window geometry changes, and the layout is not fully updated until
   // the event loop has been running for a little while. Sync the keyboard
   // focus with the mouse pointer after the layout has settled, in case Qt
@@ -3715,6 +3719,8 @@ static void unset_main_window_fullscreen(QWidget *toplevel)
 
   force_fullscreen_layout(toplevel);
   update_main_menu_notch_gap(false);
+
+  QTimer::singleShot(0, []{ update_transport_bar_notch_gap(); });
 
   QTimer::singleShot(100, []{ FOCUSFRAMES_update_from_mouse_pos(); });
   QTimer::singleShot(1000, []{ FOCUSFRAMES_update_from_mouse_pos(); });
@@ -4208,6 +4214,7 @@ int radium_main(const char *arg){
       xsplitter->addWidget(editor->editor_layout_widget);
 
       xsplitter->addWidget(block_selector);
+      install_transport_bar_notch_gap_updater(block_selector);
       block_selector->move(main_window->width()-100,0);
 
       block_selector->resize(100,block_selector->height());
@@ -5286,6 +5293,17 @@ static QString W_getApplicationDirectory(void)
 #endif // defined(RELEASE) && defined(FOR_WINDOWS)
 
 
+static void radium_atexit_handler(void)
+{
+	// We can get here from exit() in the middle of startup (e.g. when a data
+	// directory is missing). The static DiskPeaksThread destructor must not
+	// find the thread running (QThread would qFatal), and message boxes must
+	// not be spawned while Qt's statics are being torn down.
+	g_qt_is_running = false;
+	DISKPEAKS_stop();
+}
+
+
 int main(int argc, char **argv){
   //return 0;
 
@@ -5549,6 +5567,8 @@ int main(int argc, char **argv){
   R_ASSERT(THREADING_is_main_thread());
   
   g_qt_is_running = true;
+
+  atexit(radium_atexit_handler);
 
   determine_dpi_and_gfx_scale();
 

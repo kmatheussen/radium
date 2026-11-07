@@ -29,6 +29,12 @@ extern LANGSPEC void PC_StopPause(struct Tracker_Windows *window);
 extern LANGSPEC void PC_StopPauseAtCurrCursorPos(struct Tracker_Windows *window);
 extern LANGSPEC void PC_StopPause_ForcePlayBlock(struct Tracker_Windows *window);
 
+extern LANGSPEC bool PC_isTransportPaused(void);
+extern LANGSPEC int PC_getTransportPausedPlaytype(void);
+extern LANGSPEC void PC_PauseTransport(void);
+extern LANGSPEC void PC_ContinueTransport(void);
+extern LANGSPEC void PC_clearTransportPaused(void);
+
 #ifdef __cplusplus
 namespace radium{
 namespace{

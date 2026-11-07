@@ -25,8 +25,9 @@ struct NoteEventCollector
 
 	enum EventType {
 		NOTE_OFF,    // 0: sorts first at equal offsets (release before retrigger)
-		NOTE_ON,     // 1: note starts before its same-offset pitch change
-		NOTE_PITCH   // 2: pitch change of an already playing note
+		NOTE_ON,     // 1: note starts before its same-offset pitch/volume change
+		NOTE_PITCH,  // 2: pitch change of an already playing note
+		NOTE_VOLUME  // 3: volume change of an already playing note
 	};
 
 	struct Event {
@@ -73,16 +74,26 @@ struct NoteEventCollector
 		}
 	}
 
+	void noteVolume(int block_delta_time, const note_t &note)
+	{
+		if (num_events < MAX_EVENTS){
+			events[num_events].sample_offset = block_delta_time;
+			events[num_events].type = NOTE_VOLUME;
+			events[num_events].note = note;
+			num_events++;
+		}
+	}
+
 	static bool comes_after(const Event &a, const Event &b)
 	{
 		if (a.sample_offset == b.sample_offset)
-			return a.type > b.type; // at the same offset: NOTE_OFF < NOTE_ON < NOTE_PITCH
+			return a.type > b.type; // at the same offset: NOTE_OFF < NOTE_ON < NOTE_PITCH < NOTE_VOLUME
 
 		return a.sample_offset > b.sample_offset;
     }
 
 	// Insertion sort by sample_offset. At equal offsets the order is
-	// NOTE_OFF, NOTE_ON, NOTE_PITCH.
+	// NOTE_OFF, NOTE_ON, NOTE_PITCH, NOTE_VOLUME.
 	// RT-safe: no allocation, small N.
     void sort(void)
 	{

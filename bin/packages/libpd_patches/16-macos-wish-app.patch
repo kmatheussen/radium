@@ -1,35 +1,77 @@
 --- a/pure-data/src/s_inter.c
 +++ b/pure-data/src/s_inter.c
-@@ -1489,7 +1489,9 @@
-             char *homedir = getenv("HOME");
-             char embed_glob[FILENAME_MAX];
-             char home_filename[FILENAME_MAX];
+@@ -1483,63 +1483,24 @@
+         else
+         {
+ #ifdef __APPLE__
+-            int i;
+-            struct stat statbuf;
+-            glob_t glob_buffer;
+-            char *homedir = getenv("HOME");
+-            char embed_glob[FILENAME_MAX];
+-            char home_filename[FILENAME_MAX];
 -            char *wish_paths[11] = {
-+            char bundled_wish[FILENAME_MAX];
-+            char *wish_paths[12] = {
-+ "(no wish bundled with pd)",
-  "(custom wish not defined)",
-  "(did not find a home directory)",
-  "/Applications/Utilities/Wish.app/Contents/MacOS/Wish",
-@@ -1518,12 +1520,19 @@
-             else
+- "(custom wish not defined)",
+- "(did not find a home directory)",
+- "/Applications/Utilities/Wish.app/Contents/MacOS/Wish",
+- "/Applications/Utilities/Wish Shell.app/Contents/MacOS/Wish Shell",
+- "/Applications/Wish.app/Contents/MacOS/Wish",
+- "/Applications/Wish Shell.app/Contents/MacOS/Wish Shell",
+- "/Library/Frameworks/Tk.framework/Resources/Wish.app/Contents/MacOS/Wish",
+- "/Library/Frameworks/Tk.framework/Resources/Wish Shell.app/Contents/MacOS/Wish Shell",
+- "/System/Library/Frameworks/Tk.framework/Resources/Wish.app/Contents/MacOS/Wish",
+- "/System/Library/Frameworks/Tk.framework/Resources/Wish Shell.app/Contents/MacOS/Wish Shell",
+- "/usr/bin/wish"
+-            };
+-            /* this glob is needed so the Wish executable can have the same
+-             * filename as the Pd.app, i.e. 'Pd-0.42-3.app' should have a Wish
+-             * executable called 'Pd-0.42-3.app/Contents/MacOS/Pd-0.42-3' */
+-            sprintf(embed_glob, "%s/../MacOS/Pd*", libdir);
+-            glob_buffer.gl_matchc = 1; /* we only need one match */
+-            glob(embed_glob, GLOB_LIMIT, NULL, &glob_buffer);
+-            /* If we are using a copy of Wish embedded in the Pd.app, then it
+-             * will automatically load pd-gui.tcl if that embedded Wish can
+-             * find ../Resources/Scripts/AppMain.tcl, then Wish doesn't want
+-             * to receive the pd-gui.tcl as an argument.  Otherwise it needs
+-             * to know how to find pd-gui.tcl */
+-            if (glob_buffer.gl_pathc > 0)
+-                sprintf(cmdbuf, "\"%s\" %d\n", glob_buffer.gl_pathv[0], portno);
+-            else
              {
-                 int wish_paths_count = sizeof(wish_paths)/sizeof(*wish_paths);
-+                /* Radium: prefer the self-contained Wish.app bundled next to
-+                the pure-data directory, i.e. <program>/packages/libpd/Wish.app,
-+                so that the Pd2 GUI doesn't need Tcl/Tk installed on the
-+                machine. */
+-                int wish_paths_count = sizeof(wish_paths)/sizeof(*wish_paths);
+-                #ifdef WISH
+-                    wish_paths[0] = WISH;
+-                #endif
+-                sprintf(home_filename,
+-                        "%s/Applications/Wish.app/Contents/MacOS/Wish",homedir);
+-                wish_paths[1] = home_filename;
+-                for(i=0; i<wish_paths_count; i++)
+-                {
+-                    if (sys_verbose)
+-                        fprintf(stderr, "Trying Wish at \"%s\"\n",
+-                            wish_paths[i]);
+-                    if (stat(wish_paths[i], &statbuf) >= 0)
+-                        break;
+-                }
+-                if(i>=wish_paths_count)
++                struct stat statbuf;
++                char bundled_wish[FILENAME_MAX];
++                /* Radium: always run the self-contained Wish.app bundled next
++                to the pure-data directory, i.e. <program>/packages/libpd/
++                Wish.app. Never fall back to a Wish/Tcl-Tk installed on the
++                machine, so the Pd2 GUI always uses the Tcl/Tk shipped with
++                Radium. */
 +                pd_snprintf(bundled_wish, sizeof(bundled_wish),
 +                            "%s/../Wish.app/Contents/MacOS/Wish", libdir);
-+                wish_paths[0] = bundled_wish;
-                 #ifdef WISH
--                    wish_paths[0] = WISH;
-+                    wish_paths[1] = WISH;
-                 #endif
-                 sprintf(home_filename,
-                         "%s/Applications/Wish.app/Contents/MacOS/Wish",homedir);
--                wish_paths[1] = home_filename;
-+                wish_paths[2] = home_filename;
-                 for(i=0; i<wish_paths_count; i++)
++                if (stat(bundled_wish, &statbuf) < 0)
                  {
-                     if (sys_verbose)
+                     fprintf(stderr, "sys_startgui couldn't find tcl/tk\n");
+                     sys_closesocket(sockfd);
+                     return (1);
+                 }
+                 sprintf(cmdbuf, "\"%s\" \"%s/%s/pd-gui.tcl\" %d\n",
+-                        wish_paths[i], libdir, PDGUIDIR, portno);
++                        bundled_wish, libdir, PDGUIDIR, portno);
+             }
+ #else /* __APPLE__ */
+             /* sprintf the wish command with needed environment variables.

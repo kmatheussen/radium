@@ -717,6 +717,8 @@
 
 
 (<declare-variable> get-delete-all-pauses-menu-entry) ;; in sequencer.scm
+(<declare-variable> *show-transport-bar*) ;; in transport_buttons.scm
+(<declare-variable> set-show-playlist-transport-bar!) ;; in transport_buttons.scm
 
 (define (get-blocklist/playlist-common-entries)
   (list
@@ -727,7 +729,18 @@
    show-set-current-seqtrack-menu
 
    "Show blocklist"
-   ra:show-blocklist-gui))
+   ra:show-blocklist-gui
+
+   "---------------"
+
+   (list "Transport bar visible"
+         :check *show-transport-bar*
+         :shortcut (list show-hide-playlist-transport-bar)
+         (lambda (val)
+           (set-show-playlist-transport-bar! val)))
+
+   "-------------"
+   "Help keybindings" show-keybinding-help-window))
 
              
 
@@ -1104,8 +1117,16 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+(define (show-undo-history)
+  (<ra> :add-message
+        (<-> "<pre>"
+             (<ra> :get-html-from-text (<ra> :get-undo-history))
+             "</pre>")))
+
 (define (FROM_C-show-bottom-bar-undo-popup-menu)
   (popup-menu
+   "Show undo history" show-undo-history
+   "-------------"
    (get-keybinding-configuration-popup-menu-entries "ra:undo"
                                                     '()
                                                     "")
@@ -1115,6 +1136,8 @@
 
 (define (FROM_C-show-bottom-bar-redo-popup-menu)
   (popup-menu
+   "Show undo history" show-undo-history
+   "-------------"
    (get-keybinding-configuration-popup-menu-entries "ra:redo"
                                                     '()
                                                     "")
@@ -1180,4 +1203,3 @@
 
 
   
-
