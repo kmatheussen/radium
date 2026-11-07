@@ -1158,6 +1158,27 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 
 static DEFINE_ATOMIC(bool, g_is_currently_sending);
 
+// Number of currently active crash reporter calls in this thread. While a
+// report is being created (backtrace, Qt strings, temporary files, ...), the
+// crash reporter allocates memory. If the report is triggered by a realtime
+// thread (e.g. an assert in the audio callback), those allocations must not be
+// mistaken for RT allocations by the ASAN malloc/free hooks, or the crash
+// reporter would stop in getchar() and never finish.
+static __thread int g_num_ignore_malloc_free_checks = 0;
+
+void CRASHREPORTER_push_ignore_malloc_free_checks(void){
+  g_num_ignore_malloc_free_checks++;
+}
+
+void CRASHREPORTER_pop_ignore_malloc_free_checks(void){
+  if (g_num_ignore_malloc_free_checks > 0)
+    g_num_ignore_malloc_free_checks--;
+}
+
+bool CRASHREPORTER_ignore_malloc_free_checks(void){
+  return g_num_ignore_malloc_free_checks > 0;
+}
+
 bool CRASHREPORTER_is_currently_sending_assert_message(void){
 	return ATOMIC_GET(g_is_currently_sending);
 }
@@ -1170,6 +1191,8 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 
   if (ATOMIC_GET(g_dont_report))
     return;
+
+  CRASHREPORTER_push_ignore_malloc_free_checks();
 
 #if 0
   static int last_time = -10000;
@@ -1230,6 +1253,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 #endif
   
  exit:
+  CRASHREPORTER_pop_ignore_malloc_free_checks();
   ATOMIC_SET(g_is_currently_sending, false);
 }
 

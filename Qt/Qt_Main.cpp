@@ -263,14 +263,14 @@ static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool
 
     } else {
 
-      getchar();
-	  
       printf("\n\n\n==========================================================\n"
              "  %s: %s.\n"
-             "==============================================================\n\n\n",
+             "==========================(press return to continue)============\n\n\n",
              is_alloc ? "__sanitizer_malloc_hook" : "__sanitizer_free_hook",
              message);
       
+      getchar();
+	  
       if (force_abort) {
         //abort();
       } else {
@@ -468,6 +468,11 @@ void __sanitizer_malloc_hook(const volatile void *ptr, size_t size){
   if (PLAYER_ignore_malloc_free_checks())
     return;
 
+  // The crash reporter allocates memory while creating a report. If the
+  // report is triggered from an RT thread, those allocations must be ignored.
+  if (CRASHREPORTER_ignore_malloc_free_checks())
+    return;
+
   if (CRASHREPORTER_is_processing_plugin()){
     report_plugin_rt_memory_error(true);
     return;
@@ -499,6 +504,11 @@ void __sanitizer_malloc_hook(const volatile void *ptr, size_t size){
 __attribute__((weak))
 void __sanitizer_free_hook(const volatile void *ptr){
   if (PLAYER_ignore_malloc_free_checks())
+    return;
+
+  // The crash reporter allocates memory while creating a report. If the
+  // report is triggered from an RT thread, those allocations must be ignored.
+  if (CRASHREPORTER_ignore_malloc_free_checks())
     return;
 
   if (CRASHREPORTER_is_processing_plugin()){
