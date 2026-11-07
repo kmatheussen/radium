@@ -1048,10 +1048,14 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 
   // start process
   {
+    // Note: We might not be in the main thread here (for instance when aborting from the audio thread).
+    // OS_get_full_program_file_path(const char*) calls STRING_create with use_gc_alloc=true, which asserts
+    // when called from a non-main thread. OS_get_full_program_file_path2 is the function the filepath_t
+    // version delegates to, so use it directly to avoid the (unnecessary) GC-allocated temporary string.
 #ifdef FOR_WINDOWS
-    QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_crashreporter.exe").id);
+    QString program = OS_get_full_program_file_path2("radium_crashreporter.exe");
 #else
-    QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_crashreporter").id);
+    QString program = OS_get_full_program_file_path2("radium_crashreporter");
 #endif
 
 #if defined(FOR_WINDOWS)
