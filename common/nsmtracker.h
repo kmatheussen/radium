@@ -475,8 +475,11 @@ enum ShowAssertionOrThrowAPIException{
     }                                                                   \
   }while(0)
     
-
-
+#if defined(RELEASE)
+#  define GETCHAR_NONRELEASE()
+#else
+#  define GETCHAR_NONRELEASE() printf("=======   ERROR " __FILE__ ":%d Press return to continue. =========\n", __LINE__);
+#endif
 
 #if 1 //defined(USE_CUSTOM_NUM_FRAMES)
 #  define R_NUM_FRAMES_DECL int radium_num_frames___,
