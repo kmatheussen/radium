@@ -1312,6 +1312,30 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
 	}
 }
 
+static bool get_effect_native_range(SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size)
+{
+	if (plugin == NULL || plugin->data == NULL || min_value == NULL || max_value == NULL)
+		return false;
+
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	FaustDev2Dsp *dsp_data = devdata->dsp_data;
+	if (dsp_data == NULL || effect_num < 0 || effect_num >= dsp_data->num_params)
+		return false;
+
+	const float min_value_local = dsp_data->api_ui.getParamMin(effect_num);
+	const float max_value_local = dsp_data->api_ui.getParamMax(effect_num);
+	if (!std::isfinite(min_value_local) || !std::isfinite(max_value_local) || min_value_local >= max_value_local)
+		return false;
+
+	*min_value = min_value_local;
+	*max_value = max_value_local;
+	if (unit != NULL && unit_buffer_size > 0){
+		const char *unit_metadata = dsp_data->api_ui.getMetadata(effect_num, "unit");
+		snprintf(unit, unit_buffer_size, "%s", unit_metadata == NULL ? "" : unit_metadata);
+	}
+	return true;
+}
+
 
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize)
 {
@@ -1837,6 +1861,7 @@ void create_faust_dev2_plugin(void)
 	plugin_type->num_effects              = MAX_EFFECTS;
 	plugin_type->get_effect_format        = get_effect_format;
 	plugin_type->get_effect_name          = get_effect_name;
+	plugin_type->get_effect_native_range  = get_effect_native_range;
 	plugin_type->effect_is_RT             = NULL;
 	plugin_type->create_state             = create_state;
 	plugin_type->create_plugin_data       = create_plugin_data;

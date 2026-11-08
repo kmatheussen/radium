@@ -54,6 +54,9 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 #include "../mixergui/undo_mixer_connections_proc.h"
 #include "../audio/Bus_plugins_proc.h"
 
+#include <algorithm>
+#include <cmath>
+
 
 //extern void BottomBar_set_system_audio_instrument_widget_and_patch(Ui::Audio_instrument_widget *system_audio_instrument_widget, struct Patch *patch);
 
@@ -467,6 +470,140 @@ public:
         return states;
       };
 
+      auto read_instrument_context = [this]() -> radium::llm::FxInstrumentContext
+      {
+        radium::llm::FxInstrumentContext context;
+
+        struct Patch *patch = _patch.data();
+        if (patch == NULL)
+          return context;
+
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        if (plugin == NULL || plugin->type == NULL)
+          return context;
+
+        const SoundPluginType *type = plugin->type;
+        context.type_name = type->type_name == NULL ? QString() : QString::fromUtf8(type->type_name);
+        context.plugin_name = type->name == NULL ? QString() : QString::fromUtf8(type->name);
+        context.plugin_version = type->version;
+
+        // One short line about the plugin (vendor + category, say), when the
+        // plugin type can provide one. Falls back to the plugin's info text,
+        // which is mostly metadata ("Version", "Accepts MIDI", ...) the LLM
+        // does not need.
+        {
+          char summary[192] = {0};
+          PLUGIN_get_plugin_summary(plugin, summary, sizeof(summary));
+          if (summary[0] != 0)
+            context.description = QString::fromUtf8(summary).simplified().left(160);
+          else if (type->info != NULL)
+            context.description = QString::fromUtf8(type->info).simplified().left(160);
+        }
+
+        const int max_prompt_params = 256;
+        for (int effect_num = 0; effect_num < type->num_effects; effect_num++){
+          if (type->effect_is_visible != NULL && !type->effect_is_visible(plugin, effect_num))
+            continue;
+
+          const char *effect_name = PLUGIN_get_effect_name(plugin, effect_num);
+          if (effect_name == NULL || effect_name[0] == 0)
+            continue;
+
+          // Generic MIDI controller controls ("Breath (CH 3)", "ModWheel (CH
+          // 12)", ...) cannot shape a mixing change, and for some plugins they
+          // are almost the whole control list. Drop them before the size cap
+          // so they cannot crowd out the plugin's real controls.
+          {
+            radium::llm::FxInstrumentParamState midi_probe;
+            midi_probe.name = QString::fromUtf8(effect_name);
+            if (radium::llm::fx_is_midi_controller_param(midi_probe)){
+              context.hidden_midi_controls++;
+              continue;
+            }
+          }
+
+          const float current_scaled = PLUGIN_get_effect_value2(plugin, effect_num, VALUE_FROM_STORAGE, EFFECT_FORMAT_SCALED);
+          if (!std::isfinite(current_scaled) || current_scaled < -0.001f || current_scaled > 1.001f){
+            context.omitted_params++;
+            continue;
+          }
+
+          if (context.params.size() >= max_prompt_params){
+            context.omitted_params++;
+            continue;
+          }
+
+          radium::llm::FxInstrumentParamState param;
+          param.effect_num = effect_num;
+          param.name = QString::fromUtf8(effect_name);
+          param.display_name = param.name;
+          if (type->get_displayable_effect_name != NULL){
+            const char *display_name = type->get_displayable_effect_name(plugin, effect_num);
+            if (display_name != NULL && display_name[0] != 0)
+              param.display_name = QString::fromUtf8(display_name);
+          }
+          param.current_scaled = std::max(0.0f, std::min(1.0f, current_scaled));
+          param.current_native = PLUGIN_get_effect_value2(plugin, effect_num, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+
+          {
+            float min_native = 0.0f;
+            float max_native = 0.0f;
+            char unit[64] = {0};
+            if (PLUGIN_get_effect_native_range(plugin, effect_num, &min_native, &max_native, unit, sizeof(unit))
+                && std::isfinite(min_native) && std::isfinite(max_native)
+                && min_native < max_native && std::isfinite(param.current_native)
+                && param.current_native >= min_native - 0.001f
+                && param.current_native <= max_native + 0.001f){
+              param.has_native_range = true;
+              param.min_native = min_native;
+              param.max_native = max_native;
+              if (unit[0] != 0)
+                param.unit = QString::fromUtf8(unit);
+            } else {
+              // Fall back to the normalized 0..1 range: the real range is
+              // unknown, so the LLM must not infer values from the display
+              // text (see FxInstrumentParamState::is_clamped).
+              param.is_clamped = true;
+            }
+          }
+
+          const char *description = type->get_effect_description != NULL
+                                  ? type->get_effect_description(plugin, effect_num)
+                                  : NULL;
+          // The prompt sends at most FX_CONTROL_DESCRIPTION_MAX characters of
+          // this (it is per-control text, multiplied by the control count).
+          if (description != NULL)
+            param.description = QString::fromUtf8(description).simplified().left(radium::llm::FX_CONTROL_DESCRIPTION_MAX * 2);
+
+          // A plugin may know the unit without reporting a native range (all
+          // JUCE-hosted plugins do: their values are normalized, but "%", "ms"
+          // and "dB" are known). Without this the prompt would describe the
+          // control as a bare 0..1 position.
+          if (param.unit.isEmpty()){
+            char effect_unit[32] = {0};
+            PLUGIN_get_effect_unit(plugin, effect_num, effect_unit, sizeof(effect_unit));
+            if (effect_unit[0] != 0)
+              param.unit = QString::fromUtf8(effect_unit).simplified().left(12);
+          }
+
+          switch (PLUGIN_get_effect_format(plugin, effect_num)){
+            case EFFECT_FORMAT_FLOAT: param.format = radium::llm::FX_INSTRUMENT_PARAM_FLOAT; break;
+            case EFFECT_FORMAT_INT: param.format = radium::llm::FX_INSTRUMENT_PARAM_INT; break;
+            case EFFECT_FORMAT_BOOL: param.format = radium::llm::FX_INSTRUMENT_PARAM_BOOL; break;
+            case EFFECT_FORMAT_RADIO: param.format = radium::llm::FX_INSTRUMENT_PARAM_RADIO; break;
+            default: param.format = radium::llm::FX_INSTRUMENT_PARAM_UNKNOWN; break;
+          }
+
+          char display_value[256] = {0};
+          PLUGIN_get_display_value_string(plugin, effect_num, display_value, sizeof(display_value));
+          param.current_display = QString::fromUtf8(display_value).simplified().left(128);
+
+          context.params.append(param);
+        }
+
+        return context;
+      };
+
       // Available effect plugins (plugins with both audio inputs and outputs
       // that are not instruments). The LLM picks one of these when the user
       // asks for an effect the system effects cannot make (e.g. wah,
@@ -554,15 +691,38 @@ public:
         return get_inserted_effect_plugin_catalog(_patch.data());
       };
 
-      auto apply_changes = [this, read_catalog](QVector<radium::llm::FxChange> &changes) -> bool
+      auto apply_changes = [this, read_catalog](QVector<radium::llm::FxChange> &changes,
+                                                const QVector<radium::llm::FxInstrumentChange> &instrument_changes) -> bool
       {
         struct Patch *patch = _patch.data();
         if (patch == NULL)
           return false;
 
         SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-        if (plugin == NULL)
+        if (plugin == NULL || plugin->type == NULL)
           return false;
+
+        for (const radium::llm::FxInstrumentChange &change : instrument_changes){
+          if (change.type_name != QString::fromUtf8(plugin->type->type_name)
+              || change.plugin_name != QString::fromUtf8(plugin->type->name)
+              || change.plugin_version != plugin->type->version
+              || change.effect_num < 0 || change.effect_num >= plugin->type->num_effects)
+            return false;
+
+          const char *current_name = PLUGIN_get_effect_name(plugin, change.effect_num);
+          if (current_name == NULL || change.name != QString::fromUtf8(current_name))
+            return false;
+
+          if (change.value_is_native){
+            const float current_native = PLUGIN_get_effect_value2(plugin, change.effect_num, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+            if (!std::isfinite(current_native) || std::fabs(current_native - change.old_value_native) > 0.0001f)
+              return false;
+          }else{
+            const float current_scaled = PLUGIN_get_effect_value2(plugin, change.effect_num, VALUE_FROM_STORAGE, EFFECT_FORMAT_SCALED);
+            if (!std::isfinite(current_scaled) || std::fabs(current_scaled - change.old_value_scaled) > 0.001f)
+              return false;
+          }
+        }
 
         // Catalog lookups used below.
         QSet<QString> gain_db_names;
@@ -645,9 +805,13 @@ public:
             changes.append(change);
         }
 
-        // One undo entry for the whole batch, so a single undo restores
-        // everything.
-        ADD_UNDO(OnlySystemEffects(patch, AE_NO_FLAGS));
+        // Snapshot the complete effect state when plugin-specific controls
+        // are part of the batch; otherwise system effects alone are enough.
+        // ScopedUndo in apply_reply groups this together with any graph edits.
+        if (instrument_changes.isEmpty())
+          ADD_UNDO(OnlySystemEffects(patch, AE_NO_FLAGS));
+        else
+          ADD_UNDO(AudioEffect_CurrPos(patch, -1, AE_NO_FLAGS));
 
         // Apply the changes. Bus sends are linear gains natively, but the
         // catalog (and the LLM) works in dB; convert those back first.
@@ -667,6 +831,12 @@ public:
                                      : change.value;
           PLUGIN_set_effect_from_name(plugin, change.name.toUtf8().constData(), native_value, EFFECT_FORMAT_NATIVE);
         }
+
+        for (const radium::llm::FxInstrumentChange &change : instrument_changes)
+          PLUGIN_set_effect_value(plugin, -1, change.effect_num,
+                                  change.value_is_native ? change.value_native : change.value_scaled,
+                                  STORE_VALUE, FX_single,
+                                  change.value_is_native ? EFFECT_FORMAT_NATIVE : EFFECT_FORMAT_SCALED);
 
         GFX_update_instrument_widget(patch);
 
@@ -886,6 +1056,7 @@ public:
       // keeps all the nested ADD_UNDO calls (patch creation, chip positions,
       // effect values, mixer connections) inside a single undo record.
       auto apply_reply = [read_catalog, apply_changes, apply_modulations, apply_plugins, apply_remove_plugins](QVector<radium::llm::FxChange> &changes,
+                                                                                                                const QVector<radium::llm::FxInstrumentChange> &instrument_changes,
                                                                                                                 const QVector<radium::llm::FxModulation> &modulations,
                                                                                                                 const QVector<radium::llm::FxPlugin> &add_plugins,
                                                                                                                 const QVector<radium::llm::FxPlugin> &remove_plugins) -> bool
@@ -912,7 +1083,7 @@ public:
           }
         }
 
-        if (!changes.isEmpty() && !apply_changes(changes))
+        if ((!changes.isEmpty() || !instrument_changes.isEmpty()) && !apply_changes(changes, instrument_changes))
           return false;
 
         if (!modulations.isEmpty() && !apply_modulations(modulations))
@@ -991,7 +1162,7 @@ public:
         return true;
       };
 
-      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect);
+      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_instrument_context, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect);
       gridLayout_3->addWidget(_fx_tune_widget, 1, 0);
 
       // Checkbox in the instrument header, to the right of the "Configure
@@ -2575,4 +2746,3 @@ void AUDIOWIDGET_show_small(struct Patch *patch){
   get_audio_instrument_widget(patch)->show_small();
 }
 #endif
-

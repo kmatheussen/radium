@@ -22,8 +22,8 @@
 #X floatatom 686 116 5 0 0 0 - - -;
 #X obj 397 367 line~;
 #X obj 317 335 pack 0 100;
-#X obj 451 266 r_int pitch_glide_length 0 100 1200;
-#X obj 897 256 r_int velocity_glide_length 0 100 1200;
+#X obj 451 266 r_int pitch_glide_length 0 100 1200 ms;
+#X obj 897 256 r_int velocity_glide_length 0 100 1200 ms;
 #X obj 606 349 pack 0 100;
 #X connect 1 0 0 0;
 #X connect 1 0 0 1;

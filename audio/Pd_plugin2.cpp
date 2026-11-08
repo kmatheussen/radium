@@ -108,6 +108,7 @@ enum { NUM_PENDING_CONTROLLER_DEFINITIONS = 64 };
 struct PendingControllerDefinition
 {
 	char name[PD_NAME_LENGTH];
+	char unit[PD_UNIT_LENGTH];
 	int type;
 	float min_value;
 	float value;
@@ -602,6 +603,37 @@ static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enu
 		return raw;
 }
 
+static bool get_effect_native_range(SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size)
+{
+	if (plugin == NULL || plugin->type == NULL || plugin->data == NULL || min_value == NULL || max_value == NULL
+	    || effect_num < 0 || effect_num >= plugin->type->num_effects)
+		return false;
+
+	Data *data = (Data*)plugin->data;
+	float min_value_local;
+	float max_value_local;
+	bool has_name;
+	char unit_local[PD_UNIT_LENGTH];
+	{
+		ScopedControllersLock lock(data);
+		const Pd_Controller *controller = &data->controllers[effect_num];
+		min_value_local = controller->min_value;
+		max_value_local = controller->max_value;
+		has_name = controller->name[0] != 0;
+		snprintf(unit_local, sizeof(unit_local), "%s", controller->unit);
+	}
+
+	if (!has_name || !isfinite(min_value_local) || !isfinite(max_value_local)
+	    || min_value_local >= max_value_local)
+		return false;
+
+	*min_value = min_value_local;
+	*max_value = max_value_local;
+	if (unit != NULL && unit_buffer_size > 0)
+		snprintf(unit, unit_buffer_size, "%s", unit_local);
+	return true;
+}
+
 // called from radium
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize)
 {
@@ -851,7 +883,7 @@ static void RT_intern_global_symbols(Data *data)
 // Called from Pd (i.e. with the libpd lock held). Only queues the controller
 // definition; it is applied later on the GUI thread by
 // PD2_apply_pending_controller_definitions.
-static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value)
+static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value, const char *unit)
 {
 	char name[PD_NAME_LENGTH];
 	snprintf(name, sizeof(name), "%s", controller_name);
@@ -870,6 +902,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
 			def->min_value = min_value;
 			def->value = value;
 			def->max_value = max_value;
+			snprintf(def->unit, sizeof(def->unit), "%s", unit == NULL ? "" : unit);
 			return;
 		}
 	}
@@ -887,6 +920,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
 	def->min_value = min_value;
 	def->value = value;
 	def->max_value = max_value;
+	snprintf(def->unit, sizeof(def->unit), "%s", unit == NULL ? "" : unit);
 
 	data->pending_controller_definitions_head = next_head;
 }
@@ -931,6 +965,7 @@ static void apply_controller_definition(Data *data, const PendingControllerDefin
 		controller->min_value = min_value;
 		controller->value = def->value;
 		controller->max_value = max_value;  
+		snprintf(controller->unit, sizeof(controller->unit), "%s", def->unit);
 
 		strlcpy(controller->name, def->name, PD_NAME_LENGTH-1);
 		snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", def->name);
@@ -1039,22 +1074,26 @@ static void RT_pdlisthook(const char *recv, int argc, t_atom *argv)
 
 	if( !strcmp(recv, "radium_controller"))
 	{
-		if(argc==5 &&
-			 libpd_is_symbol(argv[0]) && strcmp("", libpd_get_symbol(argv[0])) &&
-			 libpd_is_float(argv[1]) &&
-			 libpd_is_float(argv[2]) &&
-			 libpd_is_float(argv[3]) &&
-			 libpd_is_float(argv[4]))
+		if((argc==5 || argc==6) &&
+				 libpd_is_symbol(argv[0]) && strcmp("", libpd_get_symbol(argv[0])) &&
+				 libpd_is_float(argv[1]) &&
+				 libpd_is_float(argv[2]) &&
+				 libpd_is_float(argv[3]) &&
+				 libpd_is_float(argv[4]) &&
+				 (argc==5 || libpd_is_symbol(argv[5])))
 			{
 				const char *name = libpd_get_symbol(argv[0]);
 				int    type      = libpd_get_float(argv[1]);
 				float  min_value = libpd_get_float(argv[2]);
 				float  value     = libpd_get_float(argv[3]);
 				float  max_value = libpd_get_float(argv[4]);
+				const char *unit  = argc==6 ? libpd_get_symbol(argv[5]) : NULL;
+				if (unit != NULL && (!strcmp(unit, "0") || !strcmp(unit, "") || unit[0] == '$'))
+					unit = NULL;
 				//printf("Got something: -%s-, %d, %f, %f, %f\n", name, type, min_value, value, max_value);
 				
 				if(type==EFFECT_FORMAT_FLOAT || type==EFFECT_FORMAT_INT || type==EFFECT_FORMAT_BOOL)
-					RT_add_controller(plugin, data, name, type, min_value, value, max_value);
+					RT_add_controller(plugin, data, name, type, min_value, value, max_value, unit);
 				else
 					printf("Unknown type: -%d-\n",type);
 			}
@@ -2046,6 +2085,7 @@ void PD2_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *stat
 		// assertions/messages from the hash functions are not run while
 		// holding a spinlock.
 		const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
+		const char *unit = HASH_has_key_at(state, "unit", i) ? HASH_get_chars_at(state, "unit", i) : NULL;
 		int type = HASH_get_int_at(state, "type", i);
 		float min_value = HASH_get_float_at(state, "min_value", i);
 		float value = HASH_get_float_at(state, "value", i);
@@ -2065,6 +2105,7 @@ void PD2_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *stat
 			controller->min_value = min_value;
 			controller->value = value;
 			controller->max_value = max_value;
+			snprintf(controller->unit, sizeof(controller->unit), "%s", unit == NULL ? "" : unit);
 			controller->has_gui   = has_gui;
 			controller->config_dialog_visible = config_dialog_visible;
 
@@ -2098,6 +2139,7 @@ void PD2_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state)
 		int has_gui;
 		int config_dialog_visible;
 		char name[PD_NAME_LENGTH];
+		char unit[PD_UNIT_LENGTH];
 
 		{
 			ScopedControllersLock lock(data);
@@ -2110,6 +2152,7 @@ void PD2_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state)
 			has_gui = controller->has_gui ? 1 : 0;
 			config_dialog_visible = controller->config_dialog_visible ? 1 : 0;
 			snprintf(name, sizeof(name), "%s", controller->name);
+			snprintf(unit, sizeof(unit), "%s", controller->unit);
 		}
 
 		if (display_name != NULL)
@@ -2120,6 +2163,7 @@ void PD2_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state)
 		HASH_put_float_at(state, "min_value", i, min_value);
 		HASH_put_float_at(state, "value", i, value);
 		HASH_put_float_at(state, "max_value", i, max_value);
+		HASH_put_chars_at(state, "unit", i, unit);
 		HASH_put_int_at(state, "has_gui", i, has_gui);
 		HASH_put_int_at(state, "config_dialog_visible", i, config_dialog_visible);
 	}
@@ -2158,6 +2202,7 @@ void PD2_delete_controller(SoundPlugin *plugin, int controller_num)
 		float max_value;
 		int has_gui;
 		int config_dialog_visible;
+		char unit[PD_UNIT_LENGTH];
 
 		{
 			ScopedControllersLock lock(data);
@@ -2168,6 +2213,7 @@ void PD2_delete_controller(SoundPlugin *plugin, int controller_num)
 			max_value = controller->max_value;
 			has_gui = controller->has_gui;
 			config_dialog_visible = controller->config_dialog_visible;
+			snprintf(unit, sizeof(unit), "%s", controller->unit);
 		}
 
 		HASH_put_string_at(state, "name", i, display_name == NULL ? L"" : display_name);
@@ -2175,6 +2221,7 @@ void PD2_delete_controller(SoundPlugin *plugin, int controller_num)
 		HASH_put_float_at(state, "min_value", i, min_value);
 		HASH_put_float_at(state, "value", i, value);
 		HASH_put_float_at(state, "max_value", i, max_value);
+		HASH_put_chars_at(state, "unit", i, unit);
 		HASH_put_int_at(state, "has_gui", i, has_gui);
 		HASH_put_int_at(state, "config_dialog_visible", i, config_dialog_visible);
 	}
@@ -2184,6 +2231,7 @@ void PD2_delete_controller(SoundPlugin *plugin, int controller_num)
 	HASH_put_float_at(state, "min_value", NUM_PD_CONTROLLERS-1, 0.0);
 	HASH_put_float_at(state, "value", NUM_PD_CONTROLLERS-1, 0.0);
 	HASH_put_float_at(state, "max_value", NUM_PD_CONTROLLERS-1, 1.0);
+	HASH_put_chars_at(state, "unit", NUM_PD_CONTROLLERS-1, "");
 	HASH_put_int_at(state, "has_gui", NUM_PD_CONTROLLERS-1, 0);
 	HASH_put_int_at(state, "config_dialog_visible", i, 0);
 
@@ -2206,6 +2254,7 @@ static void add_plugin(const wchar_t *name, QString filename)
 	plugin_type->will_never_autosuspend   = true;
 	plugin_type->get_effect_format        = get_effect_format;
 	plugin_type->get_effect_name          = get_effect_name;
+	plugin_type->get_effect_native_range  = get_effect_native_range;
 	plugin_type->effect_is_RT             = NULL;
 	plugin_type->create_plugin_data       = create_plugin_data;
 	plugin_type->cleanup_plugin_data      = cleanup_plugin_data;

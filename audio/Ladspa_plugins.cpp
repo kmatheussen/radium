@@ -837,6 +837,27 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
   }
 }
 
+static bool get_effect_native_range(SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size){
+  if(plugin == NULL || plugin->type == NULL || min_value == NULL || max_value == NULL
+     || effect_num < 0 || effect_num >= plugin->type->num_effects)
+    return false;
+
+  TypeData *type_data = (TypeData*)plugin->type->data;
+  if(type_data == NULL || type_data->min_values == NULL || type_data->max_values == NULL)
+    return false;
+
+  const float min_value_local = type_data->min_values[effect_num];
+  const float max_value_local = type_data->max_values[effect_num];
+  if(!isfinite(min_value_local) || !isfinite(max_value_local) || min_value_local >= max_value_local)
+    return false;
+
+  *min_value = min_value_local;
+  *max_value = max_value_local;
+  if(unit != NULL && unit_buffer_size > 0)
+    unit[0] = 0; // LADSPA range hints do not provide a standard unit field.
+  return true;
+}
+
 
 static const char *get_effect_name(const SoundPlugin *plugin, int effect_num){
   TypeData *type_data = (struct TypeData*)plugin->type->data;
@@ -1157,6 +1178,7 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
   plugin_type->get_effect_name=get_effect_name;
   //plugin_type->get_effect_description=get_effect_description;
   plugin_type->get_effect_format = get_effect_format;
+  plugin_type->get_effect_native_range = get_effect_native_range;
 
   return plugin_type;
 }

@@ -105,6 +105,9 @@ extern LANGSPEC void PLUGIN_update_smooth_values(SoundPlugin *plugin);
 extern LANGSPEC int PLUGIN_get_num_visible_effects(SoundPlugin *plugin);
 
 extern LANGSPEC int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num);
+extern LANGSPEC bool PLUGIN_get_effect_native_range(struct SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size);
+extern LANGSPEC void PLUGIN_get_effect_unit(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
+extern LANGSPEC void PLUGIN_get_plugin_summary(struct SoundPlugin *plugin, char *buffer, int buffersize);
 extern LANGSPEC const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, char **error_message); // if 'error_message' is NULL, the function will display an error message if there is an error.
 extern LANGSPEC const char *PLUGIN_get_effect_name(const SoundPlugin *plugin, int effect_num);

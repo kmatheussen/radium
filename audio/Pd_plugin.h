@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define NUM_PD_CONTROLLERS 40
 
 #define PD_NAME_LENGTH 64
+#define PD_UNIT_LENGTH 24
 #define PD_FX_WHEN_NAME_LENGTH (PD_NAME_LENGTH+16)
 
 //typedef struct SoundPlugin SoundPlugin;
@@ -37,6 +38,7 @@ typedef struct{
   char fx_when_middle_name[PD_FX_WHEN_NAME_LENGTH];
   char fx_when_end_name[PD_FX_WHEN_NAME_LENGTH];
   char fx_when_single_name[PD_FX_WHEN_NAME_LENGTH];
+  char unit[PD_UNIT_LENGTH];
 
   int type;
   float value;
@@ -54,4 +56,3 @@ typedef struct{
 } Pd_Controller;
 
 #endif // AUDIO_PD_PLUGIN_H
-

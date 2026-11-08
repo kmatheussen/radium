@@ -407,6 +407,22 @@ typedef struct SoundPluginType{
   
   float (*get_scaled_value_from_native_value)(struct SoundPlugin *plugin, int effect_num, float native_value); // If get_effect_value might take some time to call, or the plugin could have a lot of effects, or we may obtain a lock in get_effect_value (or do other blocking operations), it could be a good idea to implement this one if possible.
 
+  // Optional machine-readable native range for LLM/UI clients. Return true
+  // only when both bounds are meaningful; unit may be NULL when unknown.
+  // Called from the main thread, without the player lock.
+  bool (*get_effect_native_range)(struct SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size);
+
+  // Optional unit text for one effect ("ms", "%", "dB", ...), when the plugin
+  // knows it even though it does not report a native range. Used by the LLM
+  // effect tuner so a control value is never described as a bare 0..1 position
+  // when its unit is known. NULL means "unknown"; the buffer is left empty.
+  void (*get_effect_unit)(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
+
+  // Optional one-line summary of what the plugin is (vendor, category, the
+  // plugin's own descriptive name), for LLM/UI clients that have to describe it
+  // to a user. No version numbers or capability flags. NULL when unknown.
+  void (*get_plugin_summary)(struct SoundPlugin *plugin, char *buffer, int buffersize);
+
   bool (*gui_is_visible)(struct SoundPlugin *plugin); // May be NULL. Note that the function is polled very often so it should be very efficient.
   bool (*show_gui)(struct SoundPlugin *plugin, int64_t parentgui); // If NULL, the "GUI" button will not show. Returns true if gui was opened.
   void (*hide_gui)(struct SoundPlugin *plugin);

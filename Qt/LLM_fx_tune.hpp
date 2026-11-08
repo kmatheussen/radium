@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QJsonObject>
 #include <QJsonParseError>
 #include <QJsonValue>
+#include <QRegularExpression>
 #include <QSet>
 #include <QString>
 #include <QStringList>
@@ -65,11 +66,77 @@ struct FxParamState
 	bool has_modulator = false;
 };
 
+enum FxInstrumentParamFormat
+{
+	FX_INSTRUMENT_PARAM_FLOAT,
+	FX_INSTRUMENT_PARAM_INT,
+	FX_INSTRUMENT_PARAM_BOOL,
+	FX_INSTRUMENT_PARAM_RADIO,
+	FX_INSTRUMENT_PARAM_UNKNOWN,
+};
+
+// A visible control belonging to the instrument plugin itself. Controls with
+// a native range/unit exposed by the plugin use native values; controls
+// without that optional metadata fall back to normalized 0..1 values.
+struct FxInstrumentParamState
+{
+	int effect_num = -1;
+	QString name; // Internal effect name used to validate the control.
+	QString display_name; // User-facing name shown by the instrument widget.
+	// What the plugin says this control does (its parameter label / description
+	// when the plugin provides one). Empty when the plugin exposes none.
+	QString description;
+	QString current_display;
+	float current_scaled = 0.0f;
+	bool has_native_range = false;
+	float min_native = 0.0f;
+	float max_native = 0.0f;
+	float current_native = 0.0f;
+	QString unit;
+	FxInstrumentParamFormat format = FX_INSTRUMENT_PARAM_UNKNOWN;
+	// True when the host falls back to the normalized 0..1 range only because
+	// the plugin did not report a native range. The real musical range is
+	// unknown then ("Bass: 200" may be the loudest setting of a -60..+12 dB
+	// gain), so the control's display text must not be scaled linearly.
+	bool is_clamped = false;
+};
+
+struct FxInstrumentContext
+{
+	QString type_name;
+	QString plugin_name;
+	int plugin_version = -1;
+	QString description; // what the plugin is, in one short line (vendor, category, ...)
+	QVector<FxInstrumentParamState> params;
+	int omitted_params = 0;
+	int hidden_midi_controls = 0; // MIDI controller controls the host left out of 'params'
+};
+
 // A proposed change, in native units.
 struct FxChange
 {
 	QString name;
 	float value;
+};
+
+struct FxInstrumentChange
+{
+	QString type_name;
+	QString plugin_name;
+	int plugin_version = -1;
+	int effect_num = -1;
+	QString name;
+	QString display_name;
+	float old_value_scaled = 0.0f;
+	float value_scaled = 0.0f;
+	bool value_is_native = false;
+	float old_value_native = 0.0f;
+	float value_native = 0.0f;
+	QString unit;
+	// The plugin's own value texts ("170", "35.00", "On"), when the host read
+	// them; used for the summaries so they read like the plugin's UI.
+	QString old_display;
+	QString new_display;
 };
 
 // An effect plugin that can be inserted into the instrument's signal path.
@@ -241,7 +308,7 @@ static inline QVector<FxParam> fx_catalog(void)
 	add("System Compression On/Off", "", 0, 1, true, false, "", "Enables the compressor. Set to 1 when changing compressor parameters.");
 
 	add("System Pitch", "semitones", -12, 12, false, true, "System Pitch type", "Pitch shift of the instrument output, in semitones. Only works when 'System Pitch type' is not Disabled.", false, 3.0f);
-	add("System Pitch type", "", 0, 4, false, true, "", "Pitch shifter mode: 0 = Disabled (no pitch shifting), 1 = Only left channel, 2 = Only right channel, 3 = All channels, 4 = Invert channels. Pattern/note pitch changes only work when this is not 0; use 3 for a normal pitch shift.");
+	add("System Pitch type", "mode", 0, 4, false, true, "", "Pitch shifter mode: 0 = Disabled (no pitch shifting), 1 = Only left channel, 2 = Only right channel, 3 = All channels, 4 = Invert channels. Pattern/note pitch changes only work when this is not 0; use 3 for a normal pitch shift.");
 
 	add("System Pan", "pan", 0, 1, false, false, "System Pan On/Off", "Stereo pan: 0 = hard left, 0.5 = center, 1 = hard right.");
 	add("System Pan On/Off", "", 0, 1, true, false, "", "Enables the pan setting. Set to 1 when changing the pan.");
@@ -259,24 +326,26 @@ static inline QVector<FxParam> fx_catalog(void)
 	// extra copies. Turning off voice 1 (or all voices) silences the
 	// instrument completely. Changing any voice parameter auto-enables its
 	// On/Off.
+	//
+	// The shared part of the voice explanation is emitted once by
+	// fx_system_effect_reference(), which collapses the seven voices to one
+	// "Voice N" entry per parameter, so the descriptions here only say what
+	// the parameter itself does.
 	for (int voicenum = 1; voicenum <= 7; voicenum++)
 	{
 		const QString v = QString::number(voicenum);
 		const QString onoff_name = "System On/Off Voice " + v;
-		const QString voice_desc = (voicenum == 1)
-		  ? QString("Note duplicator voice 1 is the instrument's ORIGINAL note.")
-		  : QString("Note duplicator voice %1 is an extra copy of every note, mixed together with the other voices.").arg(v);
-		const QString onoff_desc = (voicenum == 1)
-		  ? QString(" All voices share the same system effects and bus sends; turning voice 1 (or all voices) off silences the instrument completely.")
-		  : QString(" Set On/Off to 1 to hear this layer. There are no separate effects per voice.");
 
-		add_param(onoff_name, "", 0, 1, true, false, "", voice_desc + onoff_desc);
-		add_param("System Transpose Voice " + v, "semitones", -99, 99, false, false, onoff_name, voice_desc + " Transpose in semitones (12 = one octave up).");
-		add_param("System Volume Voice " + v, "dB", -35, 35, false, true, onoff_name, voice_desc + " Volume in dB.");
-		add_param("System Start Voice " + v, "ms", 0, 1000, false, false, onoff_name, voice_desc + " Delay before this voice starts playing, in milliseconds (0 = immediate).");
-		add_param("System Length Voice " + v, "ms", 0, 1000, false, false, onoff_name, voice_desc + " Duration override in milliseconds (0 = use the note's own duration).");
-		add_param("System Pan Voice " + v, "degrees", -90, 90, false, true, onoff_name, voice_desc + " Pan in degrees (-90 = left, 0 = center, +90 = right).");
-		add_param("System Chance Voice " + v, "chance", 0, 256, false, true, onoff_name, voice_desc + " Chance that this voice plays: 256 = always, 128 = 50%.");
+		// The same description for every voice: fx_system_effect_reference()
+		// lists the seven voices as one "Voice N" entry.
+		add_param(onoff_name, "", 0, 1, true, false, "",
+		          "1 = this voice is heard. Voice 1 is the original note: never turn it off to achieve something, that silences the instrument completely.");
+		add_param("System Transpose Voice " + v, "semitones", -99, 99, false, false, onoff_name, "Transpose in semitones (12 = one octave up).");
+		add_param("System Volume Voice " + v, "dB", -35, 35, false, true, onoff_name, "Volume in dB.");
+		add_param("System Start Voice " + v, "ms", 0, 1000, false, false, onoff_name, "Delay before this voice starts playing (0 = immediate).");
+		add_param("System Length Voice " + v, "ms", 0, 1000, false, false, onoff_name, "Duration override (0 = use the note's own duration).");
+		add_param("System Pan Voice " + v, "degrees", -90, 90, false, true, onoff_name, "Pan in degrees (-90 = left, 0 = center, +90 = right).");
+		add_param("System Chance Voice " + v, "chance", 0, 256, false, true, onoff_name, "Chance that this voice plays: 256 = always, 128 = 50%.");
 	}
 
 	// Instrument-level output and mixer buttons. Use the buttons only when
@@ -322,6 +391,8 @@ static inline QString fx_format_value(const FxParam &param, float value)
 		return QString("%1%2\u00B0").arg(value * 180 - 90 >= 0 ? "+" : "").arg((int)qRound(value * 180 - 90));
 	if (param.unit == "chance")
 		return value >= 255.5f ? QString("always") : QString("%1/256").arg((int)qRound(value));
+	if (param.unit == "mode")
+		return QString::number((int)qRound(value));
 
 	return QString::number(value, 'f', 2);
 }
@@ -330,7 +401,33 @@ static inline QString fx_format_range(const FxParam &param)
 {
 	if (param.is_bool)
 		return "0 or 1";
+	if (param.is_int)
+		return QString("%1 to %2").arg(qRound64(param.min_native)).arg(qRound64(param.max_native));
 	return QString("%1 to %2").arg(param.min_native, 0, 'f', 2).arg(param.max_native, 0, 'f', 2);
+}
+
+// The unit to show for a catalog entry. Boolean effects have no unit of their
+// own, and a mode/choice effect (e.g. 'System Pitch type', 0-4) is not an
+// on/off switch, so it must not be labelled as one.
+static inline QString fx_param_unit(const FxParam &param)
+{
+	if (!param.unit.isEmpty())
+		return param.unit;
+	if (param.is_bool)
+		return "on/off";
+	return "number";
+}
+
+static inline QString fx_instrument_param_format_name(FxInstrumentParamFormat format)
+{
+	switch (format) {
+	case FX_INSTRUMENT_PARAM_FLOAT: return "continuous";
+	case FX_INSTRUMENT_PARAM_INT: return "integer";
+	case FX_INSTRUMENT_PARAM_BOOL: return "on/off";
+	case FX_INSTRUMENT_PARAM_RADIO: return "choice";
+	case FX_INSTRUMENT_PARAM_UNKNOWN: break;
+	}
+	return "unknown";
 }
 
 // Case/punctuation/spacing-insensitive key for matching plugin names the LLM
@@ -341,6 +438,95 @@ static inline QString fx_normalize_plugin_key(const QString &text)
 	for (const QChar c : text)
 		if (c.isLetterOrNumber())
 			ret.append(c.toLower());
+	return ret;
+}
+
+// Case/punctuation/spacing-insensitive key for matching control names the LLM
+// copied slightly differently. Radium's plugin wrappers prefix plugin
+// parameter names with their index ("2: Size", "0: Active #Amb1"), while the
+// user - and therefore the model - thinks of them as "Size" and "Active
+// #Amb1", so a leading index prefix is dropped before comparing.
+static inline QString fx_normalize_control_key(const QString &text)
+{
+	QString name = text.trimmed();
+
+	// Drop a leading "12: " / "3. " / "4) " index prefix. A separator is
+	// required, so names that really start with a number ("808 Kick") keep it.
+	int digits = 0;
+	while (digits < name.size() && name.at(digits).isDigit())
+		digits++;
+	if (digits > 0 && digits < name.size() && (name.at(digits) == ':' || name.at(digits) == '.' || name.at(digits) == ')'))
+		name = name.mid(digits + 1).trimmed();
+
+	QString ret;
+	for (const QChar c : name)
+		if (c.isLetterOrNumber())
+			ret.append(c.toLower());
+
+	if (ret.isEmpty()) // the name was only an index prefix; fall back to the full text
+		for (const QChar c : text)
+			if (c.isLetterOrNumber())
+				ret.append(c.toLower());
+
+	return ret;
+}
+
+// Like fx_normalize_control_key(), but also drops an index prefix that is only
+// separated by whitespace ("2 Size"), which is how the model tends to write it.
+// Only used as an extra candidate: a name that really starts with a number
+// ("808 Kick") is normalized with the number by fx_normalize_control_key().
+static inline QString fx_normalize_control_key_loose(const QString &text)
+{
+	QString name = text.trimmed();
+
+	int digits = 0;
+	while (digits < name.size() && name.at(digits).isDigit())
+		digits++;
+	if (digits == 0 || digits >= name.size())
+		return fx_normalize_control_key(text);
+
+	QString rest = name.mid(digits);
+	if (rest.at(0) == ':' || rest.at(0) == '.' || rest.at(0) == ')')
+		rest = rest.mid(1);
+	rest = rest.trimmed();
+	if (rest.isEmpty() || !rest.at(0).isLetter())
+		return fx_normalize_control_key(text);
+
+	QString ret;
+	for (const QChar c : rest)
+		if (c.isLetterOrNumber())
+			ret.append(c.toLower());
+
+	return ret.isEmpty() ? fx_normalize_control_key(text) : ret;
+}
+
+// A control name for the user: without the plugin wrapper's index prefix
+// ("2: Size" -> "Size") and without a layer prefix ("Rev1: Size" -> "Size"),
+// so the status line reads like the plugin's own UI ("ZRev: Size").
+// Both prefixes are dropped because a status line with two or three prefixes
+// ("ZRev: Rev1: Size 100% -> 35%") is unreadable; the instrument name already
+// scopes the control, so the bare control name is what the user recognizes.
+static inline QString fx_control_display_name(const QString &name)
+{
+	const QRegularExpression index_prefix(QStringLiteral("^[0-9]+:\\s*"));
+	const QRegularExpression layer_prefix(QStringLiteral("^[A-Za-z][A-Za-z0-9_ ]*:\\s*"));
+
+	QString stripped = name.trimmed().remove(index_prefix);
+
+	const QString without_layer = stripped.remove(layer_prefix);
+	if (!without_layer.isEmpty() && without_layer != stripped)
+		stripped = without_layer;
+
+	return stripped.isEmpty() ? name.trimmed() : stripped;
+}
+
+// All keys a control name can be looked up by: the strict one and the loose one.
+static inline QStringList fx_control_keys(const QString &text)
+{
+	QStringList ret;
+	for (const QString &key : {fx_normalize_control_key(text), fx_normalize_control_key_loose(text)})
+		if (!key.isEmpty() && !ret.contains(key))
+			ret.append(key);
 	return ret;
 }
 
@@ -358,63 +544,115 @@ static inline bool fx_plugin_matches(const FxPlugin &a, const FxPlugin &b)
 	return true;
 }
 
-// The system prompt is stable (no per-request data), so the LLM provider's
-// prompt cache can reuse it.
-static inline QString build_fx_system_prompt(void)
+// The schema and rules of the reply. This part is completely static (no
+// per-request data), so the LLM provider's prompt cache can reuse it: the
+// per-request parts (the effect reference, and the effect plugins whose
+// names match the request) are appended by build_fx_system_prompt() after
+// this, and the current values go into the user message.
+// The behavioural rules. They change more often than the schema/reference
+// (each edit invalidates the provider's prompt cache for the whole prefix), so
+// they are kept in one place and appended *after* the reference.
+static inline QString build_fx_system_prompt_intro(void)
 {
 	return QString(
 	  "You are an expert mixing engineer assistant inside Radium, a music tracker/DAW. "
-	  "The user tunes the built-in system effects of one audio instrument with short subjective "
+	  "The user tunes one audio instrument's own plugin controls and Radium's built-in system effects with short subjective "
 	  "requests such as \"make it sound harsher\", \"warmer\", \"less muddy\". "
-	  "You translate the request into concrete parameter changes for the effects listed in the user message.\n"
+	  "You translate the request into the concrete parameter changes described in the reference below; their current "
+	  "values are listed in the user message.\n"
 	  "\n"
 	  "Respond with ONE JSON object and nothing else - no markdown, no code fences, no text around it.\n"
 	  "Schema:\n"
-	  "{\"changes\":[{\"name\":\"<exact effect name>\",\"value\":<number>}, ...], "
+	  "{\"changes\":[{\"name\":\"<exact system effect name>\",\"value\":<number>}, ...], "
+	  "\"instrument_changes\":[{\"name\":\"<exact current instrument control name>\",\"value\":<number>}, ...], "
 	  "\"modulators\":[{\"action\":\"add|replace|remove\",\"effect\":\"<exact effect name>\",\"type\":\"sine|triangle|square|saw|inverted saw|random\","
 	  "\"tempo_numerator\":1,\"tempo_denominator\":2,\"min\":0.0,\"max\":1.0}, ...], "
 	  "\"add_plugins\":[{\"name\":\"<exact plugin name>\",\"type\":\"<exact plugin type>\",\"container\":\"<container name, only if needed>\"}, ...], "
 	  "\"remove_plugins\":[{\"name\":\"<exact plugin name>\",\"type\":\"<exact plugin type>\",\"container\":\"<container name, only if needed>\"}, ...], "
 	  "\"create_faust\":\"<short description of the effect to create, or empty>\", "
 	  "\"create_faust_name\":\"<short instrument name, e.g. Autotune, or empty>\", "
-	  "\"explanation\":\"<one or two sentences>\"}\n"
-	  "\n"
-	  "Rules:\n"
-	  "1) Use only effect names from the provided list, copied exactly.\n"
-	  "2) Values are absolute (the new value), in the native unit shown in the list. Respect the given min..max range.\n"
-	  "3) For On/Off effects use 0 or 1. Set the matching On/Off effect to 1 when you change an effect that has one "
+	  "\"ask\":\"<one short question to the user, only when you cannot tell what to change, or empty>\", "
+	  "\"answer\":\"<an answer of at most 200 characters to a question the user asked, or empty>\", "
+	  "\"explanation\":\"<one or two sentences>\"}\n");
+}
+
+// The behavioural rules. They change more often than the intro and the effect
+// reference (each edit invalidates the provider's prompt cache from the edit
+// onwards), so they are appended last.
+static inline QString build_fx_system_prompt_rules(void)
+{
+	return QString(
+	  "\n\nRules:\n"
+	  "1) Use only names from the provided lists, copied exactly. System-effect names go in \"changes\"; current instrument "
+	  "visible instrument-control names (or their exact control name in brackets) go in \"instrument_changes\".\n"
+	  "2) Values in \"changes\" are absolute in the native unit shown. For \"instrument_changes\", use native values and "
+	  "the unit shown whenever the control lists a native range; otherwise use normalized positions from 0 to 1. Respect "
+	  "the listed range. On/off controls use 0 or 1. For integer controls, return an integer native value when available. "
+	  "If only normalized values are available, preserve enough decimals to produce the requested integer; never round "
+	  "normalized values to three decimals (for example, 922 on a 0..1200 range is 0.768333, not 0.768).\n"
+	  "3) For system On/Off effects use 0 or 1. Set the matching system On/Off effect to 1 when you change a system effect that has one "
 	  "(EQ bands, filters, compressor, pan, width, and each note duplicator voice). Pitch changes need "
 	  "'System Pitch type' set to 3 (All channels); it is 0 (Disabled) by default.\n"
-	  "4) List only the effects you want to change (at most 8). Prefer musical, moderate moves; avoid extreme "
-	  "boosts or cuts unless the request explicitly asks for something drastic.\n"
+	  "4) List only the controls you want to change (at most 8 total across both change arrays; the matching On/Off switch that "
+	  "rule 3 tells you to set for a changed effect does not count toward that limit). Prefer musical, moderate moves; avoid extreme "
+	  "boosts or cuts unless the request explicitly asks for something drastic. Leave a control alone when it is already right: "
+	  "never add a change just to fill the budget, and never change the same control twice in one reply.\n"
+	  "Which controls to change (most important rule): the current instrument's own controls come first. If any listed "
+	  "instrument control can serve the request, use \"instrument_changes\" - and never answer a request that names the "
+	  "plugin with system effects. 'the plugin', 'the instrument', 'the synth', 'the device', 'its <parameter>' (for example "
+	  "'its size', 'the plugin mix') always mean the current instrument's own controls, even when a system effect could also "
+	  "do the job: in that case the user does not want the sound processed further. Use the system effects (\"changes\") "
+	  "for EQ, dynamics, filtering, panning, width and the bus sends - what the instrument cannot do - or when no listed "
+	  "instrument control matches. If you choose system effects although the instrument has a plausible matching control, "
+	  "state the reason in one clause of the explanation (for example 'I used the system EQ because the plugin has no tone "
+	  "controls'). If you genuinely cannot tell whether the user means the instrument's own sound or the system effects "
+	  "around it, ask instead of guessing: set \"ask\" to one short question, make no changes, and leave \"explanation\" "
+	  "empty.\n"
+	  "When two instrument controls have similar names and the plugin gives no description (for example 'Treble' and "
+	  "'TrebleFreq'), change the one the user's words fit best, not both, and say which one you changed. When the names are "
+	  "opaque abbreviations ('T0'..'T7', 'AP0'..'AP3') with no description, treat them as fine-tuning internals and leave "
+	  "them alone unless the user asks for them by name: change the controls whose names describe the sound (size, decay, "
+	  "wet, dry, damp, filter, ...). "
+	  "When a request refers to a named control on the current instrument, change that control instead of inserting a different plugin. "
+	  "If the instrument has a matching control for only part of the request, change the available control(s) and explain briefly "
+	  "which requested control is missing. A missing control is not by itself a reason to add a different plugin.\n"
 	  "5) The built-in system effects can shape EQ/filtering, compressor dynamics, pitch, panning and Haas width, "
 	  "note duplication (the 'voice' effects) and the send levels to the Reverb and Chorus mixer buses. They cannot "
 	  "create distortion, saturation, wah, phaser/flanger, delay/echo, amp simulation or other effects that need a "
-	  "dedicated plugin. For those requests, insert one of the effect plugins from the 'Available effect plugins' "
-	  "list in the user message with the \"add_plugins\" array. If no suitable plugin is listed, do not invent one: "
+	  "dedicated plugin. First check whether the current instrument has a control for the requested effect; insert an "
+	  "effect plugin only if it does not. Use one of the plugins from the 'Available effect plugins' "
+	  "list at the end of the user message (it only lists the installed plugins whose names match this request) with the "
+	  "\"add_plugins\" array. If no suitable plugin is listed, do not invent one: "
 	  "set \"create_faust\" to a short description of the requested effect (for example \"an autotune effect\") "
 	  "and explain briefly that the effect is not currently available. The host will ask the user whether to "
 	  "create it with the 'Faust Dev 2' instrument by generating Faust code. Do not claim it has already been "
 	  "created. The Reverb/Chorus buses only have an audible effect if those buses are set up in the mixer.\n"
-	  "6) The 'explanation' is one or two short sentences, in plain language, no lists.\n"
-	  "7) Signal flow: the note duplicator voices (voice 1 = the original note, voices 2-7 = extra copies) are mixed "
-	  "into ONE instrument signal. Every effect in the list - including the Reverb/Chorus sends - processes that "
-	  "mixed signal; effects are never per voice. Never set 'System On/Off Voice 1' (or all voices) to 0 to achieve "
-	  "something: it silences the instrument completely, and its bus sends too.\n"
-	  "8) Instrument output and mixer buttons: 'System Out On/Off' turns the instrument's direct (dry) output to the "
-	  "main mix on/off - the Reverb/Chorus sends keep working when it is 0; 'System Volume On/Off' is the Mute "
-	  "(1 = audible, 0 = muted, silences everything including the sends); 'System Effects On/Off' is the Bypass "
-	  "(1 = effects active, 0 = bypassed); 'System Solo On/Off' is Solo (1 = only this instrument is heard, all "
-	  "other instruments are muted). Use the Mute/Bypass/Solo buttons only when the user explicitly asks to mute/"
-	  "unmute, bypass/un-bypass or solo/unsolo, and never combine a bypass change with effect changes. To silence "
-	  "the instrument completely, set 'System Volume On/Off' to 0.\n"
-	  "9) 'Only hear reverb/chorus': raise the send level and set 'System Out On/Off' to 0. That removes the "
-	  "instrument's direct signal from the main mix while the bus send keeps working, so only the bus effect is "
-	  "heard. Set 'System Out On/Off' back to 1 when the instrument itself should be heard again. (Never try to do "
-	  "this by turning off note duplicator voices.) The effect's own wet/dry balance is set on the bus in the mixer.\n"
-	  "10) Modulation: a modulator is an LFO-like controller that continuously moves one numeric effect parameter. "
+	  "6) A question is answered, not tuned. When the user asks what something is or does, why it sounds as it does, or for an "
+	  "explanation ('what does this plugin do?', 'please explain Density and Size', 'what does Mix do'), put a short answer in "
+	  "\"answer\" - one sentence, at most 200 characters, in plain language - make no changes, and leave \"ask\" empty. Never put the answer in "
+	  "\"ask\" (that field is only for a question back to the user), and never change parameters to answer a question. "
+	  "Use the plugin description and the control names for the answer; if the plugin does not reveal what a control does, say "
+	  "so instead of inventing it. "
+	  "An explicit value ('set modulation to 4 Hz', 'make it 300 ms', 'pan it 30% left') must be honored when the control or "
+	  "effect uses that unit. If it does not (the control's unit is something else, for example a 0-100 amount instead of a "
+	  "frequency), do not silently substitute a guessed value: set \"ask\" to one short question that offers the choices (for "
+	  "example 'Modulation is a 0-100 amount here; should I set it to 50, or add a modulator for 4 Hz?'), make no changes, and "
+	  "leave \"explanation\" empty. A modulator ('modulators'; tempo_numerator/denominator is cycles per beat) is the right way "
+	  "to get a rate in Hz, and a system effect may also have the parameter the user named. The 'explanation' itself is one or "
+	  "two short sentences, in plain language, no lists.\n"
+	  "7) Signal flow: the note duplicator voices are mixed into ONE instrument signal that every effect - including "
+	  "the Reverb/Chorus sends - processes; effects are never per voice. Never set 'System On/Off Voice 1' (or all "
+	  "voices) to 0 to achieve something: it silences the instrument completely, and its bus sends too.\n"
+	  "8) The output and mixer buttons ('System Out', 'System Volume', 'System Effects', 'System Solo' On/Off) are "
+	  "described in the effect reference. Use the Mute/Bypass/Solo buttons only when the user explicitly asks to "
+	  "mute/unmute, bypass/un-bypass or solo/unsolo, and never combine a bypass change with effect changes.\n"
+	  "9) 'Only hear reverb/chorus': raise the send level and set 'System Out On/Off' to 0, which removes the "
+	  "instrument's direct signal from the main mix while the bus send keeps working; set it back to 1 when the "
+	  "instrument itself should be heard again. Never do this by turning note duplicator voices off. The effect's "
+	  "own wet/dry balance is set on the bus in the mixer.\n"
+	  "10) Modulation: a modulator is an LFO-like controller that continuously moves one numeric system-effect parameter. "
 	  "Use the separate \"modulators\" array for requests like 'modulate the high pass', 'wobble', 'slow sweep', "
-	  "'pulse' or 'stop modulating X' (never put these in \"changes\"). action: \"add\" (default; only when the effect "
+	  "'pulse' or 'stop modulating X' (never put these in either change array). Use only system-effect names here. action: \"add\" (default; only when the effect "
 	  "has no modulator - effects that already have one are marked [modulated]), \"replace\" (change the settings of "
 	  "an existing modulator) or \"remove\". type (default sine): sine, triangle, square, saw, inverted saw or "
 	  "random. tempo_numerator/tempo_denominator is the LFO rate in cycles per beat (default 1/2; slow = 1/4 to 1/8, "
@@ -424,15 +662,16 @@ static inline QString build_fx_system_prompt(void)
 	  "switches on the pitch shifter automatically.)\n"
 	  "11) Effect plugins: \"add_plugins\" inserts an external effect plugin directly after this instrument in the "
 	  "signal graph (the instrument, and everything already inserted after it, now feeds the new plugin, which "
-	  "feeds the instrument's old destinations). Use it when the user asks for an effect the built-in system "
+	  "feeds the instrument's old destinations). Use it only when the user explicitly asks to add a plugin, or when neither "
+	  "the current instrument's listed controls nor the built-in system effects can provide the requested effect. Use it when the user asks for an effect the built-in system "
 	  "effects cannot provide, such as 'add a wah wah effect', 'make it distorted', 'add a phaser' or 'add a "
 	  "delay'. Use the exact name and type from the 'Available effect plugins' list in the user message; never "
 	  "invent a plugin. If the list shows a container for the plugin, include it as \"container\" only when "
 	  "needed to distinguish plugins with the same name and type. Do not add a plugin when the request can be "
 	  "handled by the listed system effects (for "
 	  "example 'more reverb' -> 'System Reverb', 'wider' -> 'System Width'). Add at most one plugin per reply "
-	  "unless the user explicitly asks for several. Plugin parameters are not changed by this reply; the user "
-	  "can adjust them in the plugin's mixer strip.\n"
+	  "unless the user explicitly asks for several. Parameters of a newly inserted downstream effect plugin are not "
+	  "changed by this reply; the user can adjust those in the plugin's mixer strip.\n"
 	  "12) Removing effect plugins: use \"remove_plugins\" with the exact name and type from the 'Effect plugins "
 	  "currently inserted after this instrument' list in the user message; include \"container\" when the list "
 	  "shows one and it is needed to distinguish same-named plugins. Use it for requests like 'remove the "
@@ -441,7 +680,7 @@ static inline QString build_fx_system_prompt(void)
 	  "output) and deletes it. If the same plugin is inserted several times, all its instances are removed. Do not "
 	  "list the same plugin in both \"add_plugins\" and \"remove_plugins\" unless the user asks to replace it; "
 	  "removals are applied before additions.\n"
-	  "13) \"create_faust\" is only for effects that cannot be provided by the built-in system effects or any "
+	  "13) \"create_faust\" is only for effects that cannot be provided by the current instrument's controls, the built-in system effects or any "
 	  "listed effect plugin. Give a short, concrete description of the effect (including important character, "
 	  "e.g. \"a smooth autotune effect with medium retune speed\", not just \"an effect\"). Also set "
 	  "\"create_faust_name\" to a very short instrument name (one to three words, e.g. \"Autotune\") that will "
@@ -460,84 +699,971 @@ static inline QString build_fx_system_prompt(void)
 	  "- 'wider'/'stereo': use a small amount of 'System Width' (about 2-10 ms) and enable it, and/or add a note "
 	  "duplicator voice panned to one side. Width values above about 20 ms sound like an echo, not width.\n"
 	  "- 'pan left/right': set 'System Pan' (0 = hard left, 0.5 = center, 1 = hard right).\n"
-	  "- 'more reverb'/'more space': raise the 'System Reverb' send level (dB; -40 = none, -20 to -6 is typical). "
-	  "'more chorus': raise 'System Chorus'.\n"
-	  "- 'only hear reverb'/'only hear chorus': raise the send level and set 'System Out On/Off' to 0 (this removes "
-	  "the instrument's direct signal from the main mix but keeps the send working). Set 'System Out On/Off' back "
-	  "to 1 when the instrument itself should be heard again.\n"
+	  "- 'more reverb'/'more space': raise the 'System Reverb' send level (-20 to -6 dB is typical). 'more chorus': "
+	  "raise 'System Chorus'. For 'only hear reverb/chorus', see rule 9.\n"
 	  "- 'thicker'/'layered'/'add an octave': use a note duplicator voice (2-7): set its On/Off to 1 and set "
 	  "'System Transpose Voice N' (semitones), 'System Volume Voice N' (dB) and optionally 'System Pan Voice N'. "
 	  "Never turn voice 1 off - it is the original sound. Do not use more than one or two extra voices "
 	  "unless asked.\n"
 	  "\n"
-	  "The current values in the list are context only; you do not need to repeat effects that should stay unchanged.");
+	  "\n"
+	  "The current values are listed in the user message, and they are the truth. If this conversation says you changed "
+	  "a value but that list still shows the old value, the user undid the change: never assume a previous change is "
+	  "still active, and always give an absolute value when you change something.\n"
+	  "Corrections: a user message that says the last reply was wrong or was not what they meant ('I meant ...', 'no, "
+	  "not that', 'that's not what I asked', 'undo that') is a correction. For a correction, first revert the changes "
+	  "listed under 'Applied in that turn' in the previous user message by setting those controls back to their old "
+	  "values (a reverted On/Off switch goes back to its old value too), then apply what the user actually asked for. "
+	  "Leave out the reverts for controls the new request changes anyway. Do not stack the new request on top of a "
+	  "reply the user rejected.");
 }
 
-static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QVector<FxPlugin> &plugins, const QVector<FxPlugin> &inserted_plugins, const QString &prompt)
+// Reference for the built-in system effects: exact name, unit, range and what
+// each effect does. The descriptions never change, so this is part of the
+// cached prompt prefix; only the current values go into the user message.
+static inline QString fx_system_effect_reference(void)
 {
-	QString ret = "Tune the system effects of the current instrument, or add/remove an effect plugin when the request needs it.\n\n";
-	ret += "User request: " + fx_quote(prompt) + "\n\n";
-	ret += "Effect parameters (exact name; unit; allowed range; current value):\n";
+	QString ret = "\n\nEffect reference (exact name [unit; allowed range]; what it does). "
+	              "The current value of every effect is listed in the user message:\n";
 
-	bool buses_explained = false;
-	bool voices_explained = false;
-	bool mixer_buttons_explained = false;
+	// The seven note duplicator voices have identical parameters, so they are
+	// listed once, as "Voice N", with the shared explanation above them.
+	QSet<QString> shown_voice_params;
+	bool voice_header_shown = false;
 
-	for (const FxParamState &state : states)
+	for (const FxParam &param : fx_catalog())
 	{
-		const FxParam &param = state.param;
+		QString name = param.name;
 
-		if (!buses_explained && param.name == "System Reverb")
+		const int voice_pos = name.indexOf(" Voice ");
+		if (voice_pos > 0)
 		{
-			ret += "\nThe 'System Reverb'/'System Chorus' effects are send levels to the mixer buses: they add the "
-			       "effect to the instrument's output. To hear only the bus effect, raise the send and switch "
-			       "'System Out On/Off' off (see below).\n";
-			buses_explained = true;
+			const QString suffix = name.mid(voice_pos + 7);
+			bool is_number = !suffix.isEmpty();
+			for (const QChar c : suffix)
+				if (!c.isDigit())
+					is_number = false;
+			if (is_number)
+			{
+				const QString template_name = name.left(voice_pos) + " Voice N";
+				if (shown_voice_params.contains(template_name))
+					continue;
+				shown_voice_params.insert(template_name);
+
+				if (!voice_header_shown)
+				{
+					ret += "Note duplicator voices (N = 1 to 7): voice 1 is the instrument's original note, voices 2-7 play extra "
+					       "copies of every note. All voices are mixed into ONE signal and every system effect and bus send processes "
+					       "that combined signal (never per voice); changing any voice parameter switches that voice on. Turning "
+					       "voice 1 (or all voices) off silences the instrument completely.\n";
+					voice_header_shown = true;
+				}
+
+				name = template_name;
+			}
 		}
 
-		if (!voices_explained && param.name == "System On/Off Voice 1")
-		{
-			ret += "\nThe 'Voice' effects are the note duplicator. Voice 1 is the original note; voices 2-7 play "
-			       "extra copies of every note. All voices are mixed into ONE signal, and every effect and bus send "
-			       "processes that combined signal - no effect is per voice. Turning voice 1 (or all voices) off "
-			       "silences the instrument completely.\n";
-			voices_explained = true;
-		}
-
-		if (!mixer_buttons_explained && param.name == "System Out On/Off")
-		{
-			ret += "\nThe last four effects are the instrument's output and mixer buttons: 'System Out On/Off' turns "
-			       "the instrument's direct (dry) output to the main mix on/off (the Reverb/Chorus sends keep "
-			       "working when it is 0), 'System Volume On/Off' is Mute (1 = audible, 0 = muted, silences "
-			       "everything including the sends), 'System Effects On/Off' is Bypass (1 = effects active), "
-			       "'System Solo On/Off' is Solo (1 = only this instrument is heard, all others muted). Use the "
-			       "buttons only when explicitly asked; to silence the instrument, mute it.\n";
-			mixer_buttons_explained = true;
-		}
-
-		ret += "- " + param.name
-		    + " [" + (param.unit.isEmpty() ? QString("on/off") : param.unit)
-		    + "; range " + fx_format_range(param)
-		    + "; current " + fx_format_value(param, state.current_native) + "]"
-		    + (state.has_modulator ? QString(" [modulated]") : QString()) + " "
-		    + param.description + "\n";
+		ret += "- " + name + " [" + fx_param_unit(param) + "; range " + fx_format_range(param) + "] " + param.description + "\n";
 	}
 
-	ret += "\nAvailable effect plugins (exact name; type) that can be inserted after this instrument:\n";
-	if (plugins.isEmpty())
+	return ret;
+}
+
+// The words in the request that could name an effect plugin ("wah" in "add a
+// wah effect"). Very short and very common words are dropped, since they
+// would match almost every plugin name.
+static inline QStringList fx_request_keywords(const QString &request)
+{
+	const QSet<QString> stopwords{
+	  "the", "and", "for", "with", "this", "that", "from", "into", "like", "make", "made",
+	  "sound", "sounds", "sounding", "more", "less", "some", "very", "much", "little", "bit",
+	  "add", "adds", "remove", "take", "put", "please", "give", "use", "insert", "effect",
+	  "effects", "plugin", "plugins", "instrument", "now", "not", "want", "would", "could",
+	  "should", "have", "has", "its", "his", "her", "our", "your", "about", "than", "then",
+	  "there", "here", "what", "when", "which", "while", "will", "can", "get", "got", "just",
+	  "really", "still", "track", "song", "mix", "way", "one", "two", "out", "off", "over",
+	  "under", "again", "back", "also", "all", "any", "but", "how", "let", "need", "only",
+	  "other", "same", "them", "they", "too", "was", "were", "you", "after", "before",
+	};
+
+	// Words of a plugin name that are too generic to identify one. Without
+	// this, "hz" in "set modulation to 4 hz" matches "DC Offset Remover" (no,
+	// it does not - but "de" or "hz" appear inside plenty of plugin names), and
+	// a two-letter unit basically matches by accident.
+	const QSet<QString> weak_words{
+	  "hz", "khz", "db", "eq", "lp", "hp", "ms", "fx", "vst", "vst3", "ladspa", "lv2",
+	  "mono", "stereo", "left", "right", "mid", "side", "in", "out", "up", "down",
+	  "lfo", "amt", "vol", "gain", "mix", "wet", "dry", "rate", "sync", "mode", "type",
+	};
+
+	QStringList ret;
+	QString word;
+
+	// Generic audio words and units never identify a plugin, however long:
+	// "set modulation to 4 hz" must not suggest "DC Offset Remover" (the "hz"
+	// in ... nothing) or "TAP Tremolo" (the "mod" in "Modulator").
+	const QSet<QString> generic_words{
+	  "modulat", "modulate", "modulation", "frequency", "freq", "speed", "depth",
+	  "amount", "volume", "panning", "pan", "filtering", "filter", "distorted",
+	  "distortion", "reverbed", "chorused", "delayed", "echoes", "wobble", "sweep",
+	  "sounds", "sound", "loud", "quiet", "volume", "level", "setting", "value",
+	};
+
+	auto flush_word = [&]()
 	{
-		ret += "(no effect plugins are currently available)\n";
+		if (word.size() >= 3 && !stopwords.contains(word) && !weak_words.contains(word)
+		    && !generic_words.contains(word) && !ret.contains(word))
+			ret.append(word);
+		word.clear();
+	};
+
+	for (const QChar c : request.toLower())
+	{
+		if (c.isLetterOrNumber())
+			word.append(c);
+		else
+			flush_word();
+	}
+	flush_word();
+
+	return ret;
+}
+
+// True when the request could be asking for this plugin by name. Plugin names
+// are matched ignoring case and punctuation, and a keyword may match only a
+// part of the name ("wah" matches "Auto Wah", "reverb" matches "ZRev" only if
+// the words overlap, so keep the keywords concrete).
+static inline bool fx_plugin_name_matches_keywords(const FxPlugin &plugin, const QStringList &keywords)
+{
+	// Compare whole words ("reverb" matches "Reverb" and "Reverb 2", but not
+	// the tail of an unrelated name), which is what a user means when the
+	// request and the plugin share a word.
+	const QStringList words = plugin.name.toLower().split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts);
+	if (words.isEmpty())
+		return false;
+
+	for (const QString &keyword : keywords)
+	{
+		if (keyword.size() < 3)
+			continue;
+
+		// A long keyword ("autotune") matches one whole word of the name
+		// ("Auto-Tune" -> "auto", "tune"): it is the joined words.
+		QString joined;
+		for (const QString &word : words)
+			joined += word;
+		if (keyword.size() >= 5 && joined.startsWith(keyword))
+			return true;
+
+		// A short keyword ("reverb", "wah") must be a word of the name, or a
+		// prefix of one ("reverb" -> "reverb", "dist" -> "distortion"). Never
+		// a substring: "Tune" is not "Delay".
+		for (const QString &word : words)
+			if (word.startsWith(keyword))
+				return true;
+	}
+
+	return false;
+}
+
+// The installed effect plugins whose names match the request, as a list. The
+// full catalog is several hundred entries (17 KB of prompt text, sent with
+// every request) and is almost never needed: a subjective mixing request
+// rarely asks for a plugin by name. The host still validates "add_plugins"
+// against the complete catalog, so nothing is lost if a plugin is added whose
+// name is not listed.
+static inline QVector<FxPlugin> fx_matching_plugins(const QVector<FxPlugin> &plugins, const QString &request)
+{
+	QVector<FxPlugin> matches;
+
+	const QStringList keywords = fx_request_keywords(request);
+	if (keywords.isEmpty())
+		return matches;
+
+	for (const FxPlugin &plugin : plugins)
+		if (fx_plugin_name_matches_keywords(plugin, keywords))
+			matches.append(plugin);
+
+	return matches;
+}
+
+// True when a request that mentions an effect is already served by the current
+// instrument or by the built-in system effects: "compress like X" on a
+// compressor (or with 'System Compression' available), "add some reverb" when
+// the Reverb bus exists. The effect-plugin catalogue is then not needed, and it
+// is the largest per-request part of the prompt (a common word like "compress"
+// matches two dozen installed plugins).
+//
+// A request that explicitly asks for a plugin is never treated as covered: the
+// user wants a plugin then, and the model needs the names.
+static inline bool fx_request_is_covered_by_instrument(const QString &request,
+                                                       const FxInstrumentContext &instrument,
+                                                       const QVector<FxParamState> &states)
+{
+	const QString lower = request.toLower();
+
+	// Explicit plugin requests must see the catalogue.
+	const QStringList plugin_words{"plugin", "vst", "vst3", "ladspa", "faust effect", "insert a", "add a plugin"};
+	for (const QString &word : plugin_words)
+		if (lower.contains(word))
+			return false;
+
+	const QStringList keywords = fx_request_keywords(request);
+	if (keywords.isEmpty())
+		return false;
+
+	// Words of the current instrument's control names (and descriptions).
+	QStringList instrument_words;
+	for (const FxInstrumentParamState &param : instrument.params)
+		for (const QString &word : (param.name + " " + param.display_name).toLower().split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts))
+			instrument_words.append(word);
+	for (const QString &word : instrument.description.toLower().split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts))
+		instrument_words.append(word);
+
+	// Words of the built-in system effects.
+	QStringList system_words;
+	for (const FxParam &param : fx_catalog())
+		for (const QString &word : param.name.toLower().split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts))
+			system_words.append(word);
+	for (const FxParamState &state : states)
+		for (const QString &word : state.param.name.toLower().split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts))
+			system_words.append(word);
+
+	for (const QString &keyword : keywords)
+	{
+		// "compress" should also match "compression" / "compressor".
+		const int keep = keyword.size() >= 6 ? keyword.size() - 2 : keyword.size();
+		const QString stem = keyword.left(keep);
+		if (stem.size() < 4)
+			continue;
+
+		for (const QString &word : instrument_words)
+			if (word.size() >= 4 && word.startsWith(stem))
+				return true;
+
+		for (const QString &word : system_words)
+			if (word.size() >= 4 && word.startsWith(stem))
+				return true;
+	}
+
+	return false;
+}
+
+// The family key of a plugin name: "compressor-lr" -> "compressor-",
+// "mb-compressor-mono" -> "mb-compressor-", "Auto Wah" -> "" (no family).
+// Only a short trailing token counts as a variant suffix, so ordinary names
+// with a space are not grouped.
+static inline QString fx_plugin_family_key(const FxPlugin &plugin, QString *suffix)
+{
+	const QString &name = plugin.name;
+
+	// The last '-' or '_' separated token, when it is short and alphanumeric.
+	int separator = -1;
+	for (int i = name.size() - 1; i >= 0; i--)
+		if (name.at(i) == '-' || name.at(i) == '_'){
+			separator = i;
+			break;
+		}
+
+	if (separator <= 0 || separator >= name.size() - 1)
+		return QString();
+
+	const QString tail = name.mid(separator + 1);
+	if (tail.size() > 10)
+		return QString();
+	for (const QChar c : tail)
+		if (!c.isLetterOrNumber())
+			return QString();
+
+	if (suffix != NULL)
+		*suffix = tail;
+
+	return name.left(separator + 1);
+}
+
+// The per-request part of the prompt: the installed effect plugins whose names
+// match the request. It goes into the *user* message (at the very end), not
+// into the system prompt: it is the only part that depends on the request, and
+// keeping the system prompt completely static means a prefix cache can reuse
+// it - including everything after it, which is the whole conversation.
+static inline QString fx_plugin_catalog_section(const QVector<FxPlugin> &plugins, const QString &request)
+{
+	QString ret;
+
+	if (plugins.isEmpty())
+		return "\nAvailable effect plugins (exact name; type) that can be inserted after this instrument:\n"
+		       "(no effect plugins are currently available)\n";
+
+	const QVector<FxPlugin> matches = fx_matching_plugins(plugins, request);
+
+	if (matches.isEmpty())
+	{
+		// Nothing matched: do not dump "N of the N installed effect plugins
+		// are hidden" - the request does not name a plugin, so there is
+		// nothing to look up. Keep it to one short line.
+		return "\nAvailable effect plugins (exact name; type) that can be inserted after this instrument:\n"
+		       "(none whose name matches this request; the installed plugins are not listed)\n";
 	}
 	else
 	{
-		for (const FxPlugin &plugin : plugins)
+		ret += "\nAvailable effect plugins (exact name; type) that can be inserted after this instrument, "
+		       "whose names match this request:\n";
+
+		// Group the variants of one plugin set ("compressor-lr", "-mono",
+		// "-ms", "-stereo") on a single line. Every exact name is kept - the
+		// model has to copy one - only the repeated type text is shared.
+		QHash<QString, QVector<const FxPlugin*>> families;
+		QStringList family_order;
+		for (const FxPlugin &plugin : matches)
 		{
+			QString suffix;
+			const QString key = fx_plugin_family_key(plugin, &suffix);
+			const QString full_key = key.isEmpty() ? QString() : plugin.type_name + "\n" + key;
+			if (full_key.isEmpty())
+				continue;
+
+			if (!families.contains(full_key))
+				family_order.append(full_key);
+			families[full_key].append(&plugin);
+		}
+
+		QSet<QString> grouped_names; // handled by a family line
+		QHash<QString, QString> family_lines;
+		for (const QString &key : family_order)
+		{
+			const QVector<const FxPlugin*> members = families.value(key);
+			if (members.size() < 2)
+				continue;
+
+			QStringList names;
+			for (const FxPlugin *plugin : members){
+				names.append(plugin->name);
+				grouped_names.insert(plugin->name + "\n" + plugin->type_name);
+			}
+
+			// The container is only useful when it differs from the name.
+			const FxPlugin *first = members.at(0);
+			QString line = "- " + names.join(", ") + " [" + first->type_name + "]";
+			if (!first->container_name.isEmpty() && first->container_name != first->name)
+				line += " (container: " + first->container_name + ")";
+
+			family_lines.insert(key, line);
+		}
+
+		const int max_listed = 60;
+		int listed = 0;
+		QSet<QString> emitted_families;
+
+		for (int i = 0; i < matches.size(); i++)
+		{
+			if (listed >= max_listed)
+			{
+				ret += QString("- (and %1 more)\n").arg(matches.size() - listed);
+				break;
+			}
+
+			const FxPlugin &plugin = matches.at(i);
+
+			if (grouped_names.contains(plugin.name + "\n" + plugin.type_name))
+			{
+				QString suffix;
+				const QString key = fx_plugin_family_key(plugin, &suffix);
+				const QString full_key = plugin.type_name + "\n" + key;
+				if (emitted_families.contains(full_key))
+					continue; // already printed with its family
+				emitted_families.insert(full_key);
+				ret += family_lines.value(full_key) + "\n";
+				listed += families.value(full_key).size();
+				continue;
+			}
+
 			ret += "- " + plugin.name + " [" + plugin.type_name + "]";
-			if (!plugin.container_name.isEmpty())
+			// A container that equals the name is noise: it can never be what
+			// distinguishes this plugin from another one.
+			if (!plugin.container_name.isEmpty() && plugin.container_name != plugin.name)
 				ret += " (container: " + plugin.container_name + ")";
 			ret += "\n";
+			listed++;
 		}
 	}
+
+	if (matches.size() < plugins.size())
+		ret += QString("%1 of the %2 installed effect plugins are hidden because their names do not match this request. "
+		               "Never guess a hidden plugin name: if the request needs an effect plugin that is not listed, set "
+		               "\"create_faust\" instead.\n").arg(plugins.size() - matches.size()).arg(plugins.size());
+
+	return ret;
+}
+
+// The system prompt: the static rules and the static effect reference. Both
+// are identical from request to request (no per-request data at all), so a
+// prefix cache can reuse them. Everything that varies - the current values,
+// the matching effect plugins, the history - is in the user message and after
+// it.
+static inline QString build_fx_system_prompt(void)
+{
+	// Order matters for prefix caching: the schema line and the effect
+	// reference rarely change, while the rules are edited regularly. Putting
+	// the rules last means such an edit only invalidates the tail of the
+	// cached prefix.
+	return build_fx_system_prompt_intro()
+	     + fx_system_effect_reference()
+	     + build_fx_system_prompt_rules();
+}
+
+// True for the generic MIDI controller controls that plugin wrappers expose
+// ("Breath (CH 3)", "ModWheel (CH 12)", ...). They cannot shape the sound of a
+// mixing change, and for some plugins they are almost the whole control list
+// (112 of the 127 listed Uhbik-A controls), so they are left out of the prompt.
+static inline bool fx_is_midi_controller_param(const FxInstrumentParamState &param)
+{
+	QString name = param.name.toLower().trimmed();
+
+	// Drop a leading "12: " index prefix, as added by the plugin wrappers.
+	int digits = 0;
+	while (digits < name.size() && name.at(digits).isDigit())
+		digits++;
+	if (digits > 0 && digits < name.size() && (name.at(digits) == ':' || name.at(digits) == '.' || name.at(digits) == ')'))
+		name = name.mid(digits + 1).trimmed();
+
+	// "Breath (CH 3)" / "ModWheel (CH 12)" (u-he VST2).
+	if (name.contains("(ch "))
+		return true;
+
+	// "CC 5, CH 8" (u-he VST3 exposes one such control for every MIDI CC on
+	// every channel: ~1900 for Presswerk, which crowded the real ~64 controls
+	// out of the prompt). Also "CC 5 CH 8" and "CC5, CH8".
+	{
+		int p = 0;
+		auto skip_spaces = [&name, &p]()
+		{
+			while (p < name.size() && name.at(p) == ' ')
+				p++;
+		};
+
+		if (name.startsWith("cc")){
+			p = 2;
+			skip_spaces();
+			const int number_start = p;
+			while (p < name.size() && name.at(p).isDigit())
+				p++;
+			const bool has_cc_number = p > number_start;
+			skip_spaces();
+			const bool has_separator = p < name.size() && (name.at(p) == ',' || name.at(p) == ';' || name.at(p) == ':');
+			if (has_separator)
+				p++;
+			skip_spaces();
+
+			if (has_cc_number && name.mid(p).startsWith("ch"))
+				return true;
+		}
+	}
+
+	const QStringList midi_controls{"breath", "pitchbend", "modwheel", "aftertouch", "expression", "sustainpedal", "bankselect", "program"};
+	return midi_controls.contains(name);
+}
+
+// How much of a plugin's own control description is sent. Plugin labels are
+// short ("Room size"), descriptions can be a paragraph; the per-control text is
+// multiplied by up to 256 controls, so it is capped hard (this is prompt text
+// sent with every request, i.e. real money).
+static const int FX_CONTROL_DESCRIPTION_MAX = 90;
+
+// Byte budget for the instrument-control section of the user message (~5 KB,
+// about 1.2k tokens). A typical plugin needs 1-2 KB, so this only kicks in for
+// plugins with very many controls, where it keeps every request bounded.
+static const int FX_CONTROL_SECTION_BUDGET = 5000;
+
+// True when every letter of 'a' also occurs in 'b' (as a multiset), i.e. 'a'
+// could be 'b' with letters dropped or reordered. This is how plugin UIs
+// abbreviate parameter names, and how u-he's VST3 shortTitle is built: "Densty"
+// for "Density" (dropped vowels), "Trebel" for "Treble" (swapped), "TrFrq" for
+// "TrebleFreq", "OutDB" for "OutputDB".
+static inline bool fx_letters_are_contained(const QString &a, const QString &b)
+{
+	if (a.isEmpty())
+		return true;
+
+	QHash<QChar, int> available;
+	for (const QChar c : b)
+		available[c] = available.value(c) + 1;
+
+	for (const QChar c : a)
+		if (available.value(c) <= 0)
+			return false;
+		else
+			available[c] = available.value(c) - 1;
+
+	return true;
+}
+
+static inline QString fx_compact_letters(const QString &text)
+{
+	QString ret;
+	for (const QChar c : text)
+		if (c.isLetterOrNumber())
+			ret.append(c.toLower());
+	return ret;
+}
+
+// True when the plugin's description text actually tells the model something
+// the control name does not. Abbreviations of the name ("Densty" for
+// "Density") are not descriptions: they are noise, they cost prompt space, and
+// they hide the fact that the plugin provides nothing (which then suppresses
+// the "based on the control's name" hedge).
+static inline bool fx_description_is_useful(const FxInstrumentParamState &param)
+{
+	if (param.description.isEmpty())
+		return false;
+
+	const QString description = fx_compact_letters(param.description);
+	const QString name = fx_compact_letters(param.display_name.isEmpty() ? param.name : param.display_name);
+
+	if (description.size() < 4 || description == name)
+		return false;
+
+	// A shortened (or letter-swapped) form of the control name: nothing the
+	// model can not already read from the name.
+	if (fx_letters_are_contained(description, name))
+		return false;
+
+	return true;
+}
+
+static inline QString fx_control_description(const FxInstrumentParamState &param)
+{
+	if (!fx_description_is_useful(param))
+		return QString();
+
+	QString description = param.description.simplified();
+	if (description.size() > FX_CONTROL_DESCRIPTION_MAX){
+		description = description.left(FX_CONTROL_DESCRIPTION_MAX - 1).trimmed() + QChar(0x2026); // ellipsis
+	}
+	return description;
+}
+
+// True when every control has the same format and the same scale (clamped
+// 0..1 or a native range with the same unit), i.e. the per-line
+// "[continuous; position ...; displayed ...]" boilerplate can be stated once
+// instead of 64 times. Mixed groups keep the verbose per-line form.
+static inline bool fx_controls_are_homogeneous(const QVector<const FxInstrumentParamState*> &params)
+{
+	if (params.size() < 2)
+		return false;
+
+	const FxInstrumentParamState *first = params.at(0);
+	if (first->format != FX_INSTRUMENT_PARAM_FLOAT)
+		return false; // on/off, choice and integer controls need their own line
+
+	for (const FxInstrumentParamState *param : params)
+	{
+		if (param->format != first->format)
+			return false;
+		if (param->is_clamped != first->is_clamped)
+			return false;
+		if (param->has_native_range != first->has_native_range)
+			return false;
+		if (param->unit != first->unit)
+			return false;
+	}
+
+	return true;
+}
+
+// The value part of a compact control line: "- 2: Size = 1.000 (100.00)".
+// Only used when the group is homogeneous (see above), so the reader already
+// knows the type and the scale from the section header.
+static inline QString fx_compact_control_line(const FxInstrumentParamState &param)
+{
+	QString ret = "- " + (param.display_name.isEmpty() ? param.name : param.display_name);
+	if (!param.display_name.isEmpty() && param.display_name != param.name)
+		ret += " [control name: " + param.name + "]";
+
+	if (param.has_native_range){
+		ret += " = " + QString::number(param.current_native, 'g', 8);
+		if (!param.unit.isEmpty())
+			ret += " " + param.unit;
+		if (!param.current_display.isEmpty() && param.current_display != QString::number(param.current_native, 'g', 8))
+			ret += " (displayed " + param.current_display + ")";
+	}else{
+		ret += " = " + QString::number(param.current_scaled, 'f', 3);
+		if (!param.current_display.isEmpty())
+			ret += " (" + param.current_display + ")";
+		if (!param.unit.isEmpty() && !param.current_display.contains(param.unit, Qt::CaseInsensitive))
+			ret += " [" + param.unit + "]";
+	}
+
+	if (!fx_control_description(param).isEmpty())
+		ret += " " + fx_control_description(param);
+
+	return ret;
+}
+
+// The default value of a numeric catalog effect (the middle of its range).
+static inline float fx_param_default_value(const FxParam &param)
+{
+	return (param.min_native + param.max_native) / 2.0f;
+}
+
+static inline bool fx_is_default_value(const FxParam &param, float value)
+{
+	const float tolerance = std::max(0.0005f, std::fabs(param.max_native - param.min_native) * 0.0005f);
+	return std::fabs(value - fx_param_default_value(param)) <= tolerance;
+}
+
+// A short form for effect values the user does not need to see because they
+// are at their defaults, e.g. "volume 0.00 dB, start 0 ms". Returns an empty
+// string when the value differs from the default.
+static inline QString fx_default_value_hint(const FxParam &param, float value)
+{
+	const QStringList units{"Hz", "dB", "ms", "semitones", "degrees", "pan", "chance", "mode", "number", ":1"};
+	if (!units.contains(fx_param_unit(param)))
+		return QString();
+
+	return fx_format_value(param, value);
+}
+
+// "Name of the effect without the voice number" ("System Volume Voice 7" ->
+// "System Volume Voice") plus the voice number (7), or -1 for a control that
+// does not belong to a voice.
+static inline int fx_voice_number(const QString &name, QString *template_name)
+{
+	const int voice_pos = name.indexOf(" Voice ");
+	if (voice_pos <= 0)
+		return -1;
+
+	const QString suffix = name.mid(voice_pos + 7);
+	if (suffix.isEmpty())
+		return -1;
+	for (const QChar c : suffix)
+		if (!c.isDigit())
+			return -1;
+
+	if (template_name != NULL)
+		*template_name = name.left(voice_pos) + " Voice N";
+
+	return suffix.toInt();
+}
+
+// The note duplicator voices 2-7 have seven values each (42 lines of prompt
+// text) and are usually all off with the same settings, which is pure noise.
+// They are condensed to one line per parameter that keeps every value that is
+// not the default (transpose is often not), so nothing is lost and an "add an
+// octave with voice 2" request still sees the transpose it will get.
+static inline QString fx_format_voice_values(const QVector<FxParamState> &states)
+{
+	QString ret;
+
+	// Template name ("System Volume Voice N") -> the entries for voices 2-7,
+	// in catalog order.
+	QStringList template_order;
+	QHash<QString, QVector<const FxParamState*>> by_template;
+	for (const FxParamState &state : states)
+	{
+		QString template_name;
+		const int voice = fx_voice_number(state.param.name, &template_name);
+		if (voice <= 1)
+			continue;
+
+		if (!by_template.contains(template_name))
+			template_order.append(template_name);
+		by_template[template_name].append(&state);
+	}
+
+	QStringList lines;
+	for (const QString &template_name : template_order)
+	{
+		const QVector<const FxParamState*> &entries = by_template.value(template_name);
+
+		// A modulated voice is never "just a default": list its full rows.
+		bool has_modulator = false;
+		for (const FxParamState *entry : entries)
+			if (entry->has_modulator)
+				has_modulator = true;
+		if (has_modulator)
+		{
+			for (const FxParamState *entry : entries)
+			{
+				QString row = "- " + entry->param.name + " = " + fx_format_value(entry->param, entry->current_native);
+				if (entry->has_modulator)
+					row += " [modulated]";
+				lines.append(row);
+			}
+			continue;
+		}
+
+		// The first voice is the reference: the row lists only the voices
+		// whose value differs from it, so six identical defaults cost one
+		// short line instead of six.
+		const QString common_value = fx_format_value(entries.at(0)->param, entries.at(0)->current_native);
+
+		QStringList pairs;
+		for (const FxParamState *entry : entries)
+		{
+			QString unused;
+			const int voice = fx_voice_number(entry->param.name, &unused);
+			const QString value = fx_format_value(entry->param, entry->current_native);
+			if (value == common_value)
+				continue;
+			pairs.append(QString("%1 = %2").arg(voice).arg(value));
+		}
+
+		if (pairs.isEmpty())
+			lines.append(QString("- %1 2-7 = all %2").arg(template_name, common_value));
+		else
+			lines.append(QString("- %1 = %2 on 2-7, except: %3").arg(template_name, common_value, pairs.join(", ")));
+	}
+
+	if (lines.isEmpty())
+		return ret;
+
+	ret += "\nNote duplicator voices 2-7, condensed (voice 1 is listed above and is the original note; voices 2-7 are extra copies; "
+	       "a row shows the setting shared by all six, then only the voices whose value differs):\n";
+	ret += lines.join("\n");
+	ret += "\n(Change one setting on one voice by its full name, e.g. 'System Volume Voice 3', and always set that voice's 'System On/Off Voice N' to 1.)\n";
+	return ret;
+}
+
+// True when the request asks for information ("what does this plugin do?",
+// "please explain Density and Size", "why is it muddy?") rather than for a
+// change. Those must be answered, never tuned - and the last instruction of
+// the user message (the instrument-first reminder) must not contradict that.
+static inline bool fx_request_is_a_question(const QString &request)
+{
+	const QString lower = request.toLower().trimmed();
+
+	// A trailing question mark is the clearest signal.
+	if (lower.endsWith('?') || lower.endsWith('?'))
+		return true;
+
+	const QStringList question_starts{
+	  "what", "whats", "what's", "which", "who", "how", "why", "when", "where",
+	  "explain", "describe", "tell me", "is ", "are ", "does ", "do ", "can you explain",
+	  "please explain", "please describe", "help me understand",
+	};
+	for (const QString &start : question_starts)
+		if (lower.startsWith(start))
+			return true;
+
+	// A question can also be phrased without a leading interrogative
+	// ("curious what the mix does", "I'd like to know whether ...").
+	const QStringList question_markers{"explain", "what does", "what is", "what are", "what mix", "what size",
+	                                   "means", "meaning of", "know what", "know how", "difference between"};
+	for (const QString &marker : question_markers)
+		if (lower.contains(marker))
+			return true;
+
+	return false;
+}
+
+// True when the request shares no word with any control name or system effect,
+// i.e. it describes a sound or a place ("make it sound like a small radio")
+// rather than naming a parameter.
+static inline bool fx_request_names_no_control(const QString &request, const FxInstrumentContext &instrument)
+{
+	const QStringList words = fx_request_keywords(request);
+	if (words.isEmpty())
+		return true;
+
+	QStringList control_names;
+	for (const FxInstrumentParamState &param : instrument.params)
+	{
+		control_names.append(param.name);
+		control_names.append(param.display_name);
+	}
+	for (const FxParam &param : fx_catalog())
+		control_names.append(param.name);
+
+	for (const QString &name : control_names)
+		for (const QString &word : name.toLower().split(QRegularExpression("[^a-z0-9]+"), Qt::SkipEmptyParts))
+			if (word.size() >= 3 && words.contains(word))
+				return false;
+
+	return true;
+}
+
+// The user message: the request, the instrument's own controls (first, since
+// they take precedence), the system effect values, the inserted effect
+// plugins, and finally the effect plugins whose names match the request.
+// Deliberately free of descriptions (they are in the system prompt), so it
+// stays small and the cached prefix is not invalidated.
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const FxInstrumentContext &instrument, const QVector<FxPlugin> &plugins, const QVector<FxPlugin> &inserted_plugins, const QString &prompt)
+{
+	QString ret = "User request: " + fx_quote(prompt) + "\n\n";
+
+	ret += "Current instrument plugin: ";
+	if (instrument.plugin_name.isEmpty())
+		ret += "(unknown)\n";
+	else
+	{
+		ret += instrument.plugin_name + " [" + instrument.type_name + "]";
+		if (!instrument.description.isEmpty())
+			ret += " (" + instrument.description.left(160) + ")";
+		ret += "\n";
+	}
+
+	ret += "\nNote: names with a number suffix are separate instances of one parameter (\"T0\"..\"T7\" = the "
+	       "individual delay/filter taps or reverb tank stages, \"AP0\"..\"AP3\" = individual allpass stages, "
+	       "\"Feedback1\"/\"Feedback2\" = separate feedback paths). Prefer the named controls (size, decay, wet, dry, "
+	       "damp, diffusion, filter, speed, depth) unless the user asks for a specific instance.\n";
+
+	ret += "\nCurrent instrument controls. Change these first when they fit the request. A name of the form 'Layer: Control' "
+	       "(for example 'Rev1: Size') belongs to a section of the plugin; always use the full name, exactly as listed. "
+	       "Names ending in ' 1'/' 2' (or '1'/'2') are two instances of the same control, typically two compressor stages or "
+	       "two filter banks: change one and say which, unless the user asks for both.\n";
+
+	QVector<const FxInstrumentParamState*> visible_params;
+	int hidden_midi_controls = instrument.hidden_midi_controls;
+	for (const FxInstrumentParamState &param : instrument.params)
+	{
+		if (fx_is_midi_controller_param(param))
+			hidden_midi_controls++;
+		else
+			visible_params.append(&param);
+	}
+
+	// Compact mode: every control shares its type and scale, so that is stated
+	// once instead of on every line (see the header below).
+	const bool compact_values = fx_controls_are_homogeneous(visible_params);
+
+	if (visible_params.isEmpty())
+	{
+		ret += "(no visible plugin-specific controls)\n";
+	}
+	else
+	{
+		// Prompt budget for the whole control section. The per-control text is
+		// what makes a plugin with many controls expensive, and this prompt is
+		// sent on every turn, so it must stay bounded whatever the plugin looks
+		// like. Once the budget is used up, the remaining controls are listed
+		// by name only (they can still be changed, just not with a full line).
+		const int section_budget = FX_CONTROL_SECTION_BUDGET;
+		const int section_start_size = ret.size();
+		QStringList overflow_names;
+
+		// State the type and the scale once when every control shares it: the
+		// per-line "[continuous; position ...; displayed ...]" boilerplate is
+		// ~40 of the ~80 characters per line, and it repeats for every control.
+		if (compact_values){
+			const FxInstrumentParamState *first = visible_params.at(0);
+			ret += "Every control below is continuous; ";
+			if (first->has_native_range)
+				ret += QString("value = native value, unit %1").arg(first->unit.isEmpty() ? QString("none") : first->unit);
+			else
+				ret += "value = position 0 to 1 (the plugin reports no range)";
+			ret += ", then the plugin's own display in parentheses.\n";
+		}
+
+		for (const FxInstrumentParamState *param : visible_params)
+		{
+			if (ret.size() - section_start_size > section_budget){
+				overflow_names.append(param->display_name.isEmpty() ? param->name : param->display_name);
+				continue;
+			}
+
+			if (compact_values){
+				ret += fx_compact_control_line(*param) + "\n";
+				continue;
+			}
+
+			ret += "- " + (param->display_name.isEmpty() ? param->name : param->display_name);
+			if (!param->display_name.isEmpty() && param->display_name != param->name)
+				ret += " [control name: " + param->name + "]";
+			ret += " [" + fx_instrument_param_format_name(param->format);
+			if (param->is_clamped && param->format != FX_INSTRUMENT_PARAM_BOOL && param->format != FX_INSTRUMENT_PARAM_RADIO){
+				// No range read from the plugin: the normalized 0..1 range
+				// would just be a scale, and must not be read as a unit. The
+				// explanation is a single footnote at the end of the section,
+				// not repeated on every line (31 controls x 100 chars).
+				ret += "; position " + QString::number(param->current_scaled, 'f', 3);
+				if (!param->current_display.isEmpty())
+					ret += "; displayed " + param->current_display;
+				// The unit, when the plugin reports one that the display text
+				// does not already show ("position 0.5" + "%" vs "displayed 50 %").
+				if (!param->unit.isEmpty() && !param->current_display.contains(param->unit, Qt::CaseInsensitive))
+					ret += "; unit " + param->unit;
+				ret += "]";
+				if (!fx_control_description(*param).isEmpty())
+					ret += " " + fx_control_description(*param);
+				ret += "\n";
+				continue;
+			}
+			if (param->has_native_range){
+				ret += "; native range " + QString::number(param->min_native, 'g', 8) + " to " + QString::number(param->max_native, 'g', 8);
+				if (!param->unit.isEmpty())
+					ret += " " + param->unit;
+				ret += "; current native " + QString::number(param->current_native, 'g', 8);
+				if (!param->unit.isEmpty())
+					ret += " " + param->unit;
+				ret += "; normalized " + QString::number(param->current_scaled, 'f', 6);
+			}else{
+				ret += "; normalized range 0 to 1; current " + QString::number(param->current_scaled, 'f', 6);
+			}
+			if (!param->current_display.isEmpty())
+				ret += "; displayed " + param->current_display;
+			ret += "]";
+			if (!fx_control_description(*param).isEmpty())
+				ret += " " + fx_control_description(*param);
+			ret += "\n";
+		}
+
+		if (!overflow_names.isEmpty())
+		{
+			// The overflow list is capped too: 400 names are as expensive
+			// as 400 full lines would have been.
+			const int max_overflow_names = 24;
+			const QStringList shown = overflow_names.mid(0, max_overflow_names);
+			const QString more = overflow_names.size() > max_overflow_names
+			                   ? QString(" (+%1 more)").arg(overflow_names.size() - max_overflow_names)
+			                   : QString();
+			ret += QString("(%1 controls are listed by name only because the list is capped to keep the request small: %2%3. "
+			               "Ask for one if you need its value.)\n").arg(overflow_names.size()).arg(shown.join(", "), more);
+		}
+	}
+
+	if (instrument.omitted_params > 0)
+		ret += QString("(%1 additional controls omitted because the list is limited)\n").arg(instrument.omitted_params);
+	if (hidden_midi_controls > 0)
+		ret += QString("(%1 MIDI controller controls (Breath, PitchBend, ModWheel, AfterTouch, Expression, SustainPedal, BankSelect) "
+		               "are not listed: they do not shape the sound of a mixing change.)\n").arg(hidden_midi_controls);
+
+	// Whether the descriptions below come from the plugin or are missing
+	// entirely decides how much the model may assert about the controls.
+	{
+		int described = 0;
+		for (const FxInstrumentParamState *param : visible_params)
+			if (fx_description_is_useful(*param))
+				described++;
+
+		if (!visible_params.isEmpty() && described == 0)
+			ret += "(This plugin provides no descriptions, units or ranges for its controls; only their names are known. "
+			       "When answering a question about a control, say that the explanation is based on the control's name.)\n";
+	}
+
+	if (!compact_values){
+		// (The hoisted header already says this when the compact form is used.)
+		int clamped_count = 0;
+		for (const FxInstrumentParamState *param : visible_params)
+			if (param->is_clamped)
+				clamped_count++;
+		if (clamped_count > 0)
+			ret += QString("(%1 of these controls report no unit or range from the plugin: their value is a relative position 0 to 1, "
+			               "the 'displayed' text is the plugin's own scale; use values as relative amounts.)\n").arg(clamped_count);
+	}
+
+	ret += "\nCurrent system effect values (exact name = current value; the effect reference in the system prompt lists unit, range and what each effect does):\n";
+	for (const FxParamState &state : states)
+	{
+		QString template_name;
+		if (fx_voice_number(state.param.name, &template_name) > 1)
+			continue; // condensed by fx_format_voice_values below
+
+		ret += "- " + state.param.name + " = " + fx_format_value(state.param, state.current_native);
+		if (state.has_modulator)
+			ret += " [modulated]";
+		ret += "\n";
+	}
+	ret += fx_format_voice_values(states);
 
 	ret += "\nEffect plugins currently inserted after this instrument (exact name; type):\n";
 	if (inserted_plugins.isEmpty())
@@ -555,23 +1681,67 @@ static inline QString build_fx_user_message(const QVector<FxParamState> &states,
 		}
 	}
 
+	// The request-dependent part goes last: everything before it is either
+	// static (the system prompt) or small, so a prefix cache can still reuse
+	// the system prompt and the history. When the request is already served by
+	// the instrument or the built-in effects, the catalogue is skipped: it is
+	// the largest per-request part, and a common word like "compress" matches
+	// two dozen installed plugins.
+	if (fx_request_is_covered_by_instrument(prompt, instrument, states))
+		ret += "\n(No effect-plugin list: the current instrument or the built-in system effects already "
+		       "cover this request. Do not insert a plugin for it.)\n";
+	else
+		ret += fx_plugin_catalog_section(plugins, prompt);
+
+	// A "vibe only" request ("make it sound like we're in Abbey Road") has no
+	// obvious parameter, and a model forced to emit JSON can stall on it.
+	// Rather than leaving it to guess, name the way out.
+	if (fx_request_names_no_control(prompt, instrument)){
+		ret += "\nThis request names no control. If you can map it to the listed controls with confidence, do so; "
+		       "otherwise reply with an empty action set and set \"ask\" to one short question that offers the most "
+		       "likely choices. Never return an empty reply.";
+	}
+
 	ret += "\nThe container is only for disambiguation; include it in your reply only when needed for same-named plugins.";
-	ret += "\nIf no listed plugin can provide the requested effect, do not invent one. Leave \"add_plugins\" empty, set "
-	       "\"create_faust\" to a short description of the effect and \"create_faust_name\" to a short instrument name "
-	       "(e.g. \"Autotune\"), and explain that it is not currently available; the host will ask whether to create it "
-	       "with the 'Faust Dev 2' instrument.";
 	ret += "\nRemember: reply with only the JSON object. Values are absolute.";
+
+	// The final instruction is the one the model reads last, so it must agree
+	// with the rules above. Telling it "a request that names the plugin is
+	// answered with instrument_changes" made explanation questions ("what
+	// does this plugin do?") into tuning requests, which the JSON output gate
+	// of the free relay then rejects.
+	if (fx_request_is_a_question(prompt)){
+		ret += " This is a question: answer it in \"answer\" (one sentence, at most 200 characters) and change nothing.";
+	}else{
+		ret += " A request that names the plugin ('the plugin', 'the instrument') is answered with "
+		       "\"instrument_changes\"; system effects are the exception, not the default.";
+	}
 	return ret;
 }
 
-static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QVector<FxPlugin> &plugins, const QString &prompt)
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const FxInstrumentContext &instrument, const QVector<FxPlugin> &inserted_plugins, const QString &prompt)
 {
-	return build_fx_user_message(states, plugins, QVector<FxPlugin>(), prompt);
+	return build_fx_user_message(states, instrument, QVector<FxPlugin>(), inserted_plugins, prompt);
+}
+
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const FxInstrumentContext &instrument, const QString &prompt)
+{
+	return build_fx_user_message(states, instrument, QVector<FxPlugin>(), QVector<FxPlugin>(), prompt);
+}
+
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QVector<FxPlugin> &plugins, const QVector<FxPlugin> &inserted_plugins, const QString &prompt)
+{
+	return build_fx_user_message(states, FxInstrumentContext(), plugins, inserted_plugins, prompt);
+}
+
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QVector<FxPlugin> &inserted_plugins, const QString &prompt)
+{
+	return build_fx_user_message(states, FxInstrumentContext(), QVector<FxPlugin>(), inserted_plugins, prompt);
 }
 
 static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QString &prompt)
 {
-	return build_fx_user_message(states, QVector<FxPlugin>(), QVector<FxPlugin>(), prompt);
+	return build_fx_user_message(states, FxInstrumentContext(), QVector<FxPlugin>(), QVector<FxPlugin>(), prompt);
 }
 
 struct FxParseResult
@@ -580,11 +1750,14 @@ struct FxParseResult
 	QString error;
 	QString explanation;
 	QVector<FxChange> changes;
+	QVector<FxInstrumentChange> instrument_changes;
 	QVector<FxModulation> modulations;
 	QVector<FxPlugin> plugins;
 	QVector<FxPlugin> removed_plugins;
 	QString create_faust;
 	QString create_faust_name;
+	QString ask; // a clarifying question for the user (only set when nothing is changed)
+	QString answer; // an answer to a question the user asked (no changes are made)
 	QStringList warnings;
 };
 
@@ -708,14 +1881,89 @@ static inline void fx_parse_plugin_array(const QJsonValue &value,
 	}
 }
 
-// Parses and validates an LLM reply. Unknown effect names, non-numeric
-// values and out-of-range values are dropped or clamped (reported in
-// 'warnings'); all changes are converted to native units. Plugins must be
-// in the supplied catalogs; unknown plugins are dropped with a warning.
+// The value text of a plugin control. Plugin wrappers often prefix it with the
+// port name ("Bass: 200.00", "pitch_glide_length: 420"), so a trailing
+// ": <number>" is the value itself. Returns the current display text, or an
+// empty string when the host did not read one.
+static inline QString fx_parameter_display(const FxInstrumentParamState *param)
+{
+	QString display = param->current_display.trimmed();
+	if (display.isEmpty())
+		return QString();
+
+	const QRegularExpression prefix(QStringLiteral("^.*:\\s*"));
+	return display.remove(prefix);
+}
+
+// A plugin's display texts are opaque ("200", "35.00", "On"), but they are
+// almost always a number with some prefix or suffix ("Mix: 40"). For a
+// normalized control the new value is interpolated into the last number of the
+// text, proportionally to the normalized change. Returns an empty string when
+// the display is not numeric (booleans, choices, texts) or when the current
+// value is at a range endpoint (nothing to scale from): those are summarized as
+// percentages instead.
+static inline QString fx_interpolate_display(const QString &display, float old_scaled, float new_scaled)
+{
+	if (!(old_scaled > 0.000001f && old_scaled < 0.999999f))
+		return QString(); // cannot scale from an endpoint
+
+	// Find the last number in the text ("200.00", "Mix: 40", "-12.5 dB").
+	int end = -1;
+	for (int i = display.size() - 1; i >= 0; i--)
+	{
+		if (display.at(i).isDigit()){
+			end = i + 1;
+			break;
+		}
+	}
+	if (end < 0)
+		return QString();
+
+	int start = end;
+	while (start > 0)
+	{
+		const QChar c = display.at(start - 1);
+		const bool previous_is_digit = start - 1 > 0 && display.at(start - 2).isDigit();
+		if (c.isDigit() || c == '.' || (c == '-' && previous_is_digit))
+			start--;
+		else
+			break;
+	}
+
+	QString number_text = display.mid(start, end - start);
+	bool ok = false;
+	double old_display_value = number_text.toDouble(&ok);
+	if (!ok){
+		// A trailing dot was probably punctuation; retry without it.
+		number_text.chop(1);
+		old_display_value = number_text.toDouble(&ok);
+		end--;
+	}
+	if (!ok || old_display_value < 0.0)
+		return QString(); // negative: a proportional scale would be invented
+
+	int decimals = 0;
+	const int dot = number_text.indexOf('.');
+	if (dot >= 0)
+		decimals = number_text.size() - dot - 1;
+
+	double new_display_value = old_display_value * ((double)new_scaled / (double)old_scaled);
+	// Avoid "-0.00" and "168.0000000001".
+	if (std::fabs(new_display_value) < 0.5 * std::pow(10.0, -decimals))
+		new_display_value = 0.0;
+	const QString new_number = QString::number(new_display_value, 'f', std::min(6, decimals));
+	return display.left(start) + new_number + display.mid(end);
+}
+
+// Parses and validates an LLM reply. Unknown names and non-numeric values are
+// dropped; out-of-range values are clamped and reported in 'warnings'. System
+// effect values are native, while instrument plugin controls are normalized.
+// Plugins must be in the supplied catalogs; unknown plugins are dropped.
 static inline FxParseResult parse_fx_response(const QString &raw,
                                               const QVector<FxParamState> &states,
                                               const QVector<FxPlugin> &plugins,
-                                              const QVector<FxPlugin> &inserted_plugins)
+                                              const QVector<FxPlugin> &inserted_plugins,
+                                              const FxInstrumentContext &instrument)
 {
 	FxParseResult result;
 
@@ -738,21 +1986,29 @@ static inline FxParseResult parse_fx_response(const QString &raw,
 
 	const QJsonObject root = doc.object();
 	const QJsonValue changes_value = root.value("changes");
+	const QJsonValue instrument_changes_value = root.value("instrument_changes");
 	const QJsonValue modulators_value = root.value("modulators");
 	const QJsonValue plugins_value = root.value("add_plugins");
 	const QJsonValue remove_plugins_value = root.value("remove_plugins");
 	const QJsonValue create_faust_value = root.value("create_faust");
 	const QJsonValue create_faust_name_value = root.value("create_faust_name");
-	if (changes_value.isUndefined() && modulators_value.isUndefined()
+	const QJsonValue ask_value = root.value("ask");
+	const QJsonValue answer_value = root.value("answer");
+	if (changes_value.isUndefined() && instrument_changes_value.isUndefined() && modulators_value.isUndefined()
 	    && plugins_value.isUndefined() && remove_plugins_value.isUndefined()
-	    && create_faust_value.isUndefined())
+	    && create_faust_value.isUndefined() && ask_value.isUndefined() && answer_value.isUndefined())
 	{
-		result.error = "The JSON object has no action ('changes', 'modulators', 'add_plugins', 'remove_plugins' or 'create_faust').";
+		result.error = "The JSON object has no action ('changes', 'instrument_changes', 'modulators', 'add_plugins', 'remove_plugins', 'create_faust', 'ask' or 'answer').";
 		return result;
 	}
 	if (!changes_value.isUndefined() && !changes_value.isArray())
 	{
 		result.error = "'changes' is not an array.";
+		return result;
+	}
+	if (!instrument_changes_value.isUndefined() && !instrument_changes_value.isArray())
+	{
+		result.error = "'instrument_changes' is not an array.";
 		return result;
 	}
 	if (!modulators_value.isUndefined() && !modulators_value.isArray())
@@ -782,8 +2038,41 @@ static inline FxParseResult parse_fx_response(const QString &raw,
 	}
 
 	QHash<QString, const FxParamState*> by_name;
+	QHash<QString, const FxParamState*> by_normalized_name;
+	QSet<QString> ambiguous_normalized_names;
 	for (const FxParamState &state : states)
+	{
 		by_name.insert(state.param.name.toLower(), &state);
+
+		for (const QString &key : fx_control_keys(state.param.name))
+		{
+			if (by_normalized_name.contains(key))
+			{
+				by_normalized_name.remove(key);
+				ambiguous_normalized_names.insert(key);
+			}
+			else if (!ambiguous_normalized_names.contains(key))
+				by_normalized_name.insert(key, &state);
+		}
+	}
+
+	// Exact (case-insensitive) name first, then the name with the plugin
+	// wrapper's index prefix and the punctuation removed.
+	auto find_state = [&by_name, &by_normalized_name](const QString &name) -> const FxParamState*
+	{
+		const FxParamState *state = by_name.value(name.toLower(), NULL);
+		if (state != NULL)
+			return state;
+
+		for (const QString &key : fx_control_keys(name))
+		{
+			state = by_normalized_name.value(key, NULL);
+			if (state != NULL)
+				return state;
+		}
+
+		return NULL;
+	};
 
 	QHash<QString, FxChange> resolved;
 	QStringList order;
@@ -815,7 +2104,7 @@ static inline FxParseResult parse_fx_response(const QString &raw,
 		                   ? (value_json.toBool() ? 1.0 : 0.0)
 		                   : value_json.toDouble();
 
-		const FxParamState *state = by_name.value(name.toLower(), NULL);
+		const FxParamState *state = find_state(name);
 		if (state == NULL)
 		{
 			result.warnings.append(QString("Ignored unknown effect '%1'.").arg(name));
@@ -892,7 +2181,7 @@ static inline FxParseResult parse_fx_response(const QString &raw,
 			continue;
 		}
 
-		const FxParamState *state = by_name.value(effect_name.toLower(), NULL);
+		const FxParamState *state = find_state(effect_name);
 		if (state == NULL)
 		{
 			result.warnings.append(QString("Ignored modulation of unknown effect '%1'.").arg(effect_name));
@@ -959,11 +2248,189 @@ static inline FxParseResult parse_fx_response(const QString &raw,
 	}
 
 	result.explanation = root.value("explanation").toString().trimmed();
+	result.ask = root.value("ask").toString().trimmed();
+	result.answer = root.value("answer").toString().trimmed();
 	result.create_faust = create_faust_value.toString().trimmed();
 	result.create_faust_name = create_faust_name_value.toString().trimmed();
 
 	for (const QString &key : order)
 	  result.changes.append(resolved.value(key));
+
+	QHash<QString, const FxInstrumentParamState*> instrument_params_by_name;
+	QHash<QString, const FxInstrumentParamState*> instrument_params_by_display_name;
+	QSet<QString> ambiguous_instrument_display_names;
+	// Normalized keys, so the model's readable name ("Size") also finds the
+	// wrapper's exact name ("2: Size"). A key shared by two controls is
+	// dropped instead of resolving to an arbitrary one.
+	QHash<QString, const FxInstrumentParamState*> instrument_params_by_normalized_key;
+	QSet<QString> ambiguous_normalized_keys;
+
+	auto add_normalized_key = [&instrument_params_by_normalized_key, &ambiguous_normalized_keys](const QString &text, const FxInstrumentParamState *param)
+	{
+		for (const QString &key : fx_control_keys(text))
+		{
+			const FxInstrumentParamState *existing = instrument_params_by_normalized_key.value(key, NULL);
+			if (existing != NULL && existing != param)
+			{
+				instrument_params_by_normalized_key.remove(key);
+				ambiguous_normalized_keys.insert(key);
+			}
+			else if (!ambiguous_normalized_keys.contains(key))
+			{
+				instrument_params_by_normalized_key.insert(key, param);
+			}
+		}
+	};
+
+	for (const FxInstrumentParamState &param : instrument.params)
+	{
+		instrument_params_by_name.insert(param.name.toLower(), &param);
+		add_normalized_key(param.name, &param);
+
+		if (!param.display_name.isEmpty() && param.display_name.toLower() != param.name.toLower())
+		{
+			const QString key = param.display_name.toLower();
+			if (instrument_params_by_display_name.contains(key))
+			{
+				instrument_params_by_display_name.remove(key);
+				ambiguous_instrument_display_names.insert(key);
+			}
+			else if (!ambiguous_instrument_display_names.contains(key))
+				instrument_params_by_display_name.insert(key, &param);
+		}
+		add_normalized_key(param.display_name, &param);
+	}
+
+	QHash<QString, FxInstrumentChange> resolved_instrument_changes;
+	QStringList instrument_change_order;
+	for (const QJsonValue &value : instrument_changes_value.toArray())
+	{
+		if (!value.isObject())
+		{
+			result.warnings.append("Ignored an instrument change that is not an object.");
+			continue;
+		}
+
+		const QJsonObject change_object = value.toObject();
+		const QString name = change_object.value("name").toString().trimmed();
+		if (name.isEmpty())
+		{
+			result.warnings.append("Ignored an instrument change without a name.");
+			continue;
+		}
+
+		const QJsonValue value_json = change_object.value("value");
+		if (!value_json.isDouble() && !value_json.isBool())
+		{
+			result.warnings.append(QString("Ignored instrument control '%1': the value is missing or is not a number.").arg(name));
+			continue;
+		}
+
+		const QString key = name.toLower();
+		const FxInstrumentParamState *param = instrument_params_by_name.value(key, NULL);
+		if (param == NULL && ambiguous_instrument_display_names.contains(key))
+		{
+			result.warnings.append(QString("Ignored current-instrument control '%1': its displayed name is ambiguous; use the exact control name shown in brackets.").arg(name));
+			continue;
+		}
+		if (param == NULL)
+			param = instrument_params_by_display_name.value(key, NULL);
+		if (param == NULL)
+			for (const QString &candidate : fx_control_keys(name))
+			{
+				param = instrument_params_by_normalized_key.value(candidate, NULL);
+				if (param != NULL)
+					break;
+			}
+		if (param == NULL)
+		{
+			result.warnings.append(QString("Ignored unknown current-instrument control '%1'.").arg(name));
+			continue;
+		}
+
+		double new_value = value_json.isBool()
+		                   ? (value_json.toBool() ? 1.0 : 0.0)
+		                   : value_json.toDouble();
+
+		if (param->has_native_range)
+		{
+			if (param->format == FX_INSTRUMENT_PARAM_BOOL)
+				new_value = new_value >= 0.5 ? param->max_native : param->min_native;
+			else if (param->format == FX_INSTRUMENT_PARAM_INT)
+				new_value = qRound(new_value);
+
+			if (new_value < param->min_native)
+			{
+				result.warnings.append(QString("Clamped instrument control '%1' from %2 to its minimum %3.").arg(param->name).arg(new_value).arg(param->min_native));
+				new_value = param->min_native;
+			}
+			if (new_value > param->max_native)
+			{
+				result.warnings.append(QString("Clamped instrument control '%1' from %2 to its maximum %3.").arg(param->name).arg(new_value).arg(param->max_native));
+				new_value = param->max_native;
+			}
+			if (std::fabs(new_value - param->current_native) < 0.000001)
+				continue;
+		}
+		else
+		{
+			if (param->format == FX_INSTRUMENT_PARAM_BOOL)
+				new_value = new_value >= 0.5 ? 1.0 : 0.0;
+
+			if (new_value < 0.0)
+			{
+				result.warnings.append(QString("Clamped instrument control '%1' from %2 to 0.").arg(param->name).arg(new_value));
+				new_value = 0.0;
+			}
+			if (new_value > 1.0)
+			{
+				result.warnings.append(QString("Clamped instrument control '%1' from %2 to 1.").arg(param->name).arg(new_value));
+				new_value = 1.0;
+			}
+			if (std::fabs(new_value - param->current_scaled) < 0.0001)
+				continue;
+		}
+
+		FxInstrumentChange change;
+		change.type_name = instrument.type_name;
+		change.plugin_name = instrument.plugin_name;
+		change.plugin_version = instrument.plugin_version;
+		change.effect_num = param->effect_num;
+		change.name = param->name;
+		change.display_name = param->display_name;
+		change.old_value_scaled = param->current_scaled;
+		change.value_scaled = param->has_native_range
+		                    ? (float)((new_value - param->min_native) / (param->max_native - param->min_native))
+		                    : (float)new_value;
+		change.value_is_native = param->has_native_range;
+		change.old_value_native = param->current_native;
+		change.value_native = (float)new_value;
+		change.unit = param->unit;
+
+		// The plugin's own display texts: only for an unclamped (curated)
+		// control with no native range, where scaling the display text is
+		// meaningful. A control with a native range reports its native value,
+		// and a clamped control's display is only (re)read after the change.
+		if (!param->has_native_range && !param->is_clamped && !param->current_display.isEmpty())
+		{
+			const QString old_display = fx_parameter_display(param);
+			// new_value is native for a native-range control and the scaled
+			// value otherwise; only the latter is evaluated here.
+			const QString new_display = fx_interpolate_display(old_display, param->current_scaled, (float)new_value);
+			if (!new_display.isEmpty() && new_display != old_display){
+				change.old_display = old_display;
+				change.new_display = new_display;
+			}
+		}
+
+		const QString param_key = param->name.toLower();
+		if (!resolved_instrument_changes.contains(param_key))
+			instrument_change_order.append(param_key);
+		resolved_instrument_changes.insert(param_key, change);
+	}
+
+	for (const QString &key : instrument_change_order)
+		result.instrument_changes.append(resolved_instrument_changes.value(key));
 
 	result.ok = true;
 	return result;
@@ -973,12 +2440,20 @@ static inline FxParseResult parse_fx_response(const QString &raw,
                                               const QVector<FxParamState> &states,
                                               const QVector<FxPlugin> &plugins)
 {
-	return parse_fx_response(raw, states, plugins, QVector<FxPlugin>());
+	return parse_fx_response(raw, states, plugins, QVector<FxPlugin>(), FxInstrumentContext());
+}
+
+static inline FxParseResult parse_fx_response(const QString &raw,
+	                                          const QVector<FxParamState> &states,
+	                                          const QVector<FxPlugin> &plugins,
+	                                          const QVector<FxPlugin> &inserted_plugins)
+{
+	return parse_fx_response(raw, states, plugins, inserted_plugins, FxInstrumentContext());
 }
 
 static inline FxParseResult parse_fx_response(const QString &raw, const QVector<FxParamState> &states)
 {
-	return parse_fx_response(raw, states, QVector<FxPlugin>(), QVector<FxPlugin>());
+	return parse_fx_response(raw, states, QVector<FxPlugin>(), QVector<FxPlugin>(), FxInstrumentContext());
 }
 
 // If a band parameter is changed while its band is off, the change would be
@@ -1055,12 +2530,80 @@ static inline QString fx_summarize_changes(const QVector<FxParamState> &states, 
 		                          ? fx_format_value(state->param, change.value)
 		                          : QString::number(change.value, 'f', 2);
 
-		parts.append(QString("%1 %2 -> %3").arg(change.name, old_value, new_value));
+		parts.append(QString("%1 %2 -> %3").arg(fx_control_display_name(change.name), old_value, new_value));
 		count++;
 	}
 
 	return parts.join(", ");
 }
+
+static inline QString fx_summarize_instrument_changes(const QVector<FxInstrumentChange> &changes, int max_changes = 4)
+{
+	QStringList parts;
+	for (int i = 0; i < changes.size(); i++)
+	{
+		if (i == max_changes)
+		{
+			parts.append(QString("and %1 more").arg(changes.size() - i));
+			break;
+		}
+
+		const FxInstrumentChange &change = changes.at(i);
+		const QString instrument = change.plugin_name.isEmpty()
+		                          ? QString("current instrument")
+		                          : change.plugin_name;
+		const QString param_name = fx_control_display_name(change.display_name.isEmpty() ? change.name : change.display_name);
+		if (change.value_is_native){
+			const QString old_value = QString::number(change.old_value_native, 'g', 8);
+			const QString new_value = QString::number(change.value_native, 'g', 8);
+			const QString unit = change.unit.isEmpty() ? QString() : " " + change.unit;
+			parts.append(QString("%1: %2 %3 -> %4")
+			             .arg(instrument, param_name)
+			             .arg(old_value + unit, new_value + unit));
+		}else if (!change.old_display.isEmpty() && !change.new_display.isEmpty()){
+			// The plugin's own numbers ("200" -> "170") read better than the
+			// normalized percentages ("100%" -> "85%").
+			parts.append(QString("%1: %2 %3 -> %4")
+			             .arg(instrument, param_name, change.old_display, change.new_display));
+		}else{
+			parts.append(QString("%1: %2 %3% -> %4%")
+			             .arg(instrument, param_name)
+			             .arg(change.old_value_scaled * 100.0f, 0, 'f', 0)
+			             .arg(change.value_scaled * 100.0f, 0, 'f', 0));
+		}
+	}
+	return parts.join(", ");
+}
+
+// The GUI/instrument operations the session needs. Implemented by the
+// instrument widget.
+struct FxTuneSessionHost
+{
+	std::function<QVector<FxParamState>()> read_catalog;
+	std::function<FxInstrumentContext()> read_instrument_context;
+	// Effect plugins that can be inserted into the signal path. The host
+	// reads this from the plugin registry.
+	std::function<QVector<FxPlugin>()> read_plugin_catalog;
+	// Effect plugins currently inserted after this instrument, in chain
+	// order. The host reads this from the mixer graph.
+	std::function<QVector<FxPlugin>()> read_inserted_plugins;
+	// Applies the whole reply (effect value changes, modulation actions and
+	// plugin insertions/removals) as ONE undo step. May extend 'changes' with
+	// the extra changes it makes itself (e.g. enabling a band that was off),
+	// so the final status summary includes them.
+	std::function<bool(QVector<FxChange> &changes,
+	                   const QVector<FxInstrumentChange> &instrument_changes,
+	                   const QVector<FxModulation> &modulations,
+	                   const QVector<FxPlugin> &add_plugins,
+	                   const QVector<FxPlugin> &remove_plugins)> apply_reply;
+	// Asks the user whether to create a Faust Dev 2 instrument for an effect
+	// that no plugin can provide. Returns true if the user was asked (and the
+	// creation was started or declined), false on failure.
+	std::function<bool(const QString &description, const QString &name)> create_faust_effect;
+	std::function<void(const QString &text)> status;
+	std::function<void(const QString &message)> show_error;
+	std::function<void(bool busy)> set_busy;
+};
 
 static inline QString fx_plugin_display_name(const FxPlugin &plugin)
 {
@@ -1151,37 +2694,46 @@ static inline QString fx_summarize_removed_plugins(const QVector<FxPlugin> &plug
 	return "Removed " + names.join(", ");
 }
 
-// The GUI/instrument operations the session needs. Implemented by the
-// instrument widget.
-struct FxTuneSessionHost
+// The complete list of the deltas a reply applied ("old -> new" per control),
+// in the form stored in the history and written to the log. Unlike the status
+// summaries it is never truncated, so a correction can revert all of it.
+// Modulator actions and plugin insertions/removals are not parameter values
+// and are summarized in words.
+static inline QString fx_applied_summary(const FxParseResult &parsed, const QVector<FxParamState> &states)
 {
-	std::function<QVector<FxParamState>()> read_catalog;
-	// Effect plugins that can be inserted into the signal path. The host
-	// reads this from the plugin registry.
-	std::function<QVector<FxPlugin>()> read_plugin_catalog;
-	// Effect plugins currently inserted after this instrument, in chain
-	// order. The host reads this from the mixer graph.
-	std::function<QVector<FxPlugin>()> read_inserted_plugins;
-	// Applies the whole reply (effect value changes, modulation actions and
-	// plugin insertions/removals) as ONE undo step. May extend 'changes' with
-	// the extra changes it makes itself (e.g. enabling a band that was off),
-	// so the final status summary includes them.
-	std::function<bool(QVector<FxChange> &changes,
-	                   const QVector<FxModulation> &modulations,
-	                   const QVector<FxPlugin> &add_plugins,
-	                   const QVector<FxPlugin> &remove_plugins)> apply_reply;
-	// Asks the user whether to create a Faust Dev 2 instrument for an effect
-	// that no plugin can provide. Returns true if the user was asked (and the
-	// creation was started or declined), false on failure.
-	std::function<bool(const QString &description, const QString &name)> create_faust_effect;
-	std::function<void(const QString &text)> status;
-	std::function<void(const QString &message)> show_error;
-	std::function<void(bool busy)> set_busy;
-};
+	QString ret;
 
-// The effect-tuning conversation state machine: send the catalog and the
-// user's request, parse the JSON reply, apply the changes (one undo step),
-// and keep the conversation for follow-up requests ("less of that").
+	auto append = [&ret](const QString &line)
+	{
+		if (line.isEmpty())
+			return;
+		if (!ret.isEmpty())
+			ret += "\n";
+		ret += line;
+	};
+
+	if (!parsed.changes.isEmpty())
+		append("System effects: " + fx_summarize_changes(states, parsed.changes, parsed.changes.size()));
+
+	if (!parsed.instrument_changes.isEmpty())
+		append(fx_summarize_instrument_changes(parsed.instrument_changes, parsed.instrument_changes.size()));
+
+	if (!parsed.modulations.isEmpty())
+		append(fx_summarize_modulations(parsed.modulations, parsed.modulations.size()));
+
+	if (!parsed.removed_plugins.isEmpty())
+		append(fx_summarize_removed_plugins(parsed.removed_plugins));
+
+	if (!parsed.plugins.isEmpty())
+		append(fx_summarize_plugins(parsed.plugins));
+
+	return ret;
+}
+
+// The effect-tuning conversation state machine: send the system prompt (rules
+// and effect reference) plus the request with the current values and the
+// matching effect plugins, parse the JSON reply, apply the changes (one undo
+// step), and keep the conversation for follow-up requests ("less of that").
 // Open-loop: the human ear closes the loop via undo and follow-ups.
 class FxTuneSession
 {
@@ -1227,16 +2779,22 @@ public:
 		  return;
 
 		_states = _host.read_catalog();
-		if (_states.isEmpty())
+		_instrument = _host.read_instrument_context ? _host.read_instrument_context() : FxInstrumentContext();
+		if (_states.isEmpty() && _instrument.params.isEmpty())
 		{
-			_host.show_error("This instrument has no tuneable system effects.");
+			_host.show_error("This instrument has no tuneable effects or plugin controls.");
 			return;
 		}
 
 		_plugins = _host.read_plugin_catalog ? _host.read_plugin_catalog() : QVector<FxPlugin>();
 		_inserted_plugins = _host.read_inserted_plugins ? _host.read_inserted_plugins() : QVector<FxPlugin>();
 
-		_user_message = build_fx_user_message(_states, _plugins, _inserted_plugins, trimmed);
+		_request = trimmed;
+		_applied_summary.clear();
+		// The system prompt is static (cacheable), so the request-dependent
+		// plugin list goes into the user message instead.
+		_system_message = build_fx_system_prompt();
+		_user_message = build_fx_user_message(_states, _instrument, _plugins, _inserted_plugins, trimmed);
 		_repair_attempted = false;
 		request(_user_message, false);
 	}
@@ -1258,7 +2816,7 @@ private:
 		_cancel = std::make_shared<std::atomic_bool>(false);
 		const std::shared_ptr<std::atomic_bool> cancel = _cancel;
 
-		send_chat(config, build_fx_system_prompt(), user_message,
+		send_chat(config, _system_message, user_message,
 		          [this, alive, is_repair](bool ok, QString result_or_error)
 		          {
 			          if (!*alive)
@@ -1277,13 +2835,27 @@ private:
 				          }
 				          else
 				          {
+					          // A failed turn (empty stream, server error) must not
+					          // vanish from the conversation: the user retries the
+					          // request next, and the reply must not appear to
+					          // have succeeded.
+					          llm_log_note("request failed: " + result_or_error);
+					          remember_turn(_request, "(no reply: the request failed)", QString());
+					          if (_host.status)
+						          _host.status("No reply - the request failed.");
 					          if (_host.show_error)
 						          _host.show_error(result_or_error);
 				          }
 				          return;
 			          }
 
-			          FxParseResult parsed = parse_fx_response(result_or_error, _states, _plugins, _inserted_plugins);
+			FxParseResult parsed = parse_fx_response(result_or_error, _states, _plugins, _inserted_plugins, _instrument);
+
+			// Everything the parser had to drop or clamp is invisible
+			// otherwise (a silently ignored control name looks exactly
+			// like a successful change), so log it.
+			if (!parsed.warnings.isEmpty())
+				llm_log_note("parse warnings:\n- " + parsed.warnings.join("\n- "));
 
 			          if (!parsed.ok)
 			          {
@@ -1293,7 +2865,7 @@ private:
 					          _repair_attempted = true;
 					          request(QString("Your previous reply could not be parsed: %1\n\n"
 					                          "Reply with ONLY a single valid JSON object using the schema "
-					                          "{\"changes\":[{\"name\":\"...\",\"value\":0}],\"add_plugins\":[{\"name\":\"...\",\"type\":\"...\"}],"
+					                          "{\"changes\":[{\"name\":\"...\",\"value\":0}],\"instrument_changes\":[{\"name\":\"...\",\"value\":0.5}],\"add_plugins\":[{\"name\":\"...\",\"type\":\"...\"}],"
 					                          "\"remove_plugins\":[{\"name\":\"...\",\"type\":\"...\"}],\"create_faust\":\"...\",\"explanation\":\"...\"} and nothing else.").arg(parsed.error),
 					                  true);
 					          return;
@@ -1304,23 +2876,64 @@ private:
 				          return;
 			          }
 
-			          // Remember the original tuning request (not a possible
-			          // JSON-repair message) and the final reply, so follow-up
-			          // requests have the full context.
-			          remember_turn(_user_message, result_or_error);
+			// The deltas of this reply (complete, no "... and N more"). They
+			// go into the history so a correction can revert them, and into
+			// the log so the reply can be audited.
+			_applied_summary = fx_applied_summary(parsed, _states);
+			if (!_applied_summary.isEmpty())
+				llm_log_note("applied:\n" + _applied_summary);
 
-			          if (parsed.changes.isEmpty() && parsed.modulations.isEmpty()
-			              && parsed.plugins.isEmpty() && parsed.removed_plugins.isEmpty()
-			              && parsed.create_faust.isEmpty())
-			          {
-				          if (_host.status)
-					          _host.status(parsed.explanation.isEmpty() ? QString("No changes made.") : parsed.explanation);
-				          return;
-			          }
+			// Remember the original tuning request (not a possible
+			// JSON-repair message), the final reply, and what the reply
+			// changed, so follow-up requests have the full context and can
+			// undo it. Done for every accepted reply, including questions and
+			// no-op replies, so a correction never references a turn that is
+			// missing from the history.
+			remember_turn(_request, result_or_error, _applied_summary);
+
+			const bool nothing_to_apply = parsed.changes.isEmpty() && parsed.instrument_changes.isEmpty()
+			                              && parsed.modulations.isEmpty() && parsed.plugins.isEmpty()
+			                              && parsed.removed_plugins.isEmpty() && parsed.create_faust.isEmpty();
+
+			if (nothing_to_apply)
+			{
+				if (!parsed.answer.isEmpty())
+				{
+					// An answer to a question is a complete reply: show it
+					// (plus the explanation, if the model added one).
+					if (_host.status)
+						_host.status(parsed.explanation.isEmpty() ? parsed.answer : parsed.answer + " " + parsed.explanation);
+					return;
+				}
+
+				if (!parsed.ask.isEmpty())
+				{
+					// A clarifying question is a valid reply: show it
+					// instead of pretending something was changed.
+					if (_host.status)
+						_host.status(parsed.ask);
+					return;
+				}
+
+				// The reply proposed something, but the parser could not use
+				// any of it (wrong control names, out of range, ...). Say
+				// so: otherwise the explanation below reads as if the
+				// changes had been made.
+				if (!parsed.warnings.isEmpty())
+				{
+					if (_host.show_error)
+						_host.show_error("Could not apply the reply:\n- " + parsed.warnings.join("\n- "));
+					return;
+				}
+
+				if (_host.status)
+					_host.status(parsed.explanation.isEmpty() ? QString("No changes made.") : parsed.explanation);
+				return;
+			}
 
 			          QStringList summary_parts;
 
-			          if (_host.apply_reply && !_host.apply_reply(parsed.changes, parsed.modulations, parsed.plugins, parsed.removed_plugins))
+			if (_host.apply_reply && !_host.apply_reply(parsed.changes, parsed.instrument_changes, parsed.modulations, parsed.plugins, parsed.removed_plugins))
 			          {
 				          if (_host.show_error)
 					          _host.show_error("Failed to apply the changes.");
@@ -1335,8 +2948,11 @@ private:
 				          }
 			          }
 
-			          if (!parsed.changes.isEmpty())
-				          summary_parts.append("Applied: " + fx_summarize_changes(_states, parsed.changes));
+			if (!parsed.changes.isEmpty())
+				summary_parts.append("Applied: " + fx_summarize_changes(_states, parsed.changes));
+
+			if (!parsed.instrument_changes.isEmpty())
+				summary_parts.append("Adjusted: " + fx_summarize_instrument_changes(parsed.instrument_changes));
 
 			          if (!parsed.modulations.isEmpty())
 				          summary_parts.append(fx_summarize_modulations(parsed.modulations));
@@ -1354,15 +2970,38 @@ private:
 					          summary += " - ";
 				          summary += parsed.explanation;
 			          }
+			          if (!parsed.answer.isEmpty())
+			          {
+				          if (!summary.isEmpty())
+					          summary += " - ";
+				          summary += parsed.answer;
+			          }
+			          if (!parsed.ask.isEmpty())
+			          {
+				          if (!summary.isEmpty())
+					          summary += " Question: ";
+				          summary += parsed.ask;
+			          }
 			          if (_host.status)
 				          _host.status(summary);
 		          },
-		          _history, cancel, 0.2);
+		          _history, cancel, 0.2, std::function<void(int, int)>(), true /* json_mode */);
 	}
 
-	void remember_turn(const QString &user_message, const QString &assistant_message)
+	void remember_turn(const QString &request, const QString &assistant_message, const QString &applied_summary)
 	{
-		_history.append(QJsonObject{{QStringLiteral("role"), QStringLiteral("user")}, {QStringLiteral("content"), user_message}});
+		// Only the request and the deltas go into the history: the full
+		// per-turn parameter snapshot is stale the moment the reply is
+		// applied, and repeating it costs another full prompt. The current
+		// values in the newest user message are the ones that count.
+		//
+		// The deltas are what makes a correction ("I meant the plugin") able
+		// to revert the reply it refers to without sending the old snapshot.
+		QString content = "User request: " + fx_quote(request);
+		content += applied_summary.isEmpty()
+		  ? QString("\n(No changes were applied in that turn.)")
+		  : QString("\nApplied in that turn (old -> new; the newest user message lists the current values):\n") + applied_summary;
+		_history.append(QJsonObject{{QStringLiteral("role"), QStringLiteral("user")}, {QStringLiteral("content"), content}});
 		_history.append(QJsonObject{{QStringLiteral("role"), QStringLiteral("assistant")}, {QStringLiteral("content"), assistant_message}});
 
 		// Keep the last three turns, so follow-up requests stay small.
@@ -1375,8 +3014,14 @@ private:
 	std::shared_ptr<std::atomic_bool> _cancel;
 	QJsonArray _history;
 	QVector<FxParamState> _states;
+	FxInstrumentContext _instrument;
 	QVector<FxPlugin> _plugins;
 	QVector<FxPlugin> _inserted_plugins;
+	QString _request;
+	// What the current turn's reply changed (complete, "old -> new" per
+	// control). Goes into the history so a correction can revert it.
+	QString _applied_summary;
+	QString _system_message;
 	QString _user_message;
 	bool _busy = false;
 	bool _repair_attempted = false;

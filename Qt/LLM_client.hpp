@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSet>
 #include <QUuid>
 #include <QUrl>
+#include <QCryptographicHash>
 #include <QDateTime>
 #include <QElapsedTimer>
 #include <QDir>
@@ -39,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMutex>
 #include <QtConcurrent/QtConcurrentRun>
 
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
@@ -1646,6 +1648,14 @@ struct LLMStreamAccumulator
 	QString content;
 	QString reasoning_content;
 	QString finish_reason;
+	// An error object sent *inside* the stream ("data: {"error":{...}}").
+	// Kept, not just used to stop: it is the only explanation a provider gives
+	// when it answers HTTP 200 and then fails mid-stream.
+	QString stream_error;
+	// Number of "data:" lines that were not "[DONE]" and could not be parsed as
+	// JSON. A non-zero value on an otherwise empty response points at a
+	// non-SSE or truncated reply rather than at an empty completion.
+	int unparsed_lines = 0;
 	qint64 prompt_tokens = 0;
 	qint64 cache_hit_tokens = 0;
 	qint64 cache_miss_tokens = 0;
@@ -1710,12 +1720,27 @@ static inline void sse_parse_line(LLMStreamAccumulator *acc,
 	QJsonParseError parse_error;
 	QJsonDocument doc = QJsonDocument::fromJson(data, &parse_error);
 	if (doc.isNull() || parse_error.error != QJsonParseError::NoError)
-	  return;
+	{
+		acc->unparsed_lines++;
+		return;
+	}
 
 	QJsonObject obj = doc.object();
 	QJsonValue error_val = obj.value("error");
 	if (error_val.isObject())
 	{
+		// Keep the message: "data: {"error":{"message":"..."}}" is how a
+		// provider explains a failure that still came over HTTP 200.
+		const QString message = error_val.toObject().value(QStringLiteral("message")).toString();
+		acc->stream_error = message.isEmpty() ? QString::fromUtf8(data) : message;
+		printf("LLM: Stream error: -%s-\n", acc->stream_error.toUtf8().constData());
+		acc->done = true;
+		return;
+	}
+	if (error_val.isString())
+	{
+		acc->stream_error = error_val.toString();
+		printf("LLM: Stream error: -%s-\n", acc->stream_error.toUtf8().constData());
 		acc->done = true;
 		return;
 	}
@@ -3983,6 +4008,15 @@ static inline void llm_log_append(const QString &text)
 	}
 }
 
+// A short fingerprint of the request body, so two log entries can be compared
+// at a glance: a changed prefix (e.g. an edited system prompt) is exactly what
+// breaks the provider's prompt cache, and seeing the hash change explains a
+// sudden cache-hit drop.
+static inline QString llm_body_fingerprint(const QByteArray &body)
+{
+	return QString::fromUtf8(QCryptographicHash::hash(body, QCryptographicHash::Sha1).toHex().left(12));
+}
+
 static inline void llm_log_start(const LLMConfig &config,
                                  const QByteArray &body,
                                  double temperature,
@@ -3994,20 +4028,43 @@ static inline void llm_log_start(const LLMConfig &config,
 	entry += "model: " + config.model + "\n";
 	entry += "temperature: " + QString::number(temperature) + "\n";
 	entry += "thinking: " + (thinking_enabled ? QString("enabled (effort %1)").arg(effort) : QString("disabled")) + "\n";
-	entry += "max_tokens: 8192\n";
-	entry += "----- request body -----\n";
+	entry += "request bytes: " + QString::number(body.size()) + "\n";
+	entry += "prompt sha1: " + llm_body_fingerprint(body) + "\n";
 	QJsonParseError parse_error;
 	QJsonDocument body_doc = QJsonDocument::fromJson(body, &parse_error);
 	if (!body_doc.isNull())
-	  entry += QString::fromUtf8(body_doc.toJson(QJsonDocument::Indented));
+	{
+		// Report what was actually sent (the body can be rewritten by the
+		// llm.conf parameter rules), not a hardcoded default.
+		const QJsonObject body_object = body_doc.object();
+		const QJsonValue max_tokens = body_object.contains("max_completion_tokens")
+		                              ? body_object.value("max_completion_tokens")
+		                              : body_object.value("max_tokens");
+		const QString max_tokens_text = max_tokens.isDouble()
+		                                ? QString::number((qint64)max_tokens.toDouble())
+		                                : QString("(not set)");
+		entry += "max_tokens: " + max_tokens_text + "\n";
+		if (body_object.contains("response_format"))
+		  entry += "response_format: " + QString::fromUtf8(QJsonDocument(body_object.value("response_format").toObject()).toJson(QJsonDocument::Compact)) + "\n";
+		entry += "----- request body -----\n";
+		entry += QString::fromUtf8(body_doc.toJson(QJsonDocument::Indented));
+	}
 	else
-	  entry += QString::fromUtf8(body);
+	{
+		entry += "----- request body -----\n";
+		entry += QString::fromUtf8(body);
+	}
 	entry += "\n";
 	llm_log_append(entry);
 }
 
+
+// 'elapsed_ms' is the wall-clock time of the request, so the log also shows
+// whether a request was slow (a retry, a stalled stream) and not just what it
+// cost. Pass -1 when the duration is unknown.
 static inline void llm_log_finish(const LLMStreamAccumulator *acc,
-                                  const QString &result)
+                                  const QString &result,
+                                  qint64 elapsed_ms = -1)
 {
 	QString entry = "----- reasoning -----\n";
 	entry += acc->reasoning_content;
@@ -4015,8 +4072,52 @@ static inline void llm_log_finish(const LLMStreamAccumulator *acc,
 	entry += acc->content;
 	entry += "\n----- result -----\n";
 	entry += result;
+	if (elapsed_ms >= 0)
+	  entry += QString("\nelapsed: %1 ms").arg(elapsed_ms);
 	entry += "\n========================================\n\n";
 	llm_log_append(entry);
+}
+
+// One machine-readable line per request (a compact JSON object), so the log
+// can be analyzed with jq/grep instead of reading the pretty-printed request
+// bodies: prompt/cache/completion tokens, cost, elapsed time and outcome.
+static inline void llm_log_summary(const QString &model,
+                                   const QString &http_status,
+                                   const QString &finish_reason,
+                                   const QString &status,
+                                   qint64 prompt_tokens,
+                                   qint64 cache_hit_tokens,
+                                   qint64 cache_miss_tokens,
+                                   qint64 completion_tokens,
+                                   double cost,
+                                   double session_cost,
+                                   qint64 elapsed_ms,
+                                   bool truncated,
+                                   const QString &error = QString(),
+                                   const QString &request_fingerprint = QString())
+{
+	QJsonObject summary;
+	summary["ts"] = QDateTime::currentDateTime().toString(Qt::ISODateWithMs);
+	summary["model"] = model;
+	summary["http"] = http_status;
+	summary["status"] = status;
+	summary["finish_reason"] = finish_reason;
+	summary["prompt_tokens"] = (double)prompt_tokens;
+	summary["cache_hit_tokens"] = (double)cache_hit_tokens;
+	summary["cache_miss_tokens"] = (double)cache_miss_tokens;
+	summary["completion_tokens"] = (double)completion_tokens;
+	// Rounded: the raw sum of floating point products prints as
+	// 0.00044042399999999997.
+	summary["cost"] = std::round(cost * 1e8) / 1e8;
+	summary["session_cost"] = std::round(session_cost * 1e8) / 1e8;
+	summary["elapsed_ms"] = (double)elapsed_ms;
+	if (!request_fingerprint.isEmpty())
+	  summary["prompt_sha1"] = request_fingerprint;
+	summary["truncated"] = truncated;
+	if (!error.isEmpty())
+	  summary["error"] = error;
+
+	llm_log_append("----- summary -----\n" + QString::fromUtf8(QJsonDocument(summary).toJson(QJsonDocument::Compact)) + "\n");
 }
 
 // Host-side event notes (decisions made outside the HTTP request/response
@@ -4076,7 +4177,9 @@ static inline void send_request_once(const LLMConfig &config,
                                      bool is_effect = false,
                                      bool effect_is_mono = false,
                                      const QString &system_prompt_override = QString(),
-                                     bool raw_text_response = false)
+                                     bool raw_text_response = false,
+                                     bool json_mode = false,
+                                     bool retried_identical_request = false)
 {
 	llm_start_price_fetch();
 
@@ -4221,6 +4324,13 @@ static inline void send_request_once(const LLMConfig &config,
 			: QStringLiteral("none");
 	}
 
+	// Callers that parse the reply as JSON (the effect tuner) ask for a JSON
+	// object up front, so a chatty model cannot wrap the object in prose.
+	// Only sent to providers known to accept it; the llm.conf parameter rules
+	// below can add or remove it for any other provider.
+	if (json_mode && (is_deepseek(config) || is_openai_reasoning_model(config)))
+	  body["response_format"] = QJsonObject{{QStringLiteral("type"), QStringLiteral("json_object")}};
+
 	// Apply the user's llm.conf parameter rules (removals and additions,
 	// in file order).
 	llm_apply_param_rules(body, config.model, llm_request_param_rules());
@@ -4235,6 +4345,7 @@ static inline void send_request_once(const LLMConfig &config,
 	request.setTransferTimeout(300 * 1000);
 
 	QByteArray data = QJsonDocument(body).toJson(QJsonDocument::Compact);
+	const QString request_fingerprint = llm_body_fingerprint(data);
 
 	llm_log_start(config, data, temperature, thinking_enabled, effective_effort);
 
@@ -4296,7 +4407,12 @@ static inline void send_request_once(const LLMConfig &config,
 		}
 	});
 
-	QObject::connect(reply, &QNetworkReply::finished, [reply, nam, acc, callback, config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, effective_effort, thinking_enabled, reasoning_loop, skip_examples, error_buffer, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response]()
+	// The fingerprint of the request that this attempt retries (empty when
+	// this attempt is not a retry). It lets the finished handler notice that
+	// the identical request failed twice in a row.
+	const QString retried_fingerprint = retried_identical_request ? request_fingerprint : QString();
+
+	QObject::connect(reply, &QNetworkReply::finished, [reply, nam, acc, callback, config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, effective_effort, thinking_enabled, reasoning_loop, skip_examples, error_buffer, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode, retried_identical_request, retried_fingerprint, request_timer, request_fingerprint]()
 	{
 		QString http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toString();
 
@@ -4305,7 +4421,7 @@ static inline void send_request_once(const LLMConfig &config,
 			printf("LLM: Request cancelled.\n");
 			reply->deleteLater();
 			nam->deleteLater();
-			llm_log_finish(acc, "CANCELLED");
+			llm_log_finish(acc, "CANCELLED", request_timer->elapsed());
 			delete acc;
 			callback(false, "Request cancelled.");
 			return;
@@ -4325,11 +4441,12 @@ static inline void send_request_once(const LLMConfig &config,
 
 			llm_log_finish(acc, QString("REASONING LOOP (%1 chars of thinking, no content). Retrying with effort '%2'.")
 			                  .arg(acc->reasoning_content.size())
-			                  .arg(next_effort));
+			                  .arg(next_effort),
+			               request_timer->elapsed());
 			delete acc;
 			reply->deleteLater();
 			nam->deleteLater();
-			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response);
+			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode);
 			return;
 		}
 
@@ -4361,11 +4478,11 @@ static inline void send_request_once(const LLMConfig &config,
 			{
 				printf("LLM: Timeout detected. Retrying... (%d attempts left)\n", retries_left - 1);
 
-				llm_log_finish(acc, QString("TIMEOUT (HTTP %1), retrying (%2 attempts left).").arg(http_status).arg(retries_left - 1));
+				llm_log_finish(acc, QString("TIMEOUT (HTTP %1), retrying (%2 attempts left).").arg(http_status).arg(retries_left - 1), request_timer->elapsed());
 				delete acc;
 				reply->deleteLater();
 				nam->deleteLater();
-				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response);
+				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode);
 				return;
 			}
 
@@ -4374,7 +4491,11 @@ static inline void send_request_once(const LLMConfig &config,
 			const QString result = server_message.isEmpty()
 			  ? QString("ERROR (HTTP %1): %2").arg(http_status, reply->errorString())
 			  : QString("ERROR (HTTP %1): %2").arg(http_status, server_message);
-			llm_log_finish(acc, result);
+			llm_log_finish(acc, result, request_timer->elapsed());
+			llm_log_summary(config.model, http_status, acc->finish_reason, "error",
+			                0, 0, 0, 0, 0.0, llm_session_cost(), request_timer->elapsed(), false,
+			                server_message.isEmpty() ? reply->errorString() : server_message,
+			                request_fingerprint);
 			if (!server_message.isEmpty())
 			  callback(false, "Error from LLM server:\n" + server_message);
 			else
@@ -4397,14 +4518,16 @@ static inline void send_request_once(const LLMConfig &config,
 
 		// Add this request's cost to the session total. The widget reads the
 		// total via llm_session_cost() and appends it to the LLM status box.
+		double request_cost = 0.0;
+		double session_cost = 0.0;
 		if (acc->prompt_tokens > 0)
 		{
-			const double cost =
+			request_cost =
 			  (double)acc->cache_hit_tokens / 1000000.0 * llm_cache_hit_price(config.model)
 			  + (double)acc->cache_miss_tokens / 1000000.0 * llm_cache_miss_price(config.model)
 			  + (double)acc->completion_tokens / 1000000.0 * llm_output_price(config.model);
-			const double total = llm_add_session_cost(cost);
-			printf("LLM: Session cost so far: %s\n", llm_format_dollars(total).toUtf8().constData());
+			session_cost = llm_add_session_cost(request_cost);
+			printf("LLM: Session cost so far: %s\n", llm_format_dollars(session_cost).toUtf8().constData());
 		}
 
 		// The response was cut off by the token limit, or the model spent its
@@ -4415,13 +4538,76 @@ static inline void send_request_once(const LLMConfig &config,
 		// OpenAI reasoning models; other providers run with thinking off and
 		// a retry would just reproduce the truncated response.)
 		const bool truncated = (acc->finish_reason == "length") || (acc->content.isEmpty() && !acc->reasoning_content.isEmpty());
-		llm_log_finish(acc, QString("finish_reason: %1; prompt=%2 tokens (cache hit=%3, cache miss=%4), completion=%5; truncated: %6")
+
+		// An HTTP 200 with nothing in it: no content, no finish_reason, no
+		// usage. Seen from the DeepSeek relay with response_format
+		// json_object on a request it could not turn into JSON. Without this
+		// check the log claimed "status: ok" and the turn vanished silently.
+		const bool empty_response = acc->content.isEmpty()
+		                            && acc->reasoning_content.isEmpty()
+		                            && acc->finish_reason.isEmpty()
+		                            && acc->prompt_tokens == 0
+		                            && acc->completion_tokens == 0;
+		if (empty_response || !acc->stream_error.isEmpty())
+		{
+			QString why = !acc->stream_error.isEmpty()
+			  ? "STREAM ERROR: " + acc->stream_error
+			  : QString("EMPTY RESPONSE (HTTP %1: no content, no finish_reason, no usage)").arg(http_status);
+			if (acc->unparsed_lines > 0)
+			  why += QString(" (%1 unparseable stream line(s); the reply was not SSE JSON)").arg(acc->unparsed_lines);
+			llm_log_finish(acc, why, request_timer->elapsed());
+			llm_log_summary(config.model, http_status, acc->finish_reason, "error",
+			                acc->prompt_tokens, acc->cache_hit_tokens, acc->cache_miss_tokens, acc->completion_tokens,
+			                request_cost, session_cost, request_timer->elapsed(), false, why, request_fingerprint);
+
+			// One retry: an empty 200 is usually transient (a relay hiccup, a
+			// constrained-decoder dead end). The retry is logged as its own
+			// request, so both attempts stay auditable.
+			//
+			// A retry only makes sense when the failure can be transient. If
+			// the previous attempt sent the *identical* request and was also
+			// empty, the prompt is the problem (an unanswerable or
+			// ungated
+			// request), and repeating it costs the user several seconds per
+			// attempt for nothing: fail immediately with the same message.
+			const bool repeated_failure = retried_identical_request && retried_fingerprint == request_fingerprint;
+			if (empty_response && repeated_failure)
+			{
+				printf("LLM: Empty response again for the identical request (%s). Not retrying.\n",
+				       request_fingerprint.toUtf8().constData());
+				llm_log_note(QString("empty response repeated for the identical request (%1); not retrying").arg(request_fingerprint));
+			}
+			else if (retries_left > 0 && acc->stream_error.isEmpty())
+			{
+				printf("LLM: Empty response (HTTP %s). Retrying... (%d attempts left)\n",
+				       http_status.toUtf8().constData(), retries_left);
+				delete acc;
+				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode, /*retried_identical_request=*/empty_response);
+				return;
+			}
+
+			callback(false, empty_response
+			         ? QString("Error: the LLM returned an empty response (HTTP %1). Try again, or rephrase the request "
+			                   "(for example name the parameter you want changed).").arg(http_status)
+			         : "Error from the LLM stream:\n" + acc->stream_error);
+			delete acc;
+			return;
+		}
+
+		llm_log_finish(acc, QString("finish_reason: %1; http=%2; prompt=%3 tokens (cache hit=%4, cache miss=%5), completion=%6; cost=%7 (session %8); truncated: %9")
 		                  .arg(acc->finish_reason)
+		                  .arg(http_status)
 		                  .arg(acc->prompt_tokens)
 		                  .arg(acc->cache_hit_tokens)
 		                  .arg(acc->cache_miss_tokens)
 		                  .arg(acc->completion_tokens)
-		                  .arg(truncated ? "yes" : "no"));
+		                  .arg(acc->prompt_tokens > 0 ? llm_format_dollars(request_cost) : QString("unknown (no usage reported)"))
+		                  .arg(llm_format_dollars(session_cost))
+		                  .arg(truncated ? "yes" : "no"),
+		               request_timer->elapsed());
+		llm_log_summary(config.model, http_status, acc->finish_reason, "ok",
+		                acc->prompt_tokens, acc->cache_hit_tokens, acc->cache_miss_tokens, acc->completion_tokens,
+		                request_cost, session_cost, request_timer->elapsed(), truncated, QString(), request_fingerprint);
 		const bool can_retry_at_lower_effort = thinking_enabled
 		                                       || (is_openai_reasoning_model(config) && !is_deepseek(config) && effective_effort != "off");
 		if (truncated && !can_retry_at_lower_effort)
@@ -4446,7 +4632,7 @@ static inline void send_request_once(const LLMConfig &config,
 			       (long long)acc->reasoning_content.size(),
 			       next_effort.toUtf8().constData());
 			delete acc;
-			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response);
+			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode);
 			return;
 		}
 
@@ -4519,9 +4705,10 @@ static inline void send_chat(const LLMConfig &config,
                              const QJsonArray &history = QJsonArray(),
                              std::shared_ptr<std::atomic_bool> cancel = std::shared_ptr<std::atomic_bool>(),
                              double temperature = 0.2,
-                             std::function<void(int reasoning_chars, int content_chars)> progress_callback = std::function<void(int, int)>())
+                             std::function<void(int reasoning_chars, int content_chars)> progress_callback = std::function<void(int, int)>(),
+                             bool json_mode = false)
 {
-	send_request_once(config, QString(), user_message, history, cancel, 2, temperature, progress_callback, callback, true, QString(), QString(), false, false, system_prompt, true);
+	send_request_once(config, QString(), user_message, history, cancel, 2, temperature, progress_callback, callback, true, QString(), QString(), false, false, system_prompt, true, json_mode);
 }
 
 } // namespace llm

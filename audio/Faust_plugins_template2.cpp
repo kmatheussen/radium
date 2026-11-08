@@ -561,6 +561,26 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   return get_effect_value2(data, effect_num, value_format);
 }
 
+static bool get_effect_native_range(SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size){
+  if(plugin == NULL || plugin->data == NULL || min_value == NULL || max_value == NULL)
+    return false;
+
+  Data *data = (Data*)plugin->data;
+  if(data->voices[0].dsp_instance == NULL || effect_num < 0 || effect_num >= (int)data->voices[0].myUI._controllers.size())
+    return false;
+
+  const MyUI::Controller *controller = &data->voices[0].myUI._controllers.at(effect_num);
+  if(!isfinite(controller->min_value) || !isfinite(controller->max_value)
+     || controller->min_value >= controller->max_value)
+    return false;
+
+  *min_value = controller->min_value;
+  *max_value = controller->max_value;
+  if(unit != NULL && unit_buffer_size > 0)
+    snprintf(unit, unit_buffer_size, "%s", controller->unit == NULL ? "" : controller->unit);
+  return true;
+}
+
 static void get_display_value_string2(Data *data, int effect_num, char *buffer, int buffersize){
   Voice *voice = &data->voices[0];
   MyUI::Controller *controller = &voice->myUI._controllers.at(effect_num);

@@ -526,6 +526,7 @@ void create_faust_plugin(void){
   plugin_type->stop_note        = dev_stop_note;
   plugin_type->set_effect_value = dev_set_effect_value;
   plugin_type->get_effect_value = dev_get_effect_value;
+  plugin_type->get_effect_native_range = get_effect_native_range;
   plugin_type->get_display_value_string = dev_get_display_value_string;
   plugin_type->get_effect_description   = dev_get_effect_description;
   plugin_type->effect_is_visible = dev_effect_is_visible;

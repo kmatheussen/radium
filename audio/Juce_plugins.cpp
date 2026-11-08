@@ -611,6 +611,7 @@ namespace{
     const wchar_t *file_or_identifier; // used by Juce.
     juce::PluginDescription description;
     const char **effect_names = NULL; // set the first time the plugin is loaded
+    const char **effect_descriptions = NULL; // per-control labels, filled on first use (LLM effect tuner)
     bool has_shown_noncompatible_warning = false; // TODO: recreate_from_state is called twice when loading preset.
     TypeData(const wchar_t *file_or_identifier,
              juce::PluginDescription description
@@ -2623,12 +2624,124 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
   return type_data->effect_names[effect_num];
 }
 
-/*
-static const char *get_effect_description(const struct SoundPluginType *plugin_type, int effect_num){
-  TypeData *type_data = (struct TypeData*)plugin_type->data;
-  return type_data->effect_names[effect_num];
+static void fill_effect_descriptions(struct SoundPlugin *plugin);
+
+// One line about what the plugin is, for clients that have to describe it
+// (Radium's LLM effect tuner). Uses the parts of the plugin description that
+// say something: vendor and category. No version numbers, no capability flags.
+// (This file is compiled without Qt, hence juce::String.)
+static void get_plugin_summary(struct SoundPlugin *plugin, char *buffer, int buffersize){
+  if (buffer == NULL || buffersize <= 0)
+    return;
+
+  buffer[0] = 0;
+
+  if (plugin == NULL || plugin->type == NULL)
+    return;
+
+  const SoundPluginType *type = plugin->type;
+  const juce::String name (type->name != NULL ? type->name : "");
+  const juce::String vendor (type->creator != NULL ? type->creator : "");
+  const juce::String category (type->category != NULL ? type->category : "");
+
+  juce::StringArray parts;
+
+  if (vendor.isNotEmpty())
+    parts.add (vendor.trim());
+
+  if (category.isNotEmpty()){
+    // "Fx|u-he" only repeats the vendor; "Effect", "Fx|Reverb" say something.
+    const juce::String trimmedCategory = category.trim();
+    if (! trimmedCategory.endsWithIgnoreCase (vendor)
+        && ! trimmedCategory.equalsIgnoreCase (name)
+        && ! trimmedCategory.containsIgnoreCase (vendor))
+      parts.add (trimmedCategory);
+  }
+
+  if (parts.isEmpty())
+    return;
+
+  const juce::String summary = parts.joinIntoString (", ").substring (0, 140).trim();
+  snprintf(buffer, buffersize-1, "%s", summary.toRawUTF8());
 }
-*/
+
+// The unit text of one effect ("ms", "%", "dB"), when the plugin reports one.
+// JUCE plugins do not expose a native range (only a normalized 0..1 value), so
+// without this the LLM effect tuner has to describe every control as a bare
+// position, even when the plugin knows the unit.
+static void get_effect_unit(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  Data *data = (Data*)plugin->data;
+
+  if (buffer == NULL || buffersize <= 0)
+    return;
+
+  buffer[0] = 0;
+
+  if (data == NULL || data->audio_instance == NULL)
+    return;
+
+  if (effect_num < 0 || effect_num >= data->audio_instance->getParameters().size())
+    return;
+
+  run_on_message_thread([&](){
+      const juce::String unit = data->audio_instance->getParameters()[effect_num]->getUnit().trim();
+      if (unit.isNotEmpty())
+        snprintf(buffer, buffersize-1, "%s", unit.toRawUTF8());
+    });
+}
+
+// The control's own description, as the plugin reports it. Used by the LLM
+// effect tuner to explain controls (Qt/Qt_audio_instrument_widget_callbacks.h)
+// instead of letting the model guess from the name.
+//
+// The text comes from the format wrapper's getDescription(): VST3's
+// ParameterInfo::shortTitle, and for VST2 the parameter label when it says
+// something the name does not (JUCE's getName is effGetParamName already).
+// NULL means the plugin provides nothing, and the caller then tells the model
+// that its explanation is based on the control's name alone.
+//
+// The values are read and cached on the message thread the first time this is
+// called (see fill_effect_descriptions), because this runs for every visible
+// control of every prompt.
+static const char *get_effect_description(struct SoundPlugin *plugin, int effect_num){
+  const TypeData *type_data = (const struct TypeData*)plugin->type->data;
+
+  if (effect_num < 0 || effect_num >= plugin->type->num_effects)
+    return NULL;
+
+  if (type_data->effect_descriptions == NULL){
+    run_on_message_thread([&](){
+        fill_effect_descriptions(plugin);
+      });
+    if (type_data->effect_descriptions == NULL)
+      return NULL;
+  }
+
+  return type_data->effect_descriptions[effect_num];
+}
+
+// Fills TypeData::effect_descriptions. Runs inside run_on_message_thread.
+static void fill_effect_descriptions(struct SoundPlugin *plugin){
+  TypeData *type_data = (struct TypeData*)plugin->type->data;
+  Data *data = (Data*)plugin->data;
+
+  if (type_data->effect_descriptions != NULL || data == NULL || data->audio_instance == NULL)
+    return;
+
+  type_data->effect_descriptions = (const char**)V_calloc(sizeof(char*), plugin->type->num_effects);
+
+  for (int i = 0; i < plugin->type->num_effects; i++){
+    // The format-specific description: VST3 ParameterInfo::shortTitle, VST2 the
+    // parameter label when it differs from the name (see the getDescription()
+    // overrides in the vendored JUCE format wrappers). Empty for plugins that
+    // provide nothing.
+    const juce::String description = data->audio_instance->getParameters()[i]->getDescription().trim();
+    if (description.isEmpty())
+      continue;
+
+    type_data->effect_descriptions[i] = V_strdup(description.toRawUTF8());
+  }
+}
 
 static int get_num_programs(struct SoundPlugin *plugin){
   //const MMLock mmLock;
@@ -2798,7 +2911,9 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
   
   plugin_type->get_display_value_string=get_display_value_string;
   plugin_type->get_effect_name=get_effect_name;
-  //plugin_type->get_effect_description=get_effect_description;
+  plugin_type->get_effect_description=get_effect_description;
+  plugin_type->get_effect_unit=get_effect_unit;
+  plugin_type->get_plugin_summary=get_plugin_summary;
 
   plugin_type->create_state = create_state;
   plugin_type->recreate_from_state = plugin_type_recreate_from_state;

@@ -791,6 +791,41 @@ int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 }
 
+bool PLUGIN_get_effect_native_range(struct SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size){
+  if(plugin == NULL || plugin->type == NULL || min_value == NULL || max_value == NULL
+     || effect_num < 0 || effect_num >= plugin->type->num_effects
+     || plugin->type->get_effect_native_range == NULL)
+    return false;
+
+  return plugin->type->get_effect_native_range(plugin, effect_num, min_value, max_value, unit, unit_buffer_size);
+}
+
+void PLUGIN_get_effect_unit(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  if(buffer == NULL || buffersize <= 0)
+    return;
+
+  buffer[0] = 0;
+
+  if(plugin == NULL || plugin->type == NULL
+     || effect_num < 0 || effect_num >= plugin->type->num_effects
+     || plugin->type->get_effect_unit == NULL)
+    return;
+
+  plugin->type->get_effect_unit(plugin, effect_num, buffer, buffersize);
+}
+
+void PLUGIN_get_plugin_summary(struct SoundPlugin *plugin, char *buffer, int buffersize){
+  if(buffer == NULL || buffersize <= 0)
+    return;
+
+  buffer[0] = 0;
+
+  if(plugin == NULL || plugin->type == NULL || plugin->type->get_plugin_summary == NULL)
+    return;
+
+  plugin->type->get_plugin_summary(plugin, buffer, buffersize);
+}
+
 /*
 static char *substring(char *s,int start,int end){
   char *ret       = talloc_atomic(1,end-start+1);

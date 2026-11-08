@@ -572,6 +572,9 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
   else
     real_value = value;
 
+  if(controller->type == EFFECT_FORMAT_INT)
+    real_value = roundf(real_value);
+
   safe_float_write(&controller->value, real_value);
 
   if(strcmp(controller->name, "")) {
@@ -613,6 +616,24 @@ static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enu
                  0.0f, 1.0f);
   else
     return raw;
+}
+
+static bool get_effect_native_range(SoundPlugin *plugin, int effect_num, float *min_value, float *max_value, char *unit, int unit_buffer_size){
+  if(plugin == NULL || plugin->type == NULL || plugin->data == NULL || min_value == NULL || max_value == NULL
+     || effect_num < 0 || effect_num >= plugin->type->num_effects)
+    return false;
+
+  Data *data = (Data*)plugin->data;
+  const Pd_Controller *controller = &data->controllers[effect_num];
+  if(controller->name[0] == 0 || !isfinite(controller->min_value) || !isfinite(controller->max_value)
+     || controller->min_value >= controller->max_value)
+    return false;
+
+  *min_value = controller->min_value;
+  *max_value = controller->max_value;
+  if(unit != NULL && unit_buffer_size > 0)
+    unit[0] = 0;
+  return true;
 }
 
 // called from radium
@@ -774,12 +795,13 @@ static void RT_pdlisthook(void *d, const char *recv, int argc, t_atom *argv) {
   //printf("recv: %s\n",recv);
 
   if( !strcmp(recv, "radium_controller")) {
-    if(argc==5 &&
+    if((argc==5 || argc==6) &&
        libpd_is_symbol(argv[0]) && strcmp("", libpd_get_symbol(argv[0])) &&
        libpd_is_float(argv[1]) &&
        libpd_is_float(argv[2]) &&
        libpd_is_float(argv[3]) &&
-       libpd_is_float(argv[4]))
+       libpd_is_float(argv[4]) &&
+       (argc==5 || libpd_is_symbol(argv[5])))
       {
         char  *name      = libpd_get_symbol(argv[0]);
         int    type      = libpd_get_float(argv[1]);
@@ -1443,6 +1465,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->create_state_requires_processing = true; // put_pdfile_into_state() waits for the audio thread to poll the Pd GUI and save the patch. See AUDIO_remove_patchdata.
   plugin_type->get_effect_format        = get_effect_format;
   plugin_type->get_effect_name          = get_effect_name;
+  plugin_type->get_effect_native_range  = get_effect_native_range;
   plugin_type->effect_is_RT             = NULL;
   plugin_type->create_plugin_data       = create_plugin_data;
   plugin_type->cleanup_plugin_data      = cleanup_plugin_data;

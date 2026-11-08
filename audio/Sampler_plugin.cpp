@@ -3550,13 +3550,31 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   case EFF_GRAN_jitter:
     snprintf(buffer, buffersize-1, "%.2f%%", 100.0*gran_get_jitter(data));
     break;
+
+  // This one has no numeric value of its own, so it had no case and fell
+  // through to the RError below. That assertion is not a crash and does not
+  // stop the program, but Radium's LLM effect tuner reads the display text of
+  // every visible control of the current instrument
+  // (Qt_audio_instrument_widget_callbacks.h), so every sampler instrument
+  // without a sample (where the granular controls are visible) raised an
+  // assertion dialog on every prompt.
+  case EFF_GRAN_strict_no_jitter:
+    // >= 0.5, like the other on/off cases in this file: comparing a float
+    // with != 0 breaks Radium's -Werror=float-equal build.
+    snprintf(buffer, buffersize-1, "%s", gran_get_strict_no_jitter(data) >= 0.5 ? "On" : "Off");
+    break;
     
   case EFF_GRAN_volume:
     set_db_display(buffer, buffersize, gran_get_volume(data));
     break;
     
   default:
-    RError("S5. Unknown effect number %d\n",effect_num);
+    // Unreachable if every EFF_* has a case above; keep the message (it is
+    // the reminder to add one when a new effect is introduced) but as a
+    // warning: a missing display text is not an internal error, and an
+    // assertion here would be raised by any code that iterates all effects.
+    snprintf(buffer, buffersize-1, "?");
+    RWarning("S5. Unknown effect number %d\n",effect_num);
   }
 }
              
