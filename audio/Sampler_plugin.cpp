@@ -3050,7 +3050,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
       
     default:
-      RError("S1. Unknown effect number %d\n",effect_num);
+      printf("Sampler: unknown effect number %d (set_effect_value/scaled)\n",effect_num);
+	  GETCHAR_NONRELEASE();
     }
   }else{
     switch(effect_num){
@@ -3150,7 +3151,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
       
     default:
-      RError("S2. Unknown effect number %d\n",effect_num);
+      printf("Sampler: unknown effect number %d (set_effect_value/native)\n",effect_num);
+	  GETCHAR_NONRELEASE();
     }
   }
 }
@@ -3323,7 +3325,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return gran_get_strict_no_jitter(data) >= 0.5 ? 1.0 : 0.0;
       
     default:
-      RError("S3. Unknown effect number %d\n",effect_num);
+      printf("Sampler: unknown effect number %d (get_effect_value/scaled)\n",effect_num);
+	  GETCHAR_NONRELEASE();
       return 0.5f;
     }
   }else{
@@ -3397,7 +3400,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return gran_get_strict_no_jitter(data) >= 0.5 ? 1.0 : 0.0;
       
     default:
-      RError("S4. Unknown effect number %d\n",effect_num);
+      printf("Sampler: unknown effect number %d (get_effect_value/native)\n",effect_num);
+	  GETCHAR_NONRELEASE();
       return 0.5f;
     }
   }
@@ -3590,12 +3594,16 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
     
   default:
-    // Unreachable if every EFF_* has a case above; keep the message (it is
-    // the reminder to add one when a new effect is introduced) but as a
-    // warning: a missing display text is not an internal error, and an
-    // assertion here would be raised by any code that iterates all effects.
+    // Unreachable: every EFF_* has a case above (checked when adding a new
+    // one). A missing display text is cosmetic, so this must not raise an
+    // assertion or go through the crash reporter - code that iterates every
+    // visible effect (the LLM effect tuner does) would trigger it once per
+    // control per prompt, and the crash reporter spawns a process for each.
     snprintf(buffer, buffersize-1, "?");
-    RWarning("S5. Unknown effect number %d\n",effect_num);
+#if !defined(RELEASE)
+    printf("S5. Unknown effect number %d (no display text for it in Sampler_plugin.cpp)\n",effect_num);
+	  GETCHAR_NONRELEASE();
+#endif
   }
 }
              
@@ -4537,7 +4545,8 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
   case EFF_GRAN_volume:
     return "Gran. Volume";
   default:
-    RError("S6. Unknown effect number %d\n",effect_num);
+    printf("Sampler: unknown effect number %d (get_effect_name)\n",effect_num);
+	  GETCHAR_NONRELEASE();
     return NULL;
   }
 }

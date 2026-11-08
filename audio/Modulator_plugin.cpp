@@ -1209,7 +1209,10 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     break;
 
   default:
-    RError("Unknown effect number %d. Value: %f\n",effect_num, value);
+    // set_effect_value is called for every control when a patch is loaded, and
+    // for every change the LLM effect tuner applies: never raise a dialog here.
+    printf("Modulator: unknown effect number %d (set_effect_value, value %f)\n",effect_num, value);
+	GETCHAR_NONRELEASE();
   }
   
 }
@@ -1263,7 +1266,11 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     break;
 
   default:
-    RError("Unknown effect number %d",effect_num);
+    // Called for every effect by the UI and the LLM effect tuner: use a safe
+    // value instead of an assertion dialog (see also the display/name/format
+    // switches below).
+    printf("Modulator: unknown effect number %d (get_effect_value)\n",effect_num);
+	GETCHAR_NONRELEASE();
     return 0.0f;
   }
 
@@ -1312,8 +1319,14 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
       s = "Only when playing";
     else if (modulator->_parms.enabled_type==MET_ENABLED)
       s = "ON";
-    else
-      R_ASSERT(false);
+    else {
+      // Only an out-of-range stored value reaches this (an old or damaged
+      // song). Showing "?" is enough; an assertion here would pop a dialog
+      // just from opening the instrument's editor.
+      printf("Modulator: invalid enabled_type %d\n",(int)modulator->_parms.enabled_type);
+	  GETCHAR_NONRELEASE();
+      s = "?";
+    }
 
     snprintf(buffer, buffersize-1, "%s", s);
     break;
@@ -1359,7 +1372,9 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
 
   default:
-    RError("Unknown effect number %d",effect_num);
+    printf("Modulator: unknown effect number %d (get_display_value_string)\n",effect_num);
+	GETCHAR_NONRELEASE();
+    snprintf(buffer, buffersize-1, "?");
     return;
   }
 
@@ -1400,7 +1415,8 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
     return EFFECT_FORMAT_FLOAT;
 
   default:
-    RError("Unknown effect number %d",effect_num);
+    printf("Modulator: unknown effect number %d (get_effect_format)\n",effect_num);
+	GETCHAR_NONRELEASE();
     return EFFECT_FORMAT_FLOAT;
   }
 }
@@ -1442,8 +1458,9 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
     return "Release";
 
   default:
-    RError("Unknown effect number %d",effect_num);
-    return "(Error)";
+    printf("Modulator: unknown effect number %d (get_effect_name)\n",effect_num);
+	GETCHAR_NONRELEASE();
+    return "(error)";
   }
 }
 

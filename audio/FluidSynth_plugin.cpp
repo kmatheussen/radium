@@ -268,7 +268,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       sendcontrolchange(data,0,64,data->sustain_on,time);
       break;
     default:
-      RError("F1. Unknown effect number %d\n",effect_num);
+		printf("FluidSynth: unknown effect number %d (set_effect_value/scaled)\n",effect_num);
+		GETCHAR_NONRELEASE();
     }
   }else{
     switch(effect_num){
@@ -289,7 +290,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       sendcontrolchange(data,0,64,value,time);
       break;
     default:
-      RError("F2. Unknown effect number %d\n",effect_num);
+      printf("FluidSynth: unknown effect number %d (set_effect_value/native)\n",effect_num);
+	  GETCHAR_NONRELEASE();
     }
   }
 }
@@ -313,7 +315,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       //fluid_synth_get_cc(data->synth,0,64,&val);
       return data->sustain_on / 127.0;
     default:
-      RError("F3. Unknown effect number %d\n",effect_num);
+      printf("FluidSynth: unknown effect number %d (get_effect_value/scaled)\n",effect_num);
+	  GETCHAR_NONRELEASE();			
     }
   }else{
     switch(effect_num){
@@ -330,7 +333,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       //fluid_synth_get_cc(data->synth,0,64,&val);
       return data->sustain_on;
     default:
-      RError("F4. Unknown effect number %d\n",effect_num);
+      printf("FluidSynth: unknown effect number %d (get_effect_value/native)\n",effect_num);
+	  GETCHAR_NONRELEASE();
     }
   }
 
@@ -359,7 +363,11 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%d",(int)data->sustain_on);
     break;
   default:
-    RError("F5. Unknown effect number %d\n",effect_num);
+    // Reads as a control's value in the UI and in the LLM effect tuner, so a
+    // wrong index must not pop an assertion dialog: show something harmless.
+    snprintf(buffer,buffersize-1,"?");
+    printf("FluidSynth: unknown effect number %d (get_display_value_string)\n",effect_num);
+	GETCHAR_NONRELEASE();
   }
 }
 
@@ -621,7 +629,8 @@ static const char *get_effect_name(const struct SoundPlugin *plugin_type, int ef
   case EFF_SUSTAIN_PEDAL:
     return "Sustain Pedal";
   default:
-    RError("F6. Unknown effect number %d\n",effect_num);
+    printf("FluidSynth: unknown effect number %d (get_effect_name)\n",effect_num);
+	GETCHAR_NONRELEASE();
     return "";
   }
 }
