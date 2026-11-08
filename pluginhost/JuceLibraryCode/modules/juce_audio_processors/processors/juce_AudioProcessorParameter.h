@@ -161,6 +161,28 @@ public:
     */
     virtual String getLabel() const = 0;
 
+    /** Returns the unit of this parameter's value ("ms", "%", "dB"), when the
+        plugin format provides one. Unlike getLabel(), this is meant to be the
+        unit only, and may fall back to a machine-readable unit id.
+
+        (Added for Radium's LLM effect tuner and instrumentation: a control value
+        should not be reported as a bare 0..1 position when its unit is known.
+        Defaults to getLabel(), so no format changes behaviour unless it
+        overrides this.)
+    */
+    virtual String getUnit() const { return getLabel(); }
+
+    /** Returns a short description of what this parameter does, when the plugin
+        format provides one. For VST3 this is ParameterInfo::shortTitle, for VST2
+        the parameter's effGetParamLabel/effGetParamName text; most other formats
+        return an empty string.
+
+        (Added for Radium's LLM effect tuner, which explains controls to the
+        user. Defaulting to an empty string keeps every other format, and every
+        plugin that provides nothing, unaffected.)
+    */
+    virtual String getDescription() const { return {}; }
+
     /** Returns the number of steps that this parameter's range should be quantised into.
 
         If you want a continuous range of values, don't override this method, and allow

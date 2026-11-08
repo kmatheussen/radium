@@ -2340,6 +2340,29 @@ public:
             return toString (getParameterInfo().units);
         }
 
+        // ParameterInfo::units is the display text ("ms", "%", "dB").
+        // ParameterInfo::unitId is an integer UnitID, whose text would have to
+        // be looked up through IUnitInfo; it is not used here (units is filled
+        // by practically every plugin that has a unit at all).
+        String getUnit() const override
+        {
+            return toString (getParameterInfo().units);
+        }
+
+        // VST3 has no separate description field; shortTitle is the closest
+        // thing (and is what other hosts show for the parameter). Radium's LLM
+        // effect tuner uses it to explain a control instead of guessing from
+        // the name. Empty when the plugin leaves it blank or repeats the title.
+        String getDescription() const override
+        {
+            const auto info = getParameterInfo();
+            const String shortTitle = toString (info.shortTitle);
+            const String title = toString (info.title);
+            if (shortTitle.isEmpty() || shortTitle == title)
+                return {};
+            return shortTitle;
+        }
+
         bool isAutomatable() const override
         {
             return automatable;
@@ -3718,11 +3741,11 @@ tresult VST3HostContext::endEdit (Vst::ParamID paramID)
 
 tresult VST3HostContext::restartComponent (Steinberg::int32 flags)
 {
-    // If you hit this, the plugin has requested a restart from a thread other than
-    // the UI thread. JUCE should be able to cope, but you should consider filing a bug
-    // report against the plugin.
-    JUCE_ASSERT_MESSAGE_THREAD
-
+    // The VST3 API requires this to be called from the UI thread, but several
+    // plugins (e.g. Uhbik) call it from the processing thread, for instance when
+    // their latency changes. ComponentRestarter already forwards the request to
+    // the message thread, so don't assert here: a buggy plugin must not be able
+    // to abort Radium.
     componentRestarter.restart (flags);
     return kResultTrue;
 }

@@ -1,0 +1,133 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp
+index be22c7daa..2dc80c9e2 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VST3PluginFormat.cpp
+@@ -2340,6 +2340,29 @@ public:
+             return toString (getParameterInfo().units);
+         }
+ 
++        // ParameterInfo::units is the display text ("ms", "%", "dB").
++        // ParameterInfo::unitId is an integer UnitID, whose text would have to
++        // be looked up through IUnitInfo; it is not used here (units is filled
++        // by practically every plugin that has a unit at all).
++        String getUnit() const override
++        {
++            return toString (getParameterInfo().units);
++        }
++
++        // VST3 has no separate description field; shortTitle is the closest
++        // thing (and is what other hosts show for the parameter). Radium's LLM
++        // effect tuner uses it to explain a control instead of guessing from
++        // the name. Empty when the plugin leaves it blank or repeats the title.
++        String getDescription() const override
++        {
++            const auto info = getParameterInfo();
++            const String shortTitle = toString (info.shortTitle);
++            const String title = toString (info.title);
++            if (shortTitle.isEmpty() || shortTitle == title)
++                return {};
++            return shortTitle;
++        }
++
+         bool isAutomatable() const override
+         {
+             return automatable;
+@@ -3718,11 +3741,11 @@ tresult VST3HostContext::endEdit (Vst::ParamID paramID)
+ 
+ tresult VST3HostContext::restartComponent (Steinberg::int32 flags)
+ {
+-    // If you hit this, the plugin has requested a restart from a thread other than
+-    // the UI thread. JUCE should be able to cope, but you should consider filing a bug
+-    // report against the plugin.
+-    JUCE_ASSERT_MESSAGE_THREAD
+-
++    // The VST3 API requires this to be called from the UI thread, but several
++    // plugins (e.g. Uhbik) call it from the processing thread, for instance when
++    // their latency changes. ComponentRestarter already forwards the request to
++    // the message thread, so don't assert here: a buggy plugin must not be able
++    // to abort Radium.
+     componentRestarter.restart (flags);
+     return kResultTrue;
+ }
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
+index af8c722bb..9520671fc 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
+@@ -974,6 +974,44 @@ struct VSTPluginInstance final   : public AudioPluginInstance,
+                                    : label;
+         }
+ 
++        // VST2 has no description field either. effGetParamName is what the
++        // plugin considers the parameter's name (JUCE already exposes it via
++        // getName), and effGetParamLabel its unit text, so the best extra text
++        // is a label that differs from both. Asked for explicitly by Radium's
++        // LLM effect tuner, which explains a control to the user.
++        String getUnit() const override
++        {
++            return getLabel(); // effGetParamLabel, or the label the plugin registered
++        }
++
++        String getDescription() const override
++        {
++            // effGetParamName, asked directly: JUCE caches the name it read when
++            // the plugin was loaded, but a plugin may return a longer/more
++            // descriptive name when asked again (it is allowed to depend on the
++            // buffer size). Prefer the longer one, then the unit text.
++            const String cachedName = getName (1000);
++            String paramName;
++            if (auto* effect = pluginInstance.vstEffect)
++            {
++                // Asked with a larger buffer than getTextForOpcode() uses (256),
++                // since effGetParamName writes as much as the plugin likes.
++                char nm[512] = { };
++                const ScopedLock sl (pluginInstance.lock);
++                effect->dispatcher (effect, Vst2::effGetParamName, getParameterIndex(), 0, nm, 0.0f);
++                paramName = String::createStringFromData (nm, (int) sizeof (nm)).trim();
++            }
++            if (paramName.isNotEmpty() && paramName.length() > cachedName.length()
++                && ! cachedName.containsIgnoreCase (paramName))
++                return paramName;
++
++            const String effectLabel = getLabel();
++            if (effectLabel.isEmpty() || cachedName.containsIgnoreCase (effectLabel))
++                return {};
++
++            return effectLabel;
++        }
++
+         bool isAutomatable() const override
+         {
+             return automatable;
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/processors/juce_AudioProcessorParameter.h b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/processors/juce_AudioProcessorParameter.h
+index bb5615de5..889d699f6 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/processors/juce_AudioProcessorParameter.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/processors/juce_AudioProcessorParameter.h
+@@ -161,6 +161,28 @@ public:
+     */
+     virtual String getLabel() const = 0;
+ 
++    /** Returns the unit of this parameter's value ("ms", "%", "dB"), when the
++        plugin format provides one. Unlike getLabel(), this is meant to be the
++        unit only, and may fall back to a machine-readable unit id.
++
++        (Added for Radium's LLM effect tuner and instrumentation: a control value
++        should not be reported as a bare 0..1 position when its unit is known.
++        Defaults to getLabel(), so no format changes behaviour unless it
++        overrides this.)
++    */
++    virtual String getUnit() const { return getLabel(); }
++
++    /** Returns a short description of what this parameter does, when the plugin
++        format provides one. For VST3 this is ParameterInfo::shortTitle, for VST2
++        the parameter's effGetParamLabel/effGetParamName text; most other formats
++        return an empty string.
++
++        (Added for Radium's LLM effect tuner, which explains controls to the
++        user. Defaulting to an empty string keeps every other format, and every
++        plugin that provides nothing, unaffected.)
++    */
++    virtual String getDescription() const { return {}; }
++
+     /** Returns the number of steps that this parameter's range should be quantised into.
+ 
+         If you want a continuous range of values, don't override this method, and allow

@@ -974,6 +974,44 @@ struct VSTPluginInstance final   : public AudioPluginInstance,
                                    : label;
         }
 
+        // VST2 has no description field either. effGetParamName is what the
+        // plugin considers the parameter's name (JUCE already exposes it via
+        // getName), and effGetParamLabel its unit text, so the best extra text
+        // is a label that differs from both. Asked for explicitly by Radium's
+        // LLM effect tuner, which explains a control to the user.
+        String getUnit() const override
+        {
+            return getLabel(); // effGetParamLabel, or the label the plugin registered
+        }
+
+        String getDescription() const override
+        {
+            // effGetParamName, asked directly: JUCE caches the name it read when
+            // the plugin was loaded, but a plugin may return a longer/more
+            // descriptive name when asked again (it is allowed to depend on the
+            // buffer size). Prefer the longer one, then the unit text.
+            const String cachedName = getName (1000);
+            String paramName;
+            if (auto* effect = pluginInstance.vstEffect)
+            {
+                // Asked with a larger buffer than getTextForOpcode() uses (256),
+                // since effGetParamName writes as much as the plugin likes.
+                char nm[512] = { };
+                const ScopedLock sl (pluginInstance.lock);
+                effect->dispatcher (effect, Vst2::effGetParamName, getParameterIndex(), 0, nm, 0.0f);
+                paramName = String::createStringFromData (nm, (int) sizeof (nm)).trim();
+            }
+            if (paramName.isNotEmpty() && paramName.length() > cachedName.length()
+                && ! cachedName.containsIgnoreCase (paramName))
+                return paramName;
+
+            const String effectLabel = getLabel();
+            if (effectLabel.isEmpty() || cachedName.containsIgnoreCase (effectLabel))
+                return {};
+
+            return effectLabel;
+        }
+
         bool isAutomatable() const override
         {
             return automatable;
