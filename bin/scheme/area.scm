@@ -156,10 +156,14 @@
              (old-y2 y2))
          ;;(update-me!)
          (move-internal! dx dy)
-         (update (min old-x1 x1)
-                 (min old-y1 y1)
-                 (max old-x2 x2)
-                 (max old-y2 y2))))
+         ;; Update the union of the old and new position directly. Passing
+         ;; this through `update' would clamp the region to the new position
+         ;; and leave the vacated part of the old position unpainted.
+         (<gui> :update gui
+                (min old-x1 x1)
+                (min old-y1 y1)
+                (max old-x2 x2)
+                (max old-y2 y2))))
 
      (define (update x1* y1* x2* y2*)
        (let ((x1 (max x1 x1*))
@@ -1494,9 +1498,16 @@
                      (let ()
                        (set-mouse-pointer ra:set-open-hand-mouse-pointer gui)
                        #t)))
+   ;; Re-assert the pointer on every move. The raw cycle can remain active
+   ;; when the pointer leaves through one side and re-enters through another,
+   ;; in which case enter-func is not called again.
+   :move-func (lambda (button x* y)
+                (if (not (is-moving?))
+                    (set-mouse-pointer ra:set-open-hand-mouse-pointer gui))
+                #t)
    :leave-func (lambda (button x y)
-                 '(if (not (is-moving?))
-                      (set-mouse-pointer ra:set-normal-mouse-pointer gui))
+                 (if (not (is-moving?))
+                     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
                  #t
                  )
    :data 'mouse-pointerhandler)

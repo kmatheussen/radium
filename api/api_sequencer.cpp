@@ -3539,6 +3539,26 @@ int getCurrSeqtrackUnderMouse(bool forgiving, bool only_inside_timeline){
   return seqtracknum;
 }
 
+static bool g_show_mixer_path_in_seqtrack_headers = false;
+
+bool getShowMixerPathInSeqtrackHeaders(void){
+  return g_show_mixer_path_in_seqtrack_headers;
+}
+
+void setShowMixerPathInSeqtrackHeaders(bool doit){
+  if (g_show_mixer_path_in_seqtrack_headers == doit)
+    return;
+
+  g_show_mixer_path_in_seqtrack_headers = doit;
+  SEQUENCER_update(SEQUPDATE_TRACKORDER);
+}
+
+bool switchShowMixerPathInSeqtrackHeaders(void){
+  bool ret = !g_show_mixer_path_in_seqtrack_headers;
+  setShowMixerPathInSeqtrackHeaders(ret);
+  return ret;
+}
+
 void setCurrSeqtrackUnderMouse(int seqtracknum){
   if (g_curr_seqtrack_under_mouse != seqtracknum){
     const int old = g_curr_seqtrack_under_mouse;
