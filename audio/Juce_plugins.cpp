@@ -1736,9 +1736,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // Add events to the midi buffer created by the virtual keyboard.
   {
-	  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
+	  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);
+	  {
 		  data->keyboardState.processNextMidiBuffer(data->midi_buffer, 0, num_frames, true);
-	  }CRASHREPORTER_unset_plugin_name(pos);
+	  }
+	  CRASHREPORTER_unset_plugin_name(pos);
   }
   
   // 1. Process audio
@@ -1934,8 +1936,15 @@ static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
     AEffect *aeffect = (AEffect*)instance->getPlatformSpecificData();
     
     // "[return value]: tail size (for example the reverb time of a reverb plug-in); 0 is default (return 1 for 'no tail')"
-    int tail = aeffect->dispatcher(aeffect, effGetTailSize,
-                                   0, 0, 0, 0);
+
+	int tail;
+	
+	int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);
+	{
+		aeffect->dispatcher(aeffect, effGetTailSize,
+							0, 0, 0, 0);
+	}
+	CRASHREPORTER_unset_plugin_name(pos);
     
     if (tail==0)
       return -1; // i.e unable to report
@@ -2020,9 +2029,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
           
           {
             radium::PlayerRecursiveLock lock;
-            aeffect->dispatcher(aeffect,effGetParamDisplay,
-                                effect_num, 0, (void *) disp, 0.0f);
-          }
+			int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);
+			{
+				aeffect->dispatcher(aeffect,effGetParamDisplay,
+									effect_num, 0, (void *) disp, 0.0f);
+			}CRASHREPORTER_unset_plugin_name(pos);
+		  }
           
           if (disp[0]==0){
             snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),label);//plugin->type_data->params[effect_num].label);
