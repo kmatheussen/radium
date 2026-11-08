@@ -186,13 +186,41 @@ public:
 
 	~LLM_fx_tune_widget()
 	{
+		if (measurement_active_callback)
+		  measurement_active_callback(false);
 		_session.shutdown();
 	}
+
+	// Called with true when the terminal becomes visible and with false when it
+	// is hidden (checkbox off, instrument widget closed, or deleted). The host
+	// uses it to start/stop capturing the instrument's output for the
+	// measurements, so nothing is done in the audio thread unless the user is
+	// actually looking at the tuner.
+	std::function<void(bool)> measurement_active_callback;
+
+protected:
+	void showEvent(QShowEvent *event) override
+	{
+		QWidget::showEvent(event);
+		if (measurement_active_callback)
+		  measurement_active_callback(true);
+	}
+
+	void hideEvent(QHideEvent *event) override
+	{
+		QWidget::hideEvent(event);
+		if (measurement_active_callback)
+		  measurement_active_callback(false);
+	}
+
+public:
 
 	// Must be called before the widget is deleted (from the owning
 	// instrument widget) so no pending LLM callback touches anything.
 	void prepare_for_deletion(void)
 	{
+		if (measurement_active_callback)
+		  measurement_active_callback(false);
 		_session.shutdown();
 	}
 

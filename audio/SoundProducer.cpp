@@ -72,6 +72,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "SoundProducer_proc.h"
+#include "AudioMeasurements.h"
 
 DEFINE_ATOMIC(bool, g_check_abnormal_signals) = true;
 
@@ -2408,6 +2409,10 @@ public:
 
     if (!include_pan_and_width_in_wet)
       RT_process_pan_width_and_pitch(output_sound, num_frames, process_plugins);
+
+    // One atomic pointer check per block: feeds the LLM effect tuner's
+    // measurements when this is the instrument it is looking at.
+    MEASUREMENTS_RT_capture(this, _plugin, output_sound, _num_outputs, num_frames);
     
 
     bool is_touched = false;

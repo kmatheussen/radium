@@ -25,6 +25,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
+#include "../audio/SoundProducer_proc.h"
+#include "../audio/Mixer_proc.h"
+#include "../audio/AudioMeasurements.h"
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
@@ -483,6 +486,12 @@ public:
           return context;
 
         const SoundPluginType *type = plugin->type;
+        // Controls whose display text the plugin type cannot produce (a missing
+        // case in its get_display_value_string); logged once, never a dialog.
+        QStringList undisplayable_control_numbers;
+        // Why the prompt has no measurements (logged, so "the instrument was
+        // not audible" can be told apart from "the feature is broken").
+        QString measurement_missing_reason;
         context.type_name = type->type_name == NULL ? QString() : QString::fromUtf8(type->type_name);
         context.plugin_name = type->name == NULL ? QString() : QString::fromUtf8(type->name);
         context.plugin_version = type->version;
@@ -499,6 +508,76 @@ public:
           else if (type->info != NULL)
             context.description = QString::fromUtf8(type->info).simplified().left(160);
         }
+
+        if (!undisplayable_control_numbers.isEmpty())
+          radium::llm::llm_log_note(QString("instrument %1 [%2]: controls without a display text (missing case "
+                                            "in the plugin type): %3 (of %4 controls)")
+                                    .arg(context.plugin_name, context.type_name,
+                                         undisplayable_control_numbers.join(", "))
+                                    .arg(type->num_effects));
+
+        // (Logged after the block below has computed the reason.)
+        // What the instrument currently measures (spectrum/levels), when it
+        // has been audible recently. The capture target is set here too, so the
+        // audio thread starts collecting this instrument's output.
+        {
+          SoundProducer *sound_producer = SP_get_sound_producer(plugin);
+          MEASUREMENTS_set_target(sound_producer, plugin);
+
+          if (getenv("RADIUM_DEBUG_MEASUREMENTS") != NULL)
+            printf("measurements: host: patch=%p plugin=%p sound_producer=%p (type %s)\n",
+                   (void*)patch, (void*)plugin, (void*)sound_producer,
+                   type->name == NULL ? "?" : type->name);
+
+          AudioAnalysis analysis;
+          MeasurementsStatus status = sound_producer == NULL
+            ? MEASUREMENTS_STATUS_NO_PRODUCER
+            : MEASUREMENTS_get_status(sound_producer, plugin, (int)MIXER_get_sample_rate(), &analysis);
+
+          // Nothing yet? The target may have been selected only a moment ago
+          // (or the instrument only just started playing): if it is audible, a
+          // block arrives within ~85 ms, so wait briefly instead of sending a
+          // prompt without measurements.
+          if (status != MEASUREMENTS_STATUS_OK && sound_producer != NULL
+              && MEASUREMENTS_wait_for_block(sound_producer, plugin, 200))
+            status = MEASUREMENTS_get_status(sound_producer, plugin, (int)MIXER_get_sample_rate(), &analysis);
+
+          const bool have_measurement = status == MEASUREMENTS_STATUS_OK && analysis.valid;
+
+          if (!have_measurement){
+            switch(status){
+            case MEASUREMENTS_STATUS_NO_PRODUCER:     measurement_missing_reason = "no SoundProducer for this instrument"; break;
+            case MEASUREMENTS_STATUS_NOT_TARGET:      measurement_missing_reason = "another instrument is selected for the measurements"; break;
+            case MEASUREMENTS_STATUS_NEVER_CAPTURED:  measurement_missing_reason = QString("the audio thread never processed this instrument since it was selected (%1 capture calls, %2 blocks)")
+                                                                                     .arg(MEASUREMENTS_get_num_capture_calls())
+                                                                                     .arg(MEASUREMENTS_get_num_captured_blocks()); break;
+            case MEASUREMENTS_STATUS_SILENT:          measurement_missing_reason = QString("the instrument's output was silent (%1 capture calls, %2 blocks)")
+                                                                                     .arg(MEASUREMENTS_get_num_capture_calls())
+                                                                                     .arg(MEASUREMENTS_get_num_captured_blocks()); break;
+            case MEASUREMENTS_STATUS_NO_ANALYZER:     measurement_missing_reason = "libfftw3f is not available"; break;
+            case MEASUREMENTS_STATUS_OK:              measurement_missing_reason = "unexpected status"; break;
+            }
+          }
+
+          if (have_measurement){
+            context.measurement.valid = true;
+            context.measurement.sample_rate = analysis.sample_rate;
+            context.measurement.peak_db = analysis.peak_db;
+            context.measurement.rms_db = analysis.rms_db;
+            context.measurement.crest_db = analysis.crest_db;
+            context.measurement.age_ms = MEASUREMENTS_get_age_ms(sound_producer, plugin);
+            for (int band = 0; band < AUDIO_ANALYZER_NUM_BANDS; band++){
+              const AudioAnalyzerBand edges = AUDIO_ANALYZER_band(band);
+              context.measurement.bands.append(QString("%1-%2 Hz %3")
+                                               .arg((int)edges.low_hz)
+                                               .arg((int)edges.high_hz)
+                                               .arg(analysis.band_db[band], 0, 'f', 0));
+            }
+          }
+        }
+
+        if (!measurement_missing_reason.isEmpty())
+          radium::llm::llm_log_note("no sound measurements: " + measurement_missing_reason);
 
         const int max_prompt_params = 256;
         for (int effect_num = 0; effect_num < type->num_effects; effect_num++){
@@ -597,6 +676,16 @@ public:
           char display_value[256] = {0};
           PLUGIN_get_display_value_string(plugin, effect_num, display_value, sizeof(display_value));
           param.current_display = QString::fromUtf8(display_value).simplified().left(128);
+
+          // A plugin type that forgot a case for one of its effects returns an
+          // empty or "?" display text instead of raising an assertion (see
+          // Sampler_plugin.cpp). Note it once in the log, where the developer
+          // will see it, instead of showing a dialog to the user.
+          if (param.current_display.isEmpty() || param.current_display == "?"
+              || param.name.endsWith("(error)") || param.name.contains("(Error)")){
+            if (undisplayable_control_numbers.size() < 8)
+              undisplayable_control_numbers.append(QString::number(effect_num));
+          }
 
           context.params.append(param);
         }
@@ -1163,6 +1252,27 @@ public:
       };
 
       _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_instrument_context, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect);
+
+      // Sound measurements are captured only while this instrument's tuning
+      // terminal is on screen (and, because the terminal belongs to one patch,
+      // only for that instrument). Nothing is captured otherwise.
+      _fx_tune_widget->measurement_active_callback = [this](bool active){
+        struct Patch *patch = _patch.data();
+        SoundPlugin *plugin = patch != NULL ? (SoundPlugin*)patch->patchdata : NULL;
+        if (plugin == NULL){
+          MEASUREMENTS_clear_target();
+          return;
+        }
+
+        if (active)
+          MEASUREMENTS_set_target(SP_get_sound_producer(plugin), plugin);
+        else
+          MEASUREMENTS_clear_target();
+
+        if (getenv("RADIUM_DEBUG_MEASUREMENTS") != NULL)
+          printf("measurements: host: tuner %s for patch=%p plugin=%p\n",
+                 active ? "shown, capturing" : "hidden, capture stopped", (void*)patch, (void*)plugin);
+      };
       gridLayout_3->addWidget(_fx_tune_widget, 1, 0);
 
       // Checkbox in the instrument header, to the right of the "Configure

@@ -101,6 +101,36 @@ struct FxInstrumentParamState
 	bool is_clamped = false;
 };
 
+// What the instrument currently sounds like, measured from its own output.
+// Coarse and cheap: ~10 bands plus peak/RMS/crest. Only present when the
+// instrument was audible recently (see audio/AudioMeasurements.cpp).
+struct FxInstrumentMeasurement
+{
+	bool valid = false;
+	int sample_rate = 0;
+	// Milliseconds since the block was captured; measurements older than the
+	// last parameter change no longer describe the sound.
+	long long age_ms = 0;
+	float peak_db = 0.0f;
+	float rms_db = 0.0f;
+	float crest_db = 0.0f;
+	// (low_hz, high_hz, level_db) per band.
+	QVector<QString> bands;
+};
+
+// "peak -12.0, RMS -18.1, crest 6.2 dB" - the figures a follow-up request like
+// "keep the same volume as before" needs as a reference.
+static inline QString fx_measurement_summary(const FxInstrumentMeasurement &measurement)
+{
+	if (!measurement.valid)
+		return QString();
+
+	return QString("peak %1, RMS %2, crest %3 dB")
+	  .arg(measurement.peak_db, 0, 'f', 1)
+	  .arg(measurement.rms_db, 0, 'f', 1)
+	  .arg(measurement.crest_db, 0, 'f', 1);
+}
+
 struct FxInstrumentContext
 {
 	QString type_name;
@@ -108,6 +138,7 @@ struct FxInstrumentContext
 	int plugin_version = -1;
 	QString description; // what the plugin is, in one short line (vendor, category, ...)
 	QVector<FxInstrumentParamState> params;
+	FxInstrumentMeasurement measurement;
 	int omitted_params = 0;
 	int hidden_midi_controls = 0; // MIDI controller controls the host left out of 'params'
 };
@@ -706,6 +737,23 @@ static inline QString build_fx_system_prompt_rules(void)
 	  "Never turn voice 1 off - it is the original sound. Do not use more than one or two extra voices "
 	  "unless asked.\n"
 	  "\n"
+	  "Measurements: when the user message contains a 'What it currently measures' paragraph, those numbers were taken from this "
+	  "instrument's own output and describe what it sounds like right now. Use them to choose the direction and the amount "
+	  "instead of guessing: the band that sits well below its neighbours (or well above them) is the one that needs the EQ, "
+	  "the peak and RMS levels give the headroom for 'louder'/'quieter', and the crest factor is the reference for dynamics - "
+	  "a higher crest means punchier, a lower crest means more compressed/squashed. When a request is about level or "
+	  "'punch', say what the numbers were before and what you expect them to become. If there are no measurements, the "
+	  "instrument was not audible when the prompt was built: say so briefly instead of inventing numbers, and still make "
+	  "the change. The numbers describe the sound at the moment they were taken: if the block says they were measured "
+	  "some seconds ago, they may predate the user's own adjustments - treat them as indicative and do not contradict "
+	  "them. Never boost a band whose measured level is already the highest one. "
+	  "If the peak is above 0 dB the output is clipping: lowering the level comes first, before any tone change. "
+	  "For volume requests ('louder', 'quieter', 'keep the same volume as before'): use the RMS figure. The change you "
+	  "make, in dB, should equal (target RMS - current RMS), applied with ONE control (makeup gain, or the instrument's "
+	  "output gain if it has one) - do not stack several small corrections, and do not guess the amount: the measurement "
+	  "of the previous turn, listed in the history, is the reference for 'before'. If the request is relative and no "
+	  "earlier measurement exists, say so in one clause of the explanation instead of pretending to match a level you "
+	  "cannot see.\n"
 	  "\n"
 	  "The current values are listed in the user message, and they are the truth. If this conversation says you changed "
 	  "a value but that list still shows the old value, the user undid the change: never assume a previous change is "
@@ -1500,6 +1548,22 @@ static inline QString build_fx_user_message(const QVector<FxParamState> &states,
 		if (!instrument.description.isEmpty())
 			ret += " (" + instrument.description.left(160) + ")";
 		ret += "\n";
+	}
+
+	// Measured facts, when the instrument has been audible recently. This is the
+	// only part of the prompt that is not a guess about the sound.
+	if (instrument.measurement.valid && !instrument.measurement.bands.isEmpty()){
+		const bool stale = instrument.measurement.age_ms > 5000;
+		const bool clipping = instrument.measurement.peak_db > 0.0f;
+		ret += QString("\nWhat it currently measures (the instrument's own output, %1 Hz%2): peak %3 dB, RMS %4 dB "
+		               "(dB relative to full scale%5); crest %6 dB; band levels: %7.\n")
+		  .arg(instrument.measurement.sample_rate)
+		  .arg(stale ? QString("; measured %1 s ago").arg(instrument.measurement.age_ms / 1000) : QString())
+		  .arg(instrument.measurement.peak_db, 0, 'f', 1)
+		  .arg(instrument.measurement.rms_db, 0, 'f', 1)
+		  .arg(clipping ? QString(", ABOVE full scale: the output is clipping") : QString())
+		  .arg(instrument.measurement.crest_db, 0, 'f', 1)
+		  .arg(instrument.measurement.bands.join(", "));
 	}
 
 	ret += "\nNote: names with a number suffix are separate instances of one parameter (\"T0\"..\"T7\" = the "
@@ -2840,7 +2904,7 @@ private:
 					          // request next, and the reply must not appear to
 					          // have succeeded.
 					          llm_log_note("request failed: " + result_or_error);
-					          remember_turn(_request, "(no reply: the request failed)", QString());
+					          remember_turn(_request, "(no reply: the request failed)", QString(), QString());
 					          if (_host.status)
 						          _host.status("No reply - the request failed.");
 					          if (_host.show_error)
@@ -2889,7 +2953,8 @@ private:
 			// undo it. Done for every accepted reply, including questions and
 			// no-op replies, so a correction never references a turn that is
 			// missing from the history.
-			remember_turn(_request, result_or_error, _applied_summary);
+			remember_turn(_request, result_or_error, _applied_summary,
+			              fx_measurement_summary(_instrument.measurement));
 
 			const bool nothing_to_apply = parsed.changes.isEmpty() && parsed.instrument_changes.isEmpty()
 			                              && parsed.modulations.isEmpty() && parsed.plugins.isEmpty()
@@ -2988,7 +3053,8 @@ private:
 		          _history, cancel, 0.2, std::function<void(int, int)>(), true /* json_mode */);
 	}
 
-	void remember_turn(const QString &request, const QString &assistant_message, const QString &applied_summary)
+	void remember_turn(const QString &request, const QString &assistant_message,
+	                   const QString &applied_summary, const QString &measurement_summary)
 	{
 		// Only the request and the deltas go into the history: the full
 		// per-turn parameter snapshot is stale the moment the reply is
@@ -2998,6 +3064,9 @@ private:
 		// The deltas are what makes a correction ("I meant the plugin") able
 		// to revert the reply it refers to without sending the old snapshot.
 		QString content = "User request: " + fx_quote(request);
+		if (!measurement_summary.isEmpty())
+		  content += "\nMeasured before that turn (instrument output): " + measurement_summary
+		           + ". Use it as the reference for 'before'/'the same volume as before'.";
 		content += applied_summary.isEmpty()
 		  ? QString("\n(No changes were applied in that turn.)")
 		  : QString("\nApplied in that turn (old -> new; the newest user message lists the current values):\n") + applied_summary;

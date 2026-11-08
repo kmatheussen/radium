@@ -3551,13 +3551,34 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer, buffersize-1, "%.2f%%", 100.0*gran_get_jitter(data));
     break;
 
-  // This one has no numeric value of its own, so it had no case and fell
-  // through to the RError below. That assertion is not a crash and does not
-  // stop the program, but Radium's LLM effect tuner reads the display text of
-  // every visible control of the current instrument
-  // (Qt_audio_instrument_widget_callbacks.h), so every sampler instrument
-  // without a sample (where the granular controls are visible) raised an
-  // assertion dialog on every prompt.
+  // Plain on/off switches. They had no case at all, so any code that reads a
+  // display text for every visible effect (the LLM effect tuner does) hit the
+  // default below for each of them.
+  case EFF_REVERSE:
+    snprintf(buffer, buffersize-1, "%s", data->p.reverse ? "On" : "Off");
+    break;
+
+  case EFF_PINGPONG:
+    snprintf(buffer, buffersize-1, "%s", data->p.pingpong ? "On" : "Off");
+    break;
+
+  case EFF_AHDSR_ONOFF:
+    snprintf(buffer, buffersize-1, "%s", data->p.ahdsr_onoff ? "On" : "Off");
+    break;
+
+  case EFF_LOOP_ONOFF:
+    snprintf(buffer, buffersize-1, "%s", ATOMIC_GET_RELAXED(data->p.loop_onoff) ? "On" : "Off");
+    break;
+
+  case EFF_LOOP_OVERRIDE_DEFAULT:
+    snprintf(buffer, buffersize-1, "%s", data->p.loop_override_default ? "On" : "Off");
+    break;
+
+  case EFF_GRAN_onoff:
+    snprintf(buffer, buffersize-1, "%s", get_granulation_enabled(data) ? "On" : "Off");
+    break;
+
+  // Also a switch, and also previously missing.
   case EFF_GRAN_strict_no_jitter:
     // >= 0.5, like the other on/off cases in this file: comparing a float
     // with != 0 breaks Radium's -Werror=float-equal build.

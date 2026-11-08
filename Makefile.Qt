@@ -137,6 +137,7 @@ LRDFOPT ?= `$(PKG) --cflags lrdf`
 SNDFILEOPT ?= `$(PKG) --cflags sndfile`
 SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
 LIBLOOPT ?= `$(PKG) --cflags liblo`
+FFTW3FOPT ?= `$(PKG) --cflags fftw3f`
 
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
@@ -761,7 +762,7 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Faust_dev2.o $(T)Faust2_compile.o $(T)Faust2_llm_lint.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Pd_plugin2.o $(T)Pd_plugin_common.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Faust_dev2.o $(T)Faust2_compile.o $(T)Faust2_llm_lint.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Pd_plugin2.o $(T)Pd_plugin_common.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)AudioMeasurements.o $(T)AudioAnalyzer.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
 
 # The Pd2 instrument links the libpds wrapper directly into the Radium binary.
 ifneq (,$(findstring -DWITH_PD2,$(OS_OPTS)))
@@ -2859,6 +2860,12 @@ $(T)SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegist
 $(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o mixergui/QM_chip.h $(QT_PCH) # we add Sine_plugin.o here to make sure it is up to date. $(QT_PCH)
 	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(BOOST_INCLUDE)  $(MAYBE_OMIT_FRAME_POINTERS)
 ### $(CPUOPT)
+
+$(T)AudioMeasurements.o: audio/SoundPlugin.h audio/AudioMeasurements.cpp audio/AudioMeasurements.h audio/AudioAnalyzer.h $(QT_PCH)
+	$(CCC2) audio/AudioMeasurements.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(NO_ANALYZER_MALLOC_LEAK)
+
+$(T)AudioAnalyzer.o: audio/AudioAnalyzer.cpp audio/AudioAnalyzer.h
+	$(CCC2) audio/AudioAnalyzer.cpp $(QTOPT) $(FFTW3FOPT) $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp $(QT_PCH)
 	$(CCC2) audio/AudioMeterPeaks.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(NO_ANALYZER_MALLOC_LEAK)

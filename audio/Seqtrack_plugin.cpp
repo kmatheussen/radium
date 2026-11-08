@@ -2664,13 +2664,11 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 }
 
 static void get_bus_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
-  R_ASSERT_NON_RELEASE(false);
-  /*
-  if (plugin->num_visible_outputs == -1)
-    snprintf(buffer,buffersize-1,"Auto");
-  else
-    snprintf(buffer,buffersize-1,"%d",plugin->num_visible_outputs);
-  */
+  // This used to be an unconditional R_ASSERT_NON_RELEASE(false). Any code that
+  // reads a display string for every effect (the instrument editor and the LLM
+  // effect tuner do) then popped an assertion dialog - from a function that is
+  // only ever asked to produce a label.
+  snprintf(buffer, buffersize-1, "Bus");
 }
 
 static SoundPlugin *bus1 = NULL;
