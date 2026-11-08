@@ -1530,12 +1530,21 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     bool _has_adjusted_size = false;
     
-    bool size_is_valid(void){
-      if (_have_set_size==false && _has_been_opened_before==false && _has_adjusted_size==false)
-        return false;
-      else
-        return true;
-    }
+	bool size_is_valid(void)
+	{
+		if (_have_set_size || _has_been_opened_before || _has_adjusted_size)
+			return true;
+
+		// Widgets that were not created by the gui_* API (in particular the main
+		// window) already have a deliberate size. Never call adjustSize() on
+		// them: that shrinks a top-level window to its size hint, which for
+		// example happened the first time the "W" button was pressed in the
+		// sequencer (gui_getParentWindow() -> gui_width()).
+		if (_created_from_existing_widget && _widget!=NULL && _widget->isWindow() && _widget->isVisible())
+			return true;
+
+		return false;
+	}
 
     template<typename T>
     T *mycast(const_char* funcname, int argnum = 1) const {
