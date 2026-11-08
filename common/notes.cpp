@@ -1784,6 +1784,10 @@ static void RT_PITCHES_called_each_block_for_each_note(struct SeqTrack *seqtrack
                           );
 }
 
+#if !defined(RELEASE)
+static radium::RT_NoteVector g_prev_playing_notes;
+#endif
+
 void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const int play_id,
                                 const struct SeqBlock *seqblock,
@@ -1809,14 +1813,12 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
 
   
 #if !defined(RELEASE)
-  if (tracknum==0) {
-    static radium::RT_NoteVector prev_playing_notes;
-    
-    if (prev_playing_notes.size() != playing_notes.size())
+  if (tracknum==0) {    
+    if (g_prev_playing_notes.size() != playing_notes.size())
       goto not_equal;
 
     for(int i = 0 ; i < playing_notes.size() ; i++)
-      if (prev_playing_notes.at_ref(i) != playing_notes.at_ref(i))
+      if (g_prev_playing_notes.at_ref(i) != playing_notes.at_ref(i))
         goto not_equal;
 
     goto equal;
@@ -1825,10 +1827,10 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
 
     printf("=========== Playing notes:");
     
-    prev_playing_notes.clear();
+    g_prev_playing_notes.clear();
     for(auto *note : playing_notes){
       printf(" %d,", (int)note->note);
-      prev_playing_notes.push_back(note);
+      g_prev_playing_notes.push_back(note);
     }
     printf("\n");
   }

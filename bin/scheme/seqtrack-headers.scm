@@ -5,6 +5,7 @@
 (my-require 'gui.scm)
 (my-require 'instruments.scm)
 (my-require 'area.scm)
+(my-require 'mixer-strips-v2.scm)
 (my-require 'sequencer.scm)
 (my-require 'main_layout.scm)
 (my-require 'sequencer_upper_part.scm)
@@ -914,6 +915,7 @@
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
   (define is-bus (and for-audiofiles (<ra> :seqtrack-is-bus seqtracknum)))
   (define for-blocks (not for-audiofiles))
+  (define show-mixer-path (<ra> :get-show-mixer-path-in-seqtrack-headers))
   (define instrument-id (if for-blocks
                             (<ra> :create-illegal-instrument)
                             (<ra> :get-seqtrack-instrument seqtracknum)))
@@ -938,8 +940,18 @@
                           height))
 
   (define b (max 0.1 (myfloor (/ fontheight 10)))) ;; border between areas.
+
+  ;; The mixer strip path occupies the rightmost third of the header when
+  ;; enabled. The header is then 50% wider than before.
+  (define path-width (if (and for-audiofiles show-mixer-path)
+                         (max 1 (myfloor (/ width 3)))
+                         0))
+  (define path-x1 (- x2 path-width))
+  (define content-x2 (if (and for-audiofiles show-mixer-path)
+                         (- path-x1 b)
+                         x2))
   
-  (define x-meter-split (- x2 (+ b meter-width)))
+  (define x-meter-split (- content-x2 (+ b meter-width)))
   (define x1-split (+ x1 (myfloor (* 1.8 (<gui> :text-width "9:")))))
   (define x2-split (- x-meter-split (+ b mutesolo-width)))
   (define y-split (myfloor (+ y1 name-height)))
@@ -1025,10 +1037,16 @@
                                   )))
 
   (when for-audiofiles
-    (define vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2))
+    (define vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 content-x2 y2))
     (when (> y2 bottom-visible-y2)
-      (<gui> :set-vertical-audio-meter-clip-rect vam x1 y1 x2 bottom-visible-y2))
-    )
+      (<gui> :set-vertical-audio-meter-clip-rect vam x1 y1 content-x2 bottom-visible-y2))
+
+    (when show-mixer-path
+      (add-sub-area-plain!
+       (get-mixer-strip-path-v2 gui
+                                path-x1 y1
+                                x2 y2
+                                :instrument-id instrument-id))))
 
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
   
@@ -1063,8 +1081,6 @@
    :enter-func (lambda (button x* y)
                  (if (not (= button *middle-button*))
                      (maybe-autoselect-curr-seqtrack seqtracknum))
-                 (if (= 0 button)
-                     (set-mouse-pointer ra:set-normal-mouse-pointer gui))
                  #f))
 
   (define-override (get-mouse-cycle button x* y*)
@@ -1350,7 +1366,7 @@
                                (/ (- x2 x1)
                                   2)))
   
-  (define buttons-width (myfloor (* 1.8 (<gui> :text-width "W | F |"))))
+  (define buttons-width (myfloor (* 1.8 (<gui> :text-width "W | F | M |"))))
     
   (define buttons-x1 (if show-dragger
                          (- x2 buttons-width)
@@ -1430,8 +1446,8 @@
    buttons-x1 y1 x2 y2
    (if (or in-window
            (<ra> :sequencer-in-mixer))
-       '(window)
-       '(window full))
+       '(window mixer-path)
+       '(window full mixer-path))
    :spacing spacing
    :callback
    (lambda (type x1 y1 x2 y2)
@@ -1442,6 +1458,8 @@
                        *sequencer-window-gui-active*)
                       ((eq? type 'full)
                        (not (<ra> :upper-part-of-main-window-is-visible)))
+                      ((eq? type 'mixer-path)
+                       (<ra> :get-show-mixer-path-in-seqtrack-headers))
                       (else
                        (assert #f))))
               (lambda (new-value)
@@ -1450,6 +1468,8 @@
                        (<ra> :configure-sequencer-widget new-value))
                       ((eq? type 'full)
                        (<ra> :set-sequencer-in-full-mode new-value))
+                      ((eq? type 'mixer-path)
+                       (<ra> :set-show-mixer-path-in-seqtrack-headers new-value))
                       (else
                        (assert #f)))
                 (<gui> :update gui)) ;; Necessary if the dragger is at topmost position. Then the dragger gfx won't be updated.
@@ -1457,18 +1477,27 @@
                            "W")
                           ((eq? type 'full)
                            "F")
+                          ((eq? type 'mixer-path)
+                           "M")
                           (else
                            (assert #f)))
               :right-mouse-clicked-callback
               (lambda ()
                 (popup-menu
-                 (if (eq? type 'window)
-                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-sequencer-in-window"
-                                                                      :args '()
-                                                                      :focus-keybinding "FOCUS_SEQUENCER")
-                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-sequencer-in-full-mode"
-                                                                      :args '()
-                                                                      :focus-keybinding "FOCUS_SEQUENCER"))
+                 (cond ((eq? type 'window)
+                        (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:show-hide-sequencer-in-window"
+                                                                         :args '()
+                                                                         :focus-keybinding "FOCUS_SEQUENCER"))
+                       ((eq? type 'full)
+                        (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-sequencer-in-full-mode"
+                                                                         :args '()
+                                                                         :focus-keybinding "FOCUS_SEQUENCER"))
+                       ((eq? type 'mixer-path)
+                        (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-show-mixer-path-in-seqtrack-headers"
+                                                                         :args '()
+                                                                         :focus-keybinding "FOCUS_SEQUENCER"))
+                       (else
+                        (assert #f)))
                  "-------------"
                  "Help keybindings" show-keybinding-help-window))))
      
@@ -1478,6 +1507,8 @@
                       "Window mode")
                      ((eq? type 'full)
                       "Full mode. Use all available space in main window")
+                     ((eq? type 'mixer-path)
+                      "Show mixer path in seqtrack headers")
                      (else
                       (assert #f))))
      

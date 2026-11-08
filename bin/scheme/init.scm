@@ -1025,6 +1025,7 @@ FROM_C-show-select-instrument-right-click
   (my-require 'main_layout.scm)
 
   (my-require 'mixer-strips.scm)
+  (my-require 'mixer-strips-v2.scm)
 
   (my-require 'sequencer_upper_part.scm)
   (my-require 'seqtrack-headers.scm)

@@ -4446,8 +4446,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   int get_sequencer_left_part_width(void) const {
-    // 1.5 * 1.5 = 2.25: 50% wider than before, to make room for the mixer strip path.
-    return 1.5 * 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
+    // The extra 50% width is only used when the mixer path is shown.
+    const double scale = getShowMixerPathInSeqtrackHeaders() ? 1.5 * 1.5 : 1.5;
+    return scale * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
   }
 
   int get_sequencer_right_part_width(int systemfontheight) const {
