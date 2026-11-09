@@ -416,6 +416,9 @@ struct Data{
   QDialog *qtgui_parent;
 
   float *automation_values;
+
+  // Latency declared by the Faust program (see Faust_latency.hpp), in samples.
+  int latency_samples;
   
   Data()
     : voices_playing(NULL)
@@ -423,6 +426,7 @@ struct Data{
     , qtgui(NULL)
     , qtgui_parent(NULL)
     , automation_values(NULL)
+    , latency_samples(0)
   {
   }
 
