@@ -798,6 +798,9 @@ public:
       if (new_ != _last_mouse_move_was_inside_seqtracks_timeline) {
         //API_unregister_last_mouse_move_event();
         //printf("Unregistering\n");
+        // The timeline/seqblock mouse handlers set the cursor shape. Reset it to normal when leaving that area (e.g. into the seqtrack header), otherwise the last seqblock cursor (resize/open hand/etc.) sticks. Done before dispatching to the left part's mouse handlers below, so they can still override it.
+        if (!new_)
+          setCursor(Qt::ArrowCursor);
         _last_mouse_move_was_inside_seqtracks_timeline = new_;
       }
       for_seqtracks_timeline = new_;
