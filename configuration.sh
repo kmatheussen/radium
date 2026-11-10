@@ -216,7 +216,7 @@ fi
 assert_exe_exists $PKGqt
 
 if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
-    assert_exe_exists $QT_PKG_CONFIGURATION_PATH
+    assert_dir_exists "$QT_PKG_CONFIGURATION_PATH"
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
