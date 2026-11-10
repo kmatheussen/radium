@@ -3,12 +3,12 @@
 (my-require 'gui.scm)
 (my-require 'area.scm)
 
-(define *transport-background-color* "#364636")
+(define *transport-background-color* "transport_bar_background")
 (define *transport-play-color* "#2ecc71")
-(define *transport-inactive-color* "#cfcfcf")
+(define *transport-inactive-color* "transport_bar_button_foreground")
 (define *transport-stop-idle-color* "#1f6f3f")
 (define *transport-icon-border-color* "#40000000")
-(define *transport-button-color* "#803a303a")
+(define *transport-button-color* "transport_bar_button_background")
 (define *transport-border-color* "#20ffffff");000000")
 (define *transport-inner-border-color* "#22aaaaaa")
 (define *transport-border-padding* 3)
@@ -361,9 +361,9 @@
               (max 1 (- rounding 2)) (max 1 (- rounding 2))
               *gradient-diagonal-light-upper-left* 0.12)
       )
-    (<gui> :draw-text gui "buttons_text" "Block:"
+    (<gui> :draw-text gui "transport_bar_button_foreground" "Block:"
            label-x1 (get-y1 0) label-x2 (get-y2 0)
            #f #f #f 0 #t #t)
-    (<gui> :draw-text gui "buttons_text" "Song:"
+    (<gui> :draw-text gui "transport_bar_button_foreground" "Song:"
            label-x1 (get-y1 1) label-x2 (get-y2 1)
            #f #f #f 0 #t #t)))

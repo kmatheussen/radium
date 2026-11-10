@@ -1,5 +1,5 @@
 >> HASH MAP V5 BEGIN
-143
+146
 amount_of_gradient
 0
 FLOAT_TYPE
@@ -512,6 +512,18 @@ color_track_slider
 0
 STRING_TYPE
 #ff939393
+color_transport_bar_background
+0
+STRING_TYPE
+#ff364636
+color_transport_bar_button_background
+0
+STRING_TYPE
+#803a303a
+color_transport_bar_button_foreground
+0
+STRING_TYPE
+#ffcfcfcf
 color_velocity_text
 0
 STRING_TYPE

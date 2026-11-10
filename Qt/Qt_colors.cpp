@@ -288,6 +288,10 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, "sequencer_navigator_grayout_color", "Sequencer navigator gray out", false},
   {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, "sequencer_tempo_automation_color", "Sequencer tempo automation", false},
   {SEQUENCER_MARKER_COLOR_NUM, "sequencer_marker_color", "Sequencer marker", false},
+
+  {TRANSPORT_BAR_BACKGROUND_COLOR_NUM, "transport_bar_background", "Transport bar background", false},
+  {TRANSPORT_BAR_BUTTON_BACKGROUND_COLOR_NUM, "transport_bar_button_background", "Transport bar button background", false},
+  {TRANSPORT_BAR_BUTTON_FOREGROUND_COLOR_NUM, "transport_bar_button_foreground", "Transport bar button foreground", false},
   
   {END_CONFIG_COLOR_NUM, NULL, NULL, false}
 };
