@@ -103,7 +103,7 @@ protected:
     QOffscreenSurface *_fallbackSurface = NULL;
 #endif
 	
-    QRhi *_rhi;
+    QRhi *_rhi = nullptr;
 //! [swapchain-data]
     QRhiSwapChain *_swap_chain;
 #if USE_RENDER_BUFFER
