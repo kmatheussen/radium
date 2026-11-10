@@ -941,19 +941,29 @@
 
   (define b (max 0.1 (myfloor (/ fontheight 10)))) ;; border between areas.
 
-  ;; The mixer strip path occupies the rightmost third of the header when
-  ;; enabled. The header is then 50% wider than before.
+  ;; The mixer strip path and the VU meter occupy the rightmost third of the
+  ;; header when the path is enabled. The header is then 50% wider than
+  ;; before. The path comes first, the meter is placed at the far right.
   (define path-width (if (and for-audiofiles show-mixer-path)
                          (max 1 (myfloor (/ width 3)))
                          0))
-  (define path-x1 (- x2 path-width))
-  (define content-x2 (if (and for-audiofiles show-mixer-path)
-                         (- path-x1 b)
-                         x2))
-  
-  (define x-meter-split (- content-x2 (+ b meter-width)))
+
+  ;; The VU meter sits at the far right, to the right of the mixer path.
+  (define meter-x1 (- x2 meter-width))
+
+  ;; The mixer strip path is placed immediately to the left of the meter.
+  (define path-x2 (- meter-x1 b))
+  (define path-x1 (- path-x2 path-width))
+
+  ;; Right edge of the content areas (name, mute/solo, panner, volume). The
+  ;; top row stops just before the path, or just before the meter if the path
+  ;; is not shown.
+  (define x-content-x2 (if (and for-audiofiles show-mixer-path)
+                           (- path-x1 b)
+                           path-x2))
+
   (define x1-split (+ x1 (myfloor (* 1.8 (<gui> :text-width "9:")))))
-  (define x2-split (- x-meter-split (+ b mutesolo-width)))
+  (define x2-split (- x-content-x2 (+ b mutesolo-width)))
   (define y-split (myfloor (+ y1 name-height)))
 
   (delafina (get-background-color :gakk #f)
@@ -985,7 +995,7 @@
                               seqtracknum
                               (lambda () (<gui> :mix-colors "white" (get-background-color (<ra> :create-illegal-instrument)) 0.02))))
   
-  (define panner-x2 (if use-two-rows x-meter-split x2-split))
+  (define panner-x2 (if use-two-rows x-content-x2 x2-split))
   (define panner-y1 (if use-two-rows
                         (+ 0 y-split)
                         y1))
@@ -1001,7 +1011,7 @@
     
   (add-sub-area-plain! (<new> :mute-solo-buttons gui
                               (+ b x2-split) y1
-                              x-meter-split y-split
+                              x-content-x2 y-split
                               instrument-id
                               #t ;; use single letters
                               #t ;; stack horizontally
@@ -1037,15 +1047,15 @@
                                   )))
 
   (when for-audiofiles
-    (define vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 content-x2 y2))
+    (define vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) meter-x1 y1 x2 y2))
     (when (> y2 bottom-visible-y2)
-      (<gui> :set-vertical-audio-meter-clip-rect vam x1 y1 content-x2 bottom-visible-y2))
+      (<gui> :set-vertical-audio-meter-clip-rect vam x1 y1 x2 bottom-visible-y2))
 
     (when show-mixer-path
       (add-sub-area-plain!
        (get-mixer-strip-path-v2 gui
                                 path-x1 y1
-                                x2 y2
+                                path-x2 y2
                                 :instrument-id instrument-id))))
 
   ;;(define vam2 (<gui> :add-vertical-audio-meter gui instrument-id (- x2 8) y1 x2 y2))
