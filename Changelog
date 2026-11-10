@@ -1,3 +1,72 @@
+Changes 8.2.59 -> 8.3.57:
+* Editor/GPU: Always show message during startup if using the
+  Null backend.
+* Mac: Fix various splitter problems in full-screen mode, also
+  increase splitter drag-handle size a little bit.
+* Transport bar: Make colors configurable.
+* Sequencer: Fix mouse cursor shape not being set back to default
+  when leaving the sequencer.
+* FaustDev2: Fix displaying actually number of used VU meter
+  channels. Before it always showed 16 channels.
+* FaustDev1/FaustDev2: Use latency in faust programs declared by
+  "declare latency_samples" and "declare latency_frames".
+* Mac: Fix opening the sequencer or mixer window causing weird
+  hybrid state of the main window if in full screen.
+* Sequencer: New "M" button to show plugin+send sliders for the
+  audio seqtracks inside the seqtrack headers.
+* Audio: Various improvements to the plugin scanner and plugin
+  channel configuration. Should function as before for working
+  plugins though, hopefully.
+* Audio: Ignore more bad behaviors from 3rd party plugins. This
+  also makes it more likely for the crashreporter to include the
+  name of the plugin causing the crash.
+* Sequencer: Optimize gfx somewhat and fix graphical garbage
+  which sometimes could be created by the vertical white cursor
+  (trail of white vertical lines).
+* Gui: Fix left alt opening hamburger menu in the mixer window
+  and the sequencer window.
+* Gui: Fix all vertical space not always used in the main window
+  after hiding widgets.
+* Sequencer: Fix mix of bold and non-bold font in Files tab. This
+  change might fix similar bugs other places as well.
+* Gui: Fix a bug in scrollbars (using cached reference to a
+  deleted sub area) that sometimes could cause error message.
+* Audio: Set crashreporter plugin name when processing midi
+  buffers. Makes developing while using bad plugins easier, and
+  it more often shows name of crashing plugin in the
+  crashreporter.
+* Audio: Fix allocating memory in realtime thread in every block
+  when using plugins with more than 32 input+output channels.
+* Mixer/etc.: Reduce time to open popup menu for send and plugin
+  sliders and other popup menus..
+* Mixer: Make popup menus open faster in the modular mixer.
+* Editor: Pre-warm the F12 "(click me)" popup menu cache. Meaning
+  that there won't be a short delay before opening it the first
+  time.
+* Scheme: Support environment variables RADIUM_CONTROL_PORT
+  (suggested port) and RADIUM_CONTROL_PORT_FILE (filename where
+  actual port number is written) to have control of which control
+  port is actually used for the binary we are about to start.
+* Pd2: Round values for integer effects if receiving a scaled
+  value.
+* Playlist: Fix displaying popup-menu in the area where there are
+  no blocks.
+* Blocklist/playlist/transport bar: Support showing/hiding
+  transport bar in the popup menus. Setting is remembered between
+  sessions.
+* FaustDev2: Support changing velocity of playing note. (That was
+  an oversight when the FaustDev2 instrument was implemented.)
+* Gui/Mac: Place the transport bar below the notch if it would
+  othervice be placed under the notch.
+* Current instrument mixer strip: Don't put the "select current
+  instrument" arrow-down button below the name of the instrument
+  when in wide mode.
+* API: getShowMixerPathInSeqtrackHeaders,
+  setShowMixerPathInSeqtrackHeaders,
+  switchShowMixerPathInSeqtrackHeaders.
+ 
+
+
 Changes 8.2.57 -> 8.2.59:
 * Pd2: Only use included tcl/tk. Also use tcl/tl 9.1 on macos.
 * Some export MIDI file adjustments.
