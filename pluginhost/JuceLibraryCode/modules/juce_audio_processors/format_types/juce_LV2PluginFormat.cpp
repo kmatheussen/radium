@@ -5210,7 +5210,16 @@ public:
         if (File::isAbsolutePath (identifier))
             world->loadBundle (world->newFileUri (nullptr, File::addTrailingSeparator (identifier).toRawUTF8()));
 
-        for (const auto& plugin : { findPluginByUri (identifier), findPluginByFile (identifier) })
+        // Radium: The identifier is often an LV2 plugin URI (such as
+        // "http://example.com/plugin#main"), not a file path. Passing it directly to
+        // findPluginByFile() constructs a juce::File from the URI, which calls
+        // jassertfalse() (and aborts in debug builds). A URI can never match a bundle
+        // path anyway, so only look up by file when the identifier really is a path.
+        const LilvPlugin* pluginByFile = File::isAbsolutePath (identifier)
+                                           ? findPluginByFile (File (identifier))
+                                           : nullptr;
+
+        for (const auto& plugin : { findPluginByUri (identifier), pluginByFile })
         {
             if (auto desc = getDescription (plugin); desc.fileOrIdentifier.isNotEmpty())
             {
