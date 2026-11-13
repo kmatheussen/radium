@@ -296,7 +296,9 @@ void radium::RhiWindow::QRHI_request_update_from_thread(void)
 	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
 #if THREADED_GFX
-	QMetaObject::invokeMethod(qApp->thread(), [this] ()
+	// Post with the window as context, so Qt drops the queued call if the
+	// window is deleted before it is delivered (can happen at shutdown).
+	QMetaObject::invokeMethod(this, [this] ()
 		{
 			requestUpdate();
 		});
