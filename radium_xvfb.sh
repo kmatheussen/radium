@@ -20,7 +20,7 @@
 #                                   connects to by default. When unset, a random
 #                                   port in 10000-60000 is chosen.
 #   RADIUM_XVFB_BACKEND=opengl|null  GPU backend to configure (default: opengl)
-#   RADIUM_MAX_FPS=...              Xvfb frame rate cap (default: 60, 0 = unlimited)
+#   RADIUM_XVFB_MAX_FPS=...         Xvfb frame rate cap (default: 60, 0 = unlimited)
 #   RADIUM_XVFB_FALLBACK=1          Run on the current $DISPLAY instead of Xvfb
 #   RADIUM_XVFB_DISPLAY_FILE=...    Write the display name to this file
 #   RADIUM_XVFB_KEEP_HOME=1         Keep the temporary HOME for inspection
@@ -132,12 +132,11 @@ unset QT_QPA_PLATFORMTHEME QT_PLUGIN_PATH WAYLAND_DISPLAY
 if [ "$fallback" = 0 ]; then
   export LIBGL_ALWAYS_SOFTWARE=1
 
-  # Radium caps its render loop at RADIUM_MAX_FPS when this is set. Xvfb with
-  # llvmpipe has no real vsync, so without a cap the render thread runs at full
-  # speed and burns CPU.
-  export RADIUM_XVFB=1
-  if [ -z "${RADIUM_MAX_FPS:-}" ]; then
-    export RADIUM_MAX_FPS=60
+  # Radium caps its render loop at RADIUM_XVFB_MAX_FPS. Xvfb with llvmpipe has
+  # no real vsync, so without a cap the render thread runs at full speed and
+  # burns CPU.
+  if [ -z "${RADIUM_XVFB_MAX_FPS:-}" ]; then
+    export RADIUM_XVFB_MAX_FPS=60
   fi
 fi
 

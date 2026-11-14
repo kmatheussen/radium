@@ -275,17 +275,21 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 		}
 		else
 		{
-			const auto frame_start = target_frame_ms > 0.0 ? std::chrono::steady_clock::now() : 0;
-
-			QRHI_render();
-
 			if (target_frame_ms > 0.0)
 			{
+				const auto frame_start = std::chrono::steady_clock::now();
+
+				QRHI_render();
+
 				const double elapsed_ms =
 					std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - frame_start).count();
-				
+
 				if (elapsed_ms < target_frame_ms)
 					std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(target_frame_ms - elapsed_ms));
+			}
+			else
+			{
+				QRHI_render();
 			}
 		}
 	}
