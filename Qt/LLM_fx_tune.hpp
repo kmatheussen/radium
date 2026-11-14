@@ -111,9 +111,41 @@ struct FxInstrumentMeasurement
 	// Milliseconds since the block was captured; measurements older than the
 	// last parameter change no longer describe the sound.
 	long long age_ms = 0;
+	int num_frames = 0; // length of the analysed window
+
+	// Levels and loudness (BS.1770): momentary (last 400 ms) and short-term
+	// (the whole captured window, ~3 s).
 	float peak_db = 0.0f;
 	float rms_db = 0.0f;
 	float crest_db = 0.0f;
+	float loudness_momentary_lufs = -120.0f;
+	// Max over all 400 ms windows: the level of the sound itself, which is the
+	// figure to match levels with.
+	float loudness_loudest_lufs = -120.0f;
+	float loudness_window_lufs = -120.0f;
+	float true_peak_db = -120.0f;
+
+	// Space: RT60-like decay time and the level 300 ms after the peak.
+	float decay_time_s = 0.0f;
+	float tail_db = 0.0f;
+
+	// Stereo.
+	float stereo_correlation = 0.0f;
+	float stereo_side_db = -120.0f;
+	float stereo_balance_db = 0.0f;
+
+	// Timbre / noise.
+	float centroid_hz = 0.0f;
+	float flatness = 0.0f;
+	float hum_db = -120.0f;
+	float hum_hz = 0.0f;
+	float dc_offset = 0.0f;
+	float sub_bass_db = -120.0f;
+
+	// Transients.
+	float attack_db_per_ms = 0.0f;
+	float onsets_per_second = 0.0f;
+
 	// (low_hz, high_hz, level_db) per band.
 	QVector<QString> bands;
 };
@@ -125,9 +157,9 @@ static inline QString fx_measurement_summary(const FxInstrumentMeasurement &meas
 	if (!measurement.valid)
 		return QString();
 
-	return QString("peak %1, RMS %2, crest %3 dB")
-	  .arg(measurement.peak_db, 0, 'f', 1)
-	  .arg(measurement.rms_db, 0, 'f', 1)
+	return QString("loudness %1 LUFS (at its loudest), true peak %2 dB, crest %3 dB")
+	  .arg(measurement.loudness_loudest_lufs, 0, 'f', 1)
+	  .arg(measurement.true_peak_db, 0, 'f', 1)
 	  .arg(measurement.crest_db, 0, 'f', 1);
 }
 
@@ -137,6 +169,12 @@ struct FxInstrumentContext
 	QString plugin_name;
 	int plugin_version = -1;
 	QString description; // what the plugin is, in one short line (vendor, category, ...)
+	// Song timing at the current position. Only used to express durations in
+	// musical terms (an eighth note, an LFO of 4 cycles per beat, ...).
+	double bpm = 0.0;
+	int signature_numerator = 0;
+	int signature_denominator = 0;
+
 	QVector<FxInstrumentParamState> params;
 	FxInstrumentMeasurement measurement;
 	int omitted_params = 0;
@@ -747,11 +785,30 @@ static inline QString build_fx_system_prompt_rules(void)
 	  "the change. The numbers describe the sound at the moment they were taken: if the block says they were measured "
 	  "some seconds ago, they may predate the user's own adjustments - treat them as indicative and do not contradict "
 	  "them. Never boost a band whose measured level is already the highest one. "
+	  "The other figures say which control is the right one: a correlation near 1 with side far below mid means the "
+	  "material is (nearly) mono, so width can only be created (Width, chorus, a panned voice) - do not suggest making a "
+	  "mono signal narrower; a high flatness or a hum peak means the request may be about noise, not tone (highpass, EQ cut); "
+	  "a steep attack (above ~2 dB/ms) with many onsets means punchy/percussive material, a flat one means sustained. "
+	  "For space ('more/less reverb', 'drier', 'bigger/smaller room', 'more air around it'): the decay figure is what "
+	  "the space currently does - a long decay (over ~1.5 s) or a tail level close to 0 dB means it is already wet, so "
+	  "the request may be about character (size, damping) rather than more of it; a short decay (under ~0.4 s) or a tail "
+	  "around -25 dB or lower means it is dry. When the plugin is a reverb, prefer its own Size/Decay/Damping/Mix "
+	  "controls over raising the Reverb send, and use the decay/tail figures to say what you changed and why. "
+	  "The song tempo (in the user message, with the beat/bar length in ms) is what you convert musical terms with: an "
+	  "eighth note is half a beat, a sixteenth a quarter beat, and the modulator rate is in cycles per beat (so at 120 BPM "
+	  "a rate of 2/1 is 4 Hz). When the user asks for a note-length value (delay, pre-delay, attack, width, voice start) or "
+	  "a rate in Hz, compute it from the tempo instead of guessing. "
 	  "If the peak is above 0 dB the output is clipping: lowering the level comes first, before any tone change. "
-	  "For volume requests ('louder', 'quieter', 'keep the same volume as before'): use the RMS figure. The change you "
-	  "make, in dB, should equal (target RMS - current RMS), applied with ONE control (makeup gain, or the instrument's "
+	  "For volume requests ('louder', 'quieter', 'keep the same volume as before'): use the 'at its loudest, 400 ms' loudness "
+	  "figure (LUFS). It describes the sound itself; the window average is pulled down when the window happens to contain "
+	  "silence (a decaying note, a gap), and the 'right now' figure can be inside a decay - never match a level with either "
+	  "of those. The change you "
+	  "make, in dB, should equal (target loudness - current loudness), applied with ONE control (makeup gain, or the instrument's "
 	  "output gain if it has one) - do not stack several small corrections, and do not guess the amount: the measurement "
-	  "of the previous turn, listed in the history, is the reference for 'before'. If the request is relative and no "
+	  "of the previous turn, listed in the history, is the reference for 'before'. If that difference is more than about "
+	  "12 dB, the two measurements almost certainly describe different material (a different note, or a decay versus a "
+	  "sustained sound): make a moderate change (or leave the level alone) and say in the explanation why the level cannot "
+	  "be matched exactly. Also check the true peak: a level change must not push it above 0 dB.  If the request is relative and no "
 	  "earlier measurement exists, say so in one clause of the explanation instead of pretending to match a level you "
 	  "cannot see.\n"
 	  "\n"
@@ -1550,20 +1607,95 @@ static inline QString build_fx_user_message(const QVector<FxParamState> &states,
 		ret += "\n";
 	}
 
+	// Song timing: lets the model convert notes <-> milliseconds and the
+	// modulator's cycles-per-beat <-> Hz without guessing the tempo.
+	if (instrument.bpm > 0.0){
+		ret += QString("\nSong tempo: %1 BPM%2; one beat = %3 ms, one bar = %4 ms.\n")
+		  // Radium builds with -Werror=float-equal: compare the rounded value.
+		  .arg(instrument.bpm, 0, 'f', qAbs(instrument.bpm - qRound(instrument.bpm)) < 0.005 ? 0 : 2)
+		  .arg(instrument.signature_numerator > 0
+		         ? QString(", %1/%2 signature").arg(instrument.signature_numerator).arg(instrument.signature_denominator)
+		         : QString())
+		  .arg((int)qRound(60000.0 / instrument.bpm))
+		  .arg((int)qRound(60000.0 / instrument.bpm * instrument.signature_numerator * 4.0 / std::max(1, instrument.signature_denominator)));
+	}
+
 	// Measured facts, when the instrument has been audible recently. This is the
 	// only part of the prompt that is not a guess about the sound.
 	if (instrument.measurement.valid && !instrument.measurement.bands.isEmpty()){
-		const bool stale = instrument.measurement.age_ms > 5000;
-		const bool clipping = instrument.measurement.peak_db > 0.0f;
-		ret += QString("\nWhat it currently measures (the instrument's own output, %1 Hz%2): peak %3 dB, RMS %4 dB "
-		               "(dB relative to full scale%5); crest %6 dB; band levels: %7.\n")
-		  .arg(instrument.measurement.sample_rate)
-		  .arg(stale ? QString("; measured %1 s ago").arg(instrument.measurement.age_ms / 1000) : QString())
-		  .arg(instrument.measurement.peak_db, 0, 'f', 1)
-		  .arg(instrument.measurement.rms_db, 0, 'f', 1)
-		  .arg(clipping ? QString(", ABOVE full scale: the output is clipping") : QString())
-		  .arg(instrument.measurement.crest_db, 0, 'f', 1)
-		  .arg(instrument.measurement.bands.join(", "));
+		const FxInstrumentMeasurement &m = instrument.measurement;
+		const bool stale = m.age_ms > 5000;
+		const bool clipping = m.true_peak_db > 0.0f;
+
+		ret += QString("\nWhat it currently measures (the instrument's own output, %1 Hz%2):\n")
+		  .arg(m.sample_rate)
+		  .arg(stale ? QString("; measured %1 s ago").arg(m.age_ms / 1000) : QString());
+
+		// Loudness is the figure to match levels with; the true peak says
+		// whether there is headroom.
+		{
+			// 'loudest' is the level of the sound; the window average drops when
+			// the window contains silence, and 'now' can be inside a decay.
+			const bool decaying = m.loudness_momentary_lufs < m.loudness_loudest_lufs - 6.0f;
+
+			ret += QString("- loudness %1 LUFS (at its loudest, 400 ms), %2 LUFS (window average), %3 LUFS (right now)%4; "
+			               "true peak %5 dB%6; crest %7 dB\n")
+			  .arg(m.loudness_loudest_lufs, 0, 'f', 1)
+			  .arg(m.loudness_window_lufs, 0, 'f', 1)
+			  .arg(m.loudness_momentary_lufs, 0, 'f', 1)
+			  .arg(decaying ? QString(" - the instrument is decaying or quiet right now") : QString())
+			  .arg(m.true_peak_db, 0, 'f', 1)
+			  .arg(clipping ? QString(", ABOVE full scale: the output is clipping") : QString())
+			  .arg(m.crest_db, 0, 'f', 1);
+		}
+
+		// Stereo: always, because "no width at all" is exactly what a
+		// "wider"/"narrower" request has to know about.
+		{
+			ret += QString("- stereo: correlation %1, %2, balance %3 dB (right minus left)\n")
+			  .arg(m.stereo_correlation, 0, 'f', 2)
+			  .arg(m.stereo_side_db <= -60.0f
+			       ? QString("no side signal (the material is mono)")
+			       : QString("side %1 dB below mid").arg(-m.stereo_side_db, 0, 'f', 1))
+			  .arg(m.stereo_balance_db, 0, 'f', 1);
+		}
+
+		// Timbre and noise.
+		ret += QString("- shape: centroid %1 Hz, flatness %2 (0 = tonal, 1 = noise-like)")
+		  .arg((int)qRound(m.centroid_hz))
+		  .arg(m.flatness, 0, 'f', 2);
+		if (m.hum_hz > 0.0f)
+			ret += QString("; hum at %1 Hz, %2 dB").arg((int)qRound(m.hum_hz)).arg(m.hum_db, 0, 'f', 1);
+		if (m.dc_offset > 0.002f || m.dc_offset < -0.002f)
+			ret += QString("; DC offset %1").arg(m.dc_offset, 0, 'f', 3);
+		if (m.sub_bass_db > -60.0f)
+			ret += QString("; energy below 30 Hz %1 dB").arg(m.sub_bass_db, 0, 'f', 1);
+		ret += "\n";
+
+		// Space: how long the sound takes to die away. This is the figure for
+		// "more/less reverb", "drier", "bigger room".
+		if (m.decay_time_s > 0.0f || m.tail_db < 0.0f){
+			const double window_s = m.sample_rate > 0 ? (double)m.num_frames / (double)m.sample_rate : 0.0;
+			QString decay_text;
+			if (m.decay_time_s <= 0.0f)
+				decay_text = "not measurable";
+			else if (window_s > 0.1 && m.decay_time_s >= window_s * 0.9)
+				decay_text = QString("longer than the %1 s window").arg(window_s, 0, 'f', 1);
+			else
+				decay_text = QString("decay %1 s (60 dB)").arg(m.decay_time_s, 0, 'f', 2);
+
+			ret += QString("- space: %1, level 300 ms after the peak %2 dB\n")
+			  .arg(decay_text)
+			  .arg(m.tail_db, 0, 'f', 1);
+		}
+
+		// Transients.
+		if (m.onsets_per_second > 0.0f || m.attack_db_per_ms > 0.0f)
+			ret += QString("- transients: attack %1 dB/ms, %2 onsets/s\n")
+			  .arg(m.attack_db_per_ms, 0, 'f', 1)
+			  .arg(m.onsets_per_second, 0, 'f', 1);
+
+		ret += QString("- band levels (dB): %1.\n").arg(m.bands.join(", "));
 	}
 
 	ret += "\nNote: names with a number suffix are separate instances of one parameter (\"T0\"..\"T7\" = the "

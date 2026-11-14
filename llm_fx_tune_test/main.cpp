@@ -1110,7 +1110,7 @@ static void test_audio_analysis(void)
 	{
 		std::vector<float> tone = make_tone(1000.0, 1.0, num_frames, sample_rate);
 		AudioAnalysis analysis;
-		const bool ok = AUDIO_ANALYZE(tone.data(), num_frames, sample_rate, &analysis);
+		const bool ok = AUDIO_ANALYZE(tone.data(), tone.data(), num_frames, sample_rate, &analysis);
 		check(ok && analysis.valid, "a tone is analyzed");
 		check(fabsf(analysis.peak_db - 0.0f) < 0.5f, "a full-scale tone peaks at 0 dBFS");
 		check(fabsf(analysis.rms_db + 3.0f) < 0.5f, "a full-scale sine has -3 dBFS RMS");
@@ -1121,7 +1121,7 @@ static void test_audio_analysis(void)
 	{
 		std::vector<float> bass = make_tone(80.0, 0.5, num_frames, sample_rate);
 		AudioAnalysis analysis;
-		AUDIO_ANALYZE(bass.data(), num_frames, sample_rate, &analysis);
+		AUDIO_ANALYZE(bass.data(), bass.data(), num_frames, sample_rate, &analysis);
 
 		int loudest = 0;
 		for (int band = 1; band < AUDIO_ANALYZER_NUM_BANDS; band++)
@@ -1136,7 +1136,7 @@ static void test_audio_analysis(void)
 	{
 		std::vector<float> treble = make_tone(10000.0, 0.25, num_frames, sample_rate);
 		AudioAnalysis analysis;
-		AUDIO_ANALYZE(treble.data(), num_frames, sample_rate, &analysis);
+		AUDIO_ANALYZE(treble.data(), treble.data(), num_frames, sample_rate, &analysis);
 
 		int loudest = 0;
 		for (int band = 1; band < AUDIO_ANALYZER_NUM_BANDS; band++)
@@ -1155,7 +1155,7 @@ static void test_audio_analysis(void)
 			both[i] += high[i];
 
 		AudioAnalysis analysis;
-		AUDIO_ANALYZE(both.data(), num_frames, sample_rate, &analysis);
+		AUDIO_ANALYZE(both.data(), both.data(), num_frames, sample_rate, &analysis);
 		check(analysis.band_db[1] > -12.0f, "the bass tone shows in the low band");
 		check(analysis.band_db[AUDIO_ANALYZER_NUM_BANDS - 2] > -20.0f, "the treble tone shows in the high band");
 		check(analysis.band_db[5] < -30.0f, "an empty band is far below the tones");
@@ -1165,7 +1165,7 @@ static void test_audio_analysis(void)
 		std::vector<float> spike(num_frames, 0.0f);
 		spike[num_frames / 2] = 0.9f;
 		AudioAnalysis analysis;
-		AUDIO_ANALYZE(spike.data(), num_frames, sample_rate, &analysis);
+		AUDIO_ANALYZE(spike.data(), spike.data(), num_frames, sample_rate, &analysis);
 		check(analysis.crest_db > 20.0f, "a single spike has a large crest factor");
 	}
 
@@ -1173,10 +1173,10 @@ static void test_audio_analysis(void)
 	{
 		AudioAnalysis analysis;
 		std::vector<float> silence(num_frames, 0.0f);
-		AUDIO_ANALYZE(silence.data(), num_frames, sample_rate, &analysis);
+		AUDIO_ANALYZE(silence.data(), silence.data(), num_frames, sample_rate, &analysis);
 		check(analysis.peak_db < -100.0f, "silence measures as silence");
 
-		check(!AUDIO_ANALYZE(silence.data(), 10, sample_rate, &analysis), "too few samples is refused");
+		check(!AUDIO_ANALYZE(silence.data(), silence.data(), 10, sample_rate, &analysis), "too few samples is refused");
 	}
 }
 
@@ -1207,12 +1207,71 @@ static void test_measurement_rule(void)
 	check(rules.contains("measured some seconds ago"), "the rules mention the age of the numbers");
 
 	// From the session where "keep the same volume" overshot twice.
-	check(rules.contains("use the RMS figure"), "volume requests are told to use the RMS figure");
-	check(rules.contains("target RMS - current RMS"), "the rules give the dB arithmetic for a volume change");
+	check(rules.contains("use the 'at its loudest, 400 ms' loudness"), "volume requests are told which loudness figure to use");
+	check(rules.contains("never match a level with either of those"), "the window average and 'now' are ruled out for level matching");
+	check(rules.contains("more than about 12 dB"), "an implausible level difference is called out");
+	check(rules.contains("target loudness - current loudness"), "the rules give the dB arithmetic for a volume change");
 	check(rules.contains("applied with ONE control"), "the rules forbid stacking small corrections");
 	check(rules.contains("is the reference for 'before'"), "the earlier measurement is the reference for 'before'");
 	check(rules.contains("no earlier measurement exists, say so"), "the model must not pretend to match an unseen level");
 	check(rules.contains("If the peak is above 0 dB the output is clipping"), "clipping is called out");
+}
+
+static void test_song_timing(void)
+{
+	printf("song tempo and signature in the prompt:\n");
+
+	const QVector<FxParamState> states = make_states();
+
+	FxInstrumentContext instrument;
+	instrument.plugin_name = "Presswerk";
+	instrument.type_name = "VST3";
+	FxInstrumentParamState param;
+	param.effect_num = 0;
+	param.name = "Ratio 1";
+	param.display_name = param.name;
+	param.current_scaled = 0.3f;
+	param.format = FX_INSTRUMENT_PARAM_FLOAT;
+	param.is_clamped = true;
+	instrument.params.append(param);
+
+	// No timing known: no line, no claim.
+	{
+		const QString message = build_fx_user_message(states, instrument, "x");
+		check(!message.contains("Song tempo"), "no tempo line without a tempo");
+	}
+
+	// 120 BPM, 4/4: a beat is 500 ms and a bar 2000 ms.
+	{
+		FxInstrumentContext timed = instrument;
+		timed.bpm = 120.0;
+		timed.signature_numerator = 4;
+		timed.signature_denominator = 4;
+
+		const QString message = build_fx_user_message(states, timed, "x");
+		check(message.contains("Song tempo: 120 BPM, 4/4 signature"), "the tempo and signature are sent");
+		check(message.contains("one beat = 500 ms"), "a beat length is given in ms");
+		check(message.contains("one bar = 2000 ms"), "a bar length is given in ms");
+	}
+
+	// 128 BPM, 3/4: beat 469 ms, bar 1406 ms.
+	{
+		FxInstrumentContext timed = instrument;
+		timed.bpm = 128.0;
+		timed.signature_numerator = 3;
+		timed.signature_denominator = 4;
+
+		const QString message = build_fx_user_message(states, timed, "x");
+		check(message.contains("Song tempo: 128 BPM, 3/4 signature"), "128 BPM is shown as an integer");
+		check(message.contains("one beat = 469 ms"), "the beat length is computed from the tempo");
+		check(message.contains("one bar = 1406 ms"), "the bar length follows the signature");
+	}
+
+	// The rules must point at it.
+	const QString rules = build_fx_system_prompt();
+	check(rules.contains("The song tempo"), "the rules mention the song tempo");
+	check(rules.contains("cycles per beat"), "the rules explain the modulator rate unit");
+	check(rules.contains("compute it from the tempo instead of guessing"), "the rules forbid guessing durations");
 }
 
 static void test_measurement_history(void)
@@ -1227,10 +1286,303 @@ static void test_measurement_history(void)
 	measurement.rms_db = -18.1f;
 	measurement.crest_db = 6.2f;
 	const QString summary = fx_measurement_summary(measurement);
-	check(summary == "peak -12.0, RMS -18.1, crest 6.2 dB", "the summary has the three level figures");
+	check(summary.contains("loudness") && summary.contains("crest 6.2 dB"), "the summary has the level figures");
 
 	// It must be small: it is repeated for every turn in the history.
-	check(summary.size() < 60, "the summary is compact");
+	check(summary.size() < 90, "the summary is compact");
+}
+
+static void test_audio_analysis_tier1(void)
+{
+	printf("audio analysis, Tier 1 figures:\n");
+
+	const int sample_rate = 48000;
+	const int num_frames = sample_rate; // 1 s
+
+	auto tone = [&](double freq, double amplitude)
+	{
+		std::vector<float> v(num_frames);
+		for (int i = 0; i < num_frames; i++)
+			v[i] = (float)(amplitude * sin(2.0 * M_PI * freq * i / sample_rate));
+		return v;
+	};
+
+	// ---- loudness: BS.1770 reference behaviour ----
+	// A -6 dBFS 1 kHz sine, both channels: about -6 LUFS.
+	{
+		std::vector<float> v = tone(1000.0, 0.5);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.loudness_window_lufs + 6.0f) < 1.0f, "a -6 dBFS stereo 1 kHz sine reads about -6 LUFS");
+		check(fabsf(a.loudness_momentary_lufs - a.loudness_window_lufs) < 0.5f,
+		      "a steady tone has the same momentary and window loudness");
+	}
+
+	// -12 dB of gain should move loudness by -12 LU, i.e. loudness is a level.
+	{
+		std::vector<float> loud = tone(1000.0, 0.5);
+		std::vector<float> quiet = tone(1000.0, 0.125); // -12 dB
+		AudioAnalysis a, b;
+		AUDIO_ANALYZE(loud.data(), loud.data(), num_frames, sample_rate, &a);
+		AUDIO_ANALYZE(quiet.data(), quiet.data(), num_frames, sample_rate, &b);
+		check(fabsf((a.loudness_window_lufs - b.loudness_window_lufs) - 12.0f) < 0.5f,
+		      "12 dB of gain reads as 12 LU");
+	}
+
+	// ---- loudness: which figure describes the sound ----
+	// A steady tone: all three figures agree.
+	// A short note followed by silence (the log's decaying sample): the window
+	// average and "now" collapse, the loudest figure does not. Matching levels
+	// with the collapsed figure is what asked for +25 dB.
+	{
+		std::vector<float> steady = tone(500.0, 0.5);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(steady.data(), steady.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.loudness_loudest_lufs - a.loudness_window_lufs) < 0.5f,
+		      "a steady sound has the same loudest and average loudness");
+
+		// The real capture window is 3 s, which is where a single short note
+		// leaves mostly silence behind (the log's case).
+		const int long_frames = 3 * sample_rate;
+		std::vector<float> shortNote(long_frames, 0.0f);
+		for (int i = 0; i < sample_rate * 3 / 10; i++) // 300 ms of tone
+			shortNote[i] = (float)(0.5 * sin(2.0 * M_PI * 500.0 * i / sample_rate));
+		AudioAnalysis b;
+		AUDIO_ANALYZE(shortNote.data(), shortNote.data(), long_frames, sample_rate, &b);
+
+		check(b.loudness_loudest_lufs > a.loudness_window_lufs - 3.0f,
+		      "the loudest figure stays near the note's own level despite the silence");
+		check(b.loudness_window_lufs < a.loudness_window_lufs - 6.0f,
+		      "the window average collapses when the window is mostly silence");
+		check(b.loudness_momentary_lufs < b.loudness_loudest_lufs - 6.0f,
+		      "the momentary figure shows that the instrument is decaying right now");
+	}
+
+	// ---- true peak ----
+	{
+		std::vector<float> v = tone(1000.0, 0.5);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(a.true_peak_db >= a.peak_db - 0.2f, "the true peak is never below the sample peak");
+		check(a.true_peak_db < 1.0f, "a -6 dBFS sine does not read as clipping");
+	}
+
+	// ---- stereo ----
+	{
+		std::vector<float> l = tone(1000.0, 0.5);
+		std::vector<float> r = l; // identical channels
+		AudioAnalysis a;
+		AUDIO_ANALYZE(l.data(), r.data(), num_frames, sample_rate, &a);
+		check(a.stereo_correlation > 0.99f, "identical channels are fully correlated");
+		check(a.stereo_side_db < -60.0f, "identical channels have no side signal");
+
+		for (int i = 0; i < num_frames; i++)
+			r[i] = -l[i]; // out of phase
+		AUDIO_ANALYZE(l.data(), r.data(), num_frames, sample_rate, &a);
+		check(a.stereo_correlation < -0.99f, "out-of-phase channels correlate at -1");
+
+		for (int i = 0; i < num_frames; i++)
+			r[i] = 0.5f * l[i]; // right channel 6 dB down
+		AUDIO_ANALYZE(l.data(), r.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.stereo_balance_db + 6.0f) < 0.5f, "a 6 dB difference reads as -6 dB (right minus left)");
+	}
+
+	// ---- spectral shape ----
+	{
+		std::vector<float> low = tone(200.0, 0.5);
+		std::vector<float> high = tone(5000.0, 0.5);
+		AudioAnalysis a, b;
+		AUDIO_ANALYZE(low.data(), low.data(), num_frames, sample_rate, &a);
+		AUDIO_ANALYZE(high.data(), high.data(), num_frames, sample_rate, &b);
+		check(fabsf(a.centroid_hz - 200.0f) < 30.0f, "a 200 Hz tone has its centroid at 200 Hz");
+		check(fabsf(b.centroid_hz - 5000.0f) < 200.0f, "a 5 kHz tone has its centroid at 5 kHz");
+		check(a.flatness < 0.2f, "a tone is not noise-like");
+
+		std::vector<float> noise(num_frames);
+		unsigned int seed = 1;
+		for (int i = 0; i < num_frames; i++){
+			seed = seed * 1103515245u + 12345u;
+			noise[i] = 0.1f * (((seed >> 16) & 0x7fff) / 16384.0f - 1.0f);
+		}
+		AudioAnalysis c;
+		AUDIO_ANALYZE(noise.data(), noise.data(), num_frames, sample_rate, &c);
+		check(c.flatness > 0.35f, "white noise is noise-like");
+	}
+
+	// ---- hum and DC ----
+	{
+		std::vector<float> hum(num_frames);
+		for (int i = 0; i < num_frames; i++)
+			hum[i] = (float)(0.05 * sin(2.0 * M_PI * 60.0 * i / sample_rate) + 0.2 * sin(2.0 * M_PI * 1000.0 * i / sample_rate));
+		AudioAnalysis a;
+		AUDIO_ANALYZE(hum.data(), hum.data(), num_frames, sample_rate, &a);
+		check(a.hum_hz > 0.0f, "a 60 Hz hum peak is found");
+		check(fabsf(a.hum_hz - 60.0f) < 1.0f, "the hum is reported at 60 Hz");
+
+		std::vector<float> clean = tone(1000.0, 0.5);
+		AudioAnalysis b;
+		AUDIO_ANALYZE(clean.data(), clean.data(), num_frames, sample_rate, &b);
+		check(b.hum_hz == 0.0f, "a clean tone has no hum");
+	}
+
+	{
+		std::vector<float> v = tone(1000.0, 0.2);
+		for (float &sample : v)
+			sample += 0.1f; // DC offset
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.dc_offset - 0.1f) < 0.01f, "a DC offset is measured");
+	}
+
+	// ---- transients ----
+	{
+		// Four clicks per second: onsets, no sustained attack measured.
+		std::vector<float> clicks(num_frames, 0.0f);
+		for (int c = 0; c < 4; c++)
+			for (int i = 0; i < 200; i++)
+				clicks[6000 + 12000 * c + i] = 0.8f * expf(-i / 40.0f);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(clicks.data(), clicks.data(), num_frames, sample_rate, &a);
+		check(a.onsets_per_second > 3.0f && a.onsets_per_second < 5.0f, "four clicks per second are counted");
+		check(a.crest_db > 20.0f, "clicks have a high crest factor");
+
+		// A steady tone has neither.
+		std::vector<float> steady = tone(1000.0, 0.5);
+		AudioAnalysis b;
+		AUDIO_ANALYZE(steady.data(), steady.data(), num_frames, sample_rate, &b);
+		check(b.onsets_per_second == 0.0f, "a steady tone has no onsets");
+		check(b.attack_db_per_ms < 0.2f, "a steady tone has no attack rate");
+	}
+
+	// Mono input (right == NULL) works and reports no stereo.
+	{
+		std::vector<float> v = tone(440.0, 0.5);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), NULL, num_frames, sample_rate, &a);
+		check(a.valid, "a mono block is analyzed");
+		check(a.stereo_side_db < -60.0f, "a mono block has no side signal");
+	}
+}
+
+static void test_audio_decay(void)
+{
+	printf("space (reverb decay) analysis:\n");
+
+	const int sample_rate = 48000;
+	const int num_frames = 3 * sample_rate;
+
+	// A 50 ms burst followed by an exponential decay with a known RT60.
+	auto burst = [&](double rt60_s)
+	{
+		std::vector<float> v(num_frames, 0.0f);
+		const double decay_db_per_s = 60.0 / rt60_s;
+		unsigned int seed = 7;
+		for (int i = 0; i < num_frames; i++){
+			const double t = (double)i / sample_rate;
+			double amplitude = t < 0.05 ? 1.0 : pow(10.0, -decay_db_per_s * (t - 0.05) / 20.0);
+			if (amplitude < 1e-4)
+				amplitude = 0.0;
+			seed = seed * 1103515245u + 12345u;
+			const double noise = ((seed >> 16) & 0x7fff) / 16384.0 - 1.0;
+			v[i] = (float)(0.5 * amplitude * noise);
+		}
+		return v;
+	};
+
+	{
+		std::vector<float> v = burst(0.3);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.decay_time_s - 0.3f) < 0.1f, "a 0.3 s decay is estimated as ~0.3 s (short/dry)");
+		check(a.tail_db < -35.0f, "a 0.3 s tail is far below the peak 300 ms later");
+	}
+
+	{
+		std::vector<float> v = burst(1.0);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.decay_time_s - 1.0f) < 0.25f, "a 1 s decay is estimated as ~1 s");
+		check(a.tail_db > -25.0f && a.tail_db < -8.0f, "a 1 s tail is a moderate distance below the peak");
+	}
+
+	{
+		std::vector<float> v = burst(2.0);
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(fabsf(a.decay_time_s - 2.0f) < 0.5f, "a 2 s decay is estimated as ~2 s (long/wet)");
+		check(a.tail_db > -12.0f, "a long tail stays close to the peak");
+	}
+
+	// Sustained material has no decay to measure: the model must not be fed a
+	// made-up reverb time.
+	{
+		std::vector<float> v(num_frames);
+		for (int i = 0; i < num_frames; i++)
+			v[i] = (float)(0.5 * sin(2.0 * M_PI * 500.0 * i / sample_rate));
+		AudioAnalysis a;
+		AUDIO_ANALYZE(v.data(), v.data(), num_frames, sample_rate, &a);
+		check(a.decay_time_s == 0.0f, "a sustained tone has no decay estimate");
+		check(a.tail_db == 0.0f, "a sustained tone has no tail figure");
+	}
+
+	// And the prompt must show the space line, and hide it when unknown.
+	{
+		const QVector<FxParamState> states = make_states();
+		FxInstrumentContext instrument;
+		instrument.plugin_name = "Uhbik-A";
+		instrument.type_name = "VST3";
+		FxInstrumentParamState param;
+		param.effect_num = 2;
+		param.name = "2: Size";
+		param.display_name = param.name;
+		param.current_scaled = 0.5f;
+		param.format = FX_INSTRUMENT_PARAM_FLOAT;
+		param.is_clamped = true;
+		instrument.params.append(param);
+
+		FxInstrumentContext measured = instrument;
+		measured.measurement.valid = true;
+		measured.measurement.sample_rate = 48000;
+		measured.measurement.decay_time_s = 1.35f;
+		measured.measurement.tail_db = -14.2f;
+		measured.measurement.bands << "60-120 Hz -9";
+
+		const QString message = build_fx_user_message(states, measured, "more reverb");
+		check(message.contains("- space: decay 1.35 s (60 dB)"), "the decay time is in the prompt");
+		check(message.contains("level 300 ms after the peak -14.2 dB"), "the tail level is in the prompt");
+
+		// A decay longer than the captured window cannot be measured; it must
+		// not be printed as a number (the log had a bogus 7.90 s).
+		measured.measurement.sample_rate = 48000;
+		measured.measurement.num_frames = 144000; // 3 s
+		measured.measurement.decay_time_s = 3.0f;
+		const QString long_decay = build_fx_user_message(states, measured, "more reverb");
+		check(long_decay.contains("space: longer than the 3.0 s window"), "a decay at the window length is reported as longer than the window");
+
+		measured.measurement.decay_time_s = 0.0f;
+		const QString no_decay = build_fx_user_message(states, measured, "more reverb");
+		check(no_decay.contains("space: not measurable"), "an unmeasurable decay says so (no 'unknown s')");
+		check(!no_decay.contains("unknown"), "no malformed 'unknown' text");
+
+		// The stereo line is always present: mono is the case a width request
+		// has to know about (it was hidden in the log).
+		{
+			FxInstrumentContext mono = measured;
+			mono.measurement.stereo_correlation = 1.0f;
+			mono.measurement.stereo_side_db = -120.0f;
+			mono.measurement.stereo_balance_db = 0.0f;
+			const QString mono_message = build_fx_user_message(states, mono, "narrow lows, wide highs");
+			check(mono_message.contains("- stereo: correlation 1.00"), "the stereo line is always shown");
+			check(mono_message.contains("no side signal (the material is mono)"), "mono material is stated as mono");
+		}
+
+		const QString plain = build_fx_user_message(states, instrument, "more reverb");
+		check(!plain.contains("- space:"), "no space line without a decay measurement");
+	}
+
+	const QString rules = build_fx_system_prompt();
+	check(rules.contains("the decay figure is what the space currently does"), "the rules explain the decay figure");
+	check(rules.contains("prefer its own Size/Decay/Damping/Mix"), "a reverb's own controls are preferred over the send");
 }
 
 static void test_measurement_prompt(void)
@@ -1269,15 +1621,16 @@ static void test_measurement_prompt(void)
 
 		const QString message = build_fx_user_message(states, measured, "more bass");
 		check(message.contains("What it currently measures"), "the measurement block is present");
-		check(message.contains("peak -3.2 dB"), "the peak is reported");
-		check(!message.contains("dBFS"), "the levels are not called dBFS (they can be above full scale)");
 		check(message.contains("crest 10.8 dB"), "the crest factor is reported");
+		check(!message.contains("dBFS"), "the levels are not called dBFS (they can be above full scale)");
+		check(message.contains("true peak"), "the true peak is reported");
+		check(message.contains("loudness"), "the loudness is reported");
 		check(message.contains("60-120 Hz -9, 250-500 Hz -4"), "the band levels are reported");
 
 		// It must stay small: this is sent on every turn.
 		const int start = message.indexOf("What it currently measures");
 		const int end = message.indexOf("Note: names with a number suffix");
-		check(end - start < 400, "the measurement block is bounded");
+		check(end - start < 900, "the measurement block is bounded");
 	}
 }
 
@@ -2170,9 +2523,12 @@ int main(int argc, char **argv)
 	test_unit_reporting();
 	test_instrument_summary();
 	test_audio_analysis();
+	test_audio_analysis_tier1();
+	test_audio_decay();
 	test_measurement_prompt();
 	test_measurement_rule();
 	test_measurement_history();
+	test_song_timing();
 	test_compact_controls();
 	test_plugin_catalogue_economy();
 	test_description_budget();

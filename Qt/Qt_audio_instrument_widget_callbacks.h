@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/AudioMeasurements.h"
+#include "../common/sequencer_timing_proc.h"
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
@@ -489,6 +490,18 @@ public:
         // Controls whose display text the plugin type cannot produce (a missing
         // case in its get_display_value_string); logged once, never a dialog.
         QStringList undisplayable_control_numbers;
+
+        // Song tempo/signature, so durations can be expressed musically.
+        // (g_rt_sequencer_bpm/_signature are updated with the audio blocks,
+        // so they describe the position the measurements come from.)
+        {
+          const double bpm = g_rt_sequencer_bpm;
+          if (bpm > 1.0 && bpm < 999.0){
+            context.bpm = bpm;
+            context.signature_numerator = (int)g_rt_sequencer_signature.numerator;
+            context.signature_denominator = (int)g_rt_sequencer_signature.denominator;
+          }
+        }
         // Why the prompt has no measurements (logged, so "the instrument was
         // not audible" can be told apart from "the feature is broken").
         QString measurement_missing_reason;
@@ -565,7 +578,25 @@ public:
             context.measurement.peak_db = analysis.peak_db;
             context.measurement.rms_db = analysis.rms_db;
             context.measurement.crest_db = analysis.crest_db;
+            context.measurement.loudness_momentary_lufs = analysis.loudness_momentary_lufs;
+            context.measurement.loudness_loudest_lufs = analysis.loudness_loudest_lufs;
+            context.measurement.loudness_window_lufs = analysis.loudness_window_lufs;
+            context.measurement.true_peak_db = analysis.true_peak_db;
+            context.measurement.stereo_correlation = analysis.stereo_correlation;
+            context.measurement.stereo_side_db = analysis.stereo_side_db;
+            context.measurement.stereo_balance_db = analysis.stereo_balance_db;
+            context.measurement.centroid_hz = analysis.centroid_hz;
+            context.measurement.flatness = analysis.flatness;
+            context.measurement.hum_db = analysis.hum_db;
+            context.measurement.hum_hz = analysis.hum_hz;
+            context.measurement.dc_offset = analysis.dc_offset;
+            context.measurement.sub_bass_db = analysis.sub_bass_db;
+            context.measurement.attack_db_per_ms = analysis.attack_db_per_ms;
+            context.measurement.onsets_per_second = analysis.onsets_per_second;
+            context.measurement.decay_time_s = analysis.decay_time_s;
+            context.measurement.tail_db = analysis.tail_db;
             context.measurement.age_ms = MEASUREMENTS_get_age_ms(sound_producer, plugin);
+            context.measurement.num_frames = analysis.num_frames;
             for (int band = 0; band < AUDIO_ANALYZER_NUM_BANDS; band++){
               const AudioAnalyzerBand edges = AUDIO_ANALYZER_band(band);
               context.measurement.bands.append(QString("%1-%2 Hz %3")

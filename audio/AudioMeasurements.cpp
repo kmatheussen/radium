@@ -54,9 +54,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "AudioMeasurements.h"
 #include "AudioAnalyzer.h"
 
-// ~85 ms at 48 kHz: enough for ~12 Hz resolution (the 30-60 Hz band needs it),
-// short enough that a change made by the user is reflected on the next prompt.
-#define CAPTURE_FRAMES 4096
+// 3 s at 48 kHz. The spectrum only needs ~85 ms (4096 samples), but loudness
+// (BS.1770 short-term is 3 s), the transient/onset figures and especially the
+// reverb-decay estimate need a longer window. The block is published once per
+// full window (a 2x576 KB memcpy every 3 s in the audio thread - no allocation,
+// no locking), plus one early partial block so the first prompt of a session
+// does not have to wait.
+#define CAPTURE_FRAMES 144000
 
 // Opt-in tracing (RADIUM_DEBUG_MEASUREMENTS=1): which instrument is selected,
 // how much audio was captured, and why a read fails.
@@ -78,10 +82,12 @@ namespace {
   std::atomic<bool> g_capture_enabled{false};
 
   // Written by the audio thread, read by the main thread.
-  float g_write_buffer[CAPTURE_FRAMES];
+  float g_write_left[CAPTURE_FRAMES];
+  float g_write_right[CAPTURE_FRAMES];
   int g_write_pos = 0;
 
-  float g_ready_buffer[CAPTURE_FRAMES];
+  float g_ready_left[CAPTURE_FRAMES];
+  float g_ready_right[CAPTURE_FRAMES];
   std::atomic<int> g_ready_version{0}; // bumped after each completed block
   int g_ready_frames = 0;
   void *g_ready_producer = NULL;
@@ -103,7 +109,8 @@ namespace {
   void publish_block(void *sound_producer, void *sound_plugin, int num_frames)
   {
     g_sequence.fetch_add(1, std::memory_order_release); // odd: writing
-    memcpy(g_ready_buffer, g_write_buffer, sizeof(float) * num_frames);
+    memcpy(g_ready_left, g_write_left, sizeof(float) * num_frames);
+    memcpy(g_ready_right, g_write_right, sizeof(float) * num_frames);
     g_ready_frames = num_frames;
     g_ready_producer = sound_producer;
     g_ready_plugin = sound_plugin;
@@ -200,30 +207,37 @@ void MEASUREMENTS_RT_capture(struct SoundProducer *sound_producer, struct SoundP
     return;
   }
 
-  // Mix down to mono; the model reasons about the instrument as a whole.
+  // Keep both channels: the stereo figures (correlation, side/mid, balance)
+  // need them separately.
   const float *left = sounds[0];
   const float *right = num_channels > 1 ? sounds[1] : NULL;
   if (left == NULL)
     return;
 
   for (int i = 0; i < num_frames; i++){
-    const float sample = right != NULL ? 0.5f * (left[i] + right[i]) : left[i];
-    g_write_buffer[g_write_pos++] = sample;
+    g_write_left[g_write_pos] = left[i];
+    g_write_right[g_write_pos] = right != NULL ? right[i] : left[i];
+    g_write_pos++;
 
-    if (g_write_pos == CAPTURE_FRAMES){
-      publish_block(sound_producer, sound_plugin, CAPTURE_FRAMES);
+    // Publish when the window is full, and once early on so the first prompt
+    // of a session does not have to wait a whole second of audio.
+    const bool first_partial = g_captured_blocks.load(std::memory_order_relaxed) == 0
+                            && g_write_pos >= CAPTURE_FRAMES / 8;
+    if (g_write_pos == CAPTURE_FRAMES || first_partial){
+      publish_block(sound_producer, sound_plugin, g_write_pos);
       const long long num_blocks = g_captured_blocks.fetch_add(1, std::memory_order_relaxed) + 1;
       if (debug_measurements() && (num_blocks <= 3 || num_blocks % 20 == 0))
-        printf("measurements: published block %lld (%p/%p)\n", num_blocks, (void*)sound_producer, (void*)sound_plugin);
+        printf("measurements: published block %lld (%d frames, %p/%p)\n",
+               num_blocks, g_write_pos, (void*)sound_producer, (void*)sound_plugin);
       g_write_pos = 0;
     }
   }
 }
 
 static bool read_block(struct SoundProducer *sound_producer, struct SoundPlugin *sound_plugin,
-                       float *block, int *num_frames_out)
+                       float *left, float *right, int *num_frames_out)
 {
-  if (block == NULL || num_frames_out == NULL)
+  if (left == NULL || right == NULL || num_frames_out == NULL)
     return false;
 
   if (!is_target(sound_producer, sound_plugin))
@@ -241,7 +255,8 @@ static bool read_block(struct SoundProducer *sound_producer, struct SoundPlugin 
     num_frames = g_ready_frames;
     if (num_frames <= 0 || num_frames > CAPTURE_FRAMES)
       return false;
-    memcpy(block, g_ready_buffer, sizeof(float) * num_frames);
+    memcpy(left, g_ready_left, sizeof(float) * num_frames);
+    memcpy(right, g_ready_right, sizeof(float) * num_frames);
 
     if (g_sequence.load(std::memory_order_acquire) == sequence_before)
       break; // consistent
@@ -315,9 +330,16 @@ MeasurementsStatus MEASUREMENTS_get_status(struct SoundProducer *sound_producer,
     return MEASUREMENTS_STATUS_NOT_TARGET;
   }
 
-  float block[CAPTURE_FRAMES];
+  float *left = (float*)malloc(sizeof(float) * CAPTURE_FRAMES);
+  float *right = (float*)malloc(sizeof(float) * CAPTURE_FRAMES);
+  if (left == NULL || right == NULL){
+    free(left);
+    free(right);
+    return MEASUREMENTS_STATUS_SILENT;
+  }
+
   int num_frames = 0;
-  const bool have_block = read_block(sound_producer, sound_plugin, block, &num_frames);
+  const bool have_block = read_block(sound_producer, sound_plugin, left, right, &num_frames);
 
   if (debug)
     printf("measurements: get_status(%p/%p): calls=%lld blocks=%lld ready=%p/%p version=%d have_block=%d frames=%d\n",
@@ -328,28 +350,33 @@ MeasurementsStatus MEASUREMENTS_get_status(struct SoundProducer *sound_producer,
            (int)g_ready_version.load(std::memory_order_relaxed),
            (int)have_block, num_frames);
 
-  if (!have_block)
+  if (!have_block){
+    free(left);
+    free(right);
     return g_capture_calls.load(std::memory_order_relaxed) == 0
       ? MEASUREMENTS_STATUS_NEVER_CAPTURED
       : MEASUREMENTS_STATUS_SILENT; // captured, but no complete block yet
+  }
 
   // Silence means the instrument is not audible right now (stopped, muted, or
   // no notes): reporting a flat -120 dB spectrum would only mislead the model.
   double sum = 0.0;
   for (int i = 0; i < num_frames; i++)
-    sum += fabs((double)block[i]);
-  if (sum / (double)num_frames < 1e-5){
-    if (debug) printf("measurements: get_status: block is silent (mean %.9f)\n", sum / (double)num_frames);
+    sum += fabs((double)left[i]) + fabs((double)right[i]);
+  if (sum / (double)(num_frames * 2) < 1e-5){
+    if (debug) printf("measurements: get_status: block is silent (mean %.9f)\n", sum / (double)(num_frames * 2));
+    free(left);
+    free(right);
     return MEASUREMENTS_STATUS_SILENT;
   }
 
-  if (!AUDIO_ANALYZE(block, num_frames, sample_rate, out)){
-    if (debug) printf("measurements: get_status: AUDIO_ANALYZE failed (libfftw3f missing?)\n");
-    return MEASUREMENTS_STATUS_NO_ANALYZER;
-  }
+  const bool ok = AUDIO_ANALYZE(left, right, num_frames, sample_rate, out);
+  if (debug) printf("measurements: get_status: analyze %s (peak %.1f dBFS, %d frames)\n",
+                    ok ? "ok" : "FAILED (libfftw3f missing?)", out->peak_db, num_frames);
+  free(left);
+  free(right);
 
-  if (debug) printf("measurements: get_status: OK (peak %.1f dBFS, %d frames)\n", out->peak_db, num_frames);
-  return MEASUREMENTS_STATUS_OK;
+  return ok ? MEASUREMENTS_STATUS_OK : MEASUREMENTS_STATUS_NO_ANALYZER;
 }
 
 bool MEASUREMENTS_get(struct SoundProducer *sound_producer, struct SoundPlugin *sound_plugin,

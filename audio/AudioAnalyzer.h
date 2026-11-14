@@ -18,13 +18,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <stdbool.h>
 
-// A coarse spectral/level description of a short audio block, made for the LLM
-// effect tuner: ten octave-ish bands plus the usual level figures. Coarse on
-// purpose - it is prompt text, and a fine spectrum would cost more than it
-// tells the model.
+// A coarse description of a short audio block, made for the LLM effect tuner:
+// the figures a mixing decision can be based on (loudness, dynamics, stereo
+// width, spectral shape, noise, transients). Coarse on purpose - it is prompt
+// text, and a fine analysis would cost more than it tells the model.
 //
-// FFTW is loaded with dlopen() on first use, so Radium builds and runs exactly
-// as before on systems without libfftw3 (AUDIO_ANALYZE then returns false).
+// Everything is computed once per prompt on the main thread, from ~1 s of the
+// instrument's output (audio/AudioMeasurements.cpp).
 
 #define AUDIO_ANALYZER_NUM_BANDS 10
 
@@ -39,20 +39,62 @@ typedef struct {
   int num_frames;
   int sample_rate;
 
-  // Full-scale-relative levels. peak_db/rms_db are dBFS (0 = full scale),
+  // ---- levels ----
+  // Full-scale-relative: peak_db/rms_db are dB re full scale (0 = full scale),
   // crest_db = peak_db - rms_db.
   float peak_db;
   float rms_db;
   float crest_db;
 
-  // Per-band level in dBFS, band-limited (so a band with no energy is very
-  // negative). Index i corresponds to AUDIO_ANALYZER_band(i).
+  // BS.1770 loudness (K-weighted), in LUFS. The momentary figure uses the last
+  // 400 ms, the "window" figure the whole captured block. 'loudest' is the
+  // maximum over all 400 ms windows: the level of the SOUND, which is the one
+  // to match levels with (the window average is depressed by the silence after
+  // a decaying note).
+  float loudness_momentary_lufs;
+  float loudness_loudest_lufs;
+  float loudness_window_lufs;
+  // Inter-sample peak estimate (4x oversampled), in dB re full scale.
+  float true_peak_db;
+
+  // ---- stereo ----
+  // 1 = mono/identical channels, 0 = uncorrelated, -1 = out of phase.
+  float stereo_correlation;
+  // Side (L-R) level relative to mid (L+R), in dB (very negative = mono).
+  float stereo_side_db;
+  // Right minus left level in dB (positive = louder on the right).
+  float stereo_balance_db;
+
+  // ---- spectral shape ----
+  float centroid_hz;   // "brightness": energy-weighted mean frequency
+  float flatness;      // 0 = tonal, 1 = noise-like (geometric/arithmetic mean)
+  float dc_offset;     // mean (mid) sample value, ~0 for a healthy signal
+  float hum_db;        // level of a mains-hum peak, dB re full scale
+  float hum_hz;        // 0 when no hum peak was found
+  float sub_bass_db;   // level below 30 Hz, dB re full scale
+
+  // ---- transients ----
+  float attack_db_per_ms;  // steepest rise of the envelope (dB per ms)
+  float onsets_per_second; // detected attacks per second
+
+  // ---- space (reverb / room) ----
+  // Estimated time for the level to fall 60 dB after a peak (RT60-like), in
+  // seconds. 0 when no clear decay could be measured (sustained material,
+  // silence, or a decay that does not fit the window).
+  float decay_time_s;
+  // Level 300 ms after that peak, relative to the peak, in dB. Closer to 0
+  // means a longer/heavier tail; -30 dB or lower means dry/short. 0 when
+  // unknown.
+  float tail_db;
+
+  // Per-band level in dB re full scale, band-limited (so a band with no energy
+  // is very negative). Index i corresponds to AUDIO_ANALYZER_band(i).
   float band_db[AUDIO_ANALYZER_NUM_BANDS];
 } AudioAnalysis;
 
 // Band i of the analysis (edges in Hz).
 AudioAnalyzerBand AUDIO_ANALYZER_band(int band_num);
 
-// Analyzes 'mono' (num_frames samples, mixed down to mono by the caller).
-// Returns false when FFTW is unavailable or the input is too short.
-bool AUDIO_ANALYZE(const float *mono, int num_frames, int sample_rate, AudioAnalysis *out);
+// Analyzes 'left' (and 'right' when not NULL, otherwise mono) -num_frames
+// samples at 'sample_rate'. Returns false for too-short input.
+bool AUDIO_ANALYZE(const float *left, const float *right, int num_frames, int sample_rate, AudioAnalysis *out);
