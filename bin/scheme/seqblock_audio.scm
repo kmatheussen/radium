@@ -347,14 +347,44 @@
             0.01))
 
       (define last-change-time -10000)
-      
+
+      ;; Updating the slider and the text input can not be done directly from
+      ;; set-new-pitch! when it is called from one of their callbacks: That
+      ;; would call ra:gui-set-value while ra:gui-set-value is still running,
+      ;; which trips the reentrancy check in the generated API wrappers
+      ;; (debug builds only). Scheduling the update lets the outer API call
+      ;; finish first.
+      (define widget-sync-is-scheduled #f)
+	  
+      (define (schedule-widget-sync!)
+        (when (not widget-sync-is-scheduled)
+          (set! widget-sync-is-scheduled #t)
+          (<ra> :schedule 0
+                (lambda ()
+                  (set! widget-sync-is-scheduled #f)
+                  (when (and seqblock-is-alive
+                             has-started
+                             pitch-slider
+                             pitch-text-input
+                             (<gui> :is-open pitch-slider)
+                             (<gui> :is-open pitch-text-input))
+                    ;; Compare the pitch, not the 0..1 slider position against a semitone value.
+                    (if (pitch-is-different (funcs :get-pitch-from-slider (<gui> :get-value pitch-slider))
+                                            curr-pitch)
+                        (<gui> :set-value pitch-slider (funcs :get-slider-from-pitch curr-pitch)))
+                    (if (pitch-is-different (<gui> :get-value pitch-text-input) curr-pitch)
+                        (<gui> :set-value pitch-text-input curr-pitch)))
+                  ;; The schedule callback must return a value that can be converted to dyn_t.
+                  #f)))
+        #f)
+
       (define (set-new-pitch! new-pitch)
         (set! seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
         (set! seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
         
         ;;(c-display "new-pitch/old-pitch" new-pitch curr-pitch)
         (when (pitch-is-different new-pitch curr-pitch)
-
+		  
           (define time (<ra> :get-ms))
           (when (> time
                    (+ last-change-time 1000))
@@ -373,11 +403,7 @@
           (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
           (<ra> :apply-gfx-seqblocks seqtracknum)
 
-          (if (pitch-is-different (<gui> :get-value pitch-slider) new-pitch)
-              (<gui> :set-value pitch-slider (funcs :get-slider-from-pitch new-pitch)))
-          (if (pitch-is-different (<gui> :get-value pitch-text-input) new-pitch)              
-              (<gui> :set-value pitch-text-input new-pitch))
-          ))
+          (schedule-widget-sync!)))
 
       (define-struct those-things
         :speed
