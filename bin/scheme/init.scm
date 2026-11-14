@@ -300,6 +300,7 @@ FROM_C-load-next-instrument-preset-popup-menu
 FROM_C-load-instrument-preset-popup-menu
 FROM_C-replace-instrument-preset-popup-menu
 FROM_C-show-hide-instrument-gui-popup-menu
+FROM_C-show-llm-fx-tune-popup-menu
 FROM_C-select-instrument-a/b-popup-menu
 FROM_C-randomize-effects-popup-menu
 FROM_C-randomize-effects

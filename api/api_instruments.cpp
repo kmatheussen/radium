@@ -1247,6 +1247,17 @@ void toggleInstrumentWidgetSizeType(instrument_t instrument_id, int size_type){
   AUDIOWIDGET_toggle_size_type(patch, (SizeType)size_type);
 }
 
+void toggleLlmFxTune(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (InstrumentWidget_get_audio_instrument_widget(patch)==NULL)
+    return;
+
+  AUDIOWIDGET_toggle_llm_fx_tune(patch);
+}
+
 void resetInstrumentEffects(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)

@@ -980,6 +980,16 @@
    ))
 
 
+(define (FROM_C-show-llm-fx-tune-popup-menu) 
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:toggle-llm-fx-tune"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 (define (FROM_C-reset-instrument-a/b-popup-menu abnum)
   (popup-menu
    (get-keybinding-configuration-popup-menu-entries "ra:reset-instrument-config-num"

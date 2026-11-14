@@ -1346,7 +1346,7 @@ public:
       // terminal. The terminal starts hidden so it does not take up space
       // unless it is used.
       _llm_checkbox = new MyQCheckBox("LLM", _plugin_widget);
-      _llm_checkbox->setToolTip("Show the LLM effect tuning terminal.");
+      _llm_checkbox->setToolTip("Show the LLM effect tuning terminal.\nRight-click to configure keybinding.");
       _llm_checkbox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
       // Insert after the fixed spacer that follows the "Configure
       // Auto-suspend" button, so no unused fixed gap is left on the right
@@ -1355,6 +1355,9 @@ public:
                                                        _llm_checkbox);
       _llm_checkbox->setChecked(false);
       _fx_tune_widget->setVisible(false);
+      _llm_checkbox->_show_popup_menu = [](){
+        S7CALL2(void_void, "FROM_C-show-llm-fx-tune-popup-menu");
+      };
       QObject::connect(_llm_checkbox, &QCheckBox::toggled, [this](bool visible){
         if (_fx_tune_widget != NULL)
           _fx_tune_widget->setVisible(visible);
@@ -3001,6 +3004,15 @@ void AUDIOWIDGET_toggle_size_type(struct Patch *patch, SizeType type){
 
   else if (type==SIZETYPE_FULL)
     w->_plugin_widget->max_checkbox->setChecked(!w->_plugin_widget->max_checkbox->isChecked());
+}
+
+void AUDIOWIDGET_toggle_llm_fx_tune(struct Patch *patch){
+  Audio_instrument_widget *w = get_audio_instrument_widget(patch);
+
+  if (w==NULL || w->_llm_checkbox==NULL)
+    return;
+
+  w->_llm_checkbox->setChecked(!w->_llm_checkbox->isChecked());
 }
 
 /*
