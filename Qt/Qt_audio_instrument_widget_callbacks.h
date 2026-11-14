@@ -255,6 +255,9 @@ public:
 
   SizeType _size_type;
   SizeType _size_type_before_hidden;
+  // Set while the widget is hidden, where its minimum height is temporarily
+  // dropped so it does not prevent the lower tabs from being minimized.
+  int _minimum_height_before_hidden = -1;
   //bool _was_large_before_hidden;
 
   static void set_arrow_style(QWidget *arrow, bool set_size_policy=true){
@@ -1329,6 +1332,12 @@ public:
         // height is needed because the LLM terminal may have raised it.
         if (!visible) {
           setMinimumHeight(10);
+          // The automatic minimum-height adjustment may have counted the
+          // terminal when deciding how large the instrument widget must be.
+          // Let it start over, so the minimum height can fall back to what the
+          // remaining controls need instead of keeping the terminal's height.
+          number_of_minheight_incs = 0;
+          time_of_last_minheight_inc.restart();
           updateGeometry();
           S7CALL2(void_void,"FROM_C-minimize-lowertab");
         }
@@ -2320,6 +2329,18 @@ public:
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
   }
 
+  QSize sizeHint(void) const override
+  {
+    // A page hidden inside the instruments QStackedWidget must not decide the
+    // size of the currently shown page. Its size hint still includes the LLM
+    // terminal if it was left open, which otherwise keeps the instrument
+    // widget at the previous instrument's height after switching instruments.
+    if (!isVisible())
+      return QSize(0, 0);
+
+    return QWidget::sizeHint();
+  }
+
   void hideEvent(QHideEvent * event) override
   {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -2339,6 +2360,23 @@ public:
       change_height(SIZETYPE_NORMAL);
       //show_small();  // If not, all instrument widgets will have large height.
     }
+
+    // A hidden tab page still contributes its minimum height when the lower
+    // tab widget computes its own minimum size (QStackedLayout includes all
+    // pages, not only the current one). calledRegularlyByParent() raises this
+    // widget's minimum height to fit its scroll area, and while the LLM
+    // terminal is visible that height is much larger. If it is kept, the
+    // hidden Instrument tab makes it impossible to minimize the lower tabs
+    // when another tab (for instance the Sequencer) is selected. Drop the
+    // minimum height while hidden and restore it in showEvent.
+    if (_size_type == SIZETYPE_NORMAL && _minimum_height_before_hidden < 0) {
+      _minimum_height_before_hidden = minimumHeight();
+      // 0 means "no explicit minimum height", which makes Qt fall back to
+      // the (large) minimumSizeHint, so use 1 instead.
+      setMinimumHeight(1);
+      number_of_minheight_incs = 0;
+      updateGeometry();
+    }
   }
   
   void showEvent(QShowEvent * event) override
@@ -2355,10 +2393,22 @@ public:
                                     ? _patch->widget_height_type
                                     : _size_type_before_hidden;
     
-    if (restore_type != SIZETYPE_NORMAL)
+    if (restore_type != SIZETYPE_NORMAL) {
       change_height(restore_type);
-    else if (!instrumentInMixer())
-      S7CALL2(void_void,"FROM_C-minimize-lowertab");
+      _minimum_height_before_hidden = -1;
+    } else {
+      if (_minimum_height_before_hidden >= 0) {
+        // Only restore if the height is still cleared. If it was changed
+        // while hidden (for instance by hiding the LLM terminal), that newer
+        // value is the correct one.
+        if (minimumHeight() <= 1)
+          setMinimumHeight(_minimum_height_before_hidden);
+        _minimum_height_before_hidden = -1;
+        updateGeometry();
+      }
+      if (!instrumentInMixer())
+        S7CALL2(void_void,"FROM_C-minimize-lowertab");
+    }
 
     //      show_large();
   }
