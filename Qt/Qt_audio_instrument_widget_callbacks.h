@@ -819,7 +819,7 @@ public:
       };
 
       auto apply_changes = [this, read_catalog](QVector<radium::llm::FxChange> &changes,
-                                                const QVector<radium::llm::FxInstrumentChange> &instrument_changes) -> bool
+                                                QVector<radium::llm::FxInstrumentChange> &instrument_changes) -> bool
       {
         struct Patch *patch = _patch.data();
         if (patch == NULL)
@@ -966,6 +966,22 @@ public:
                                   change.value_is_native ? EFFECT_FORMAT_NATIVE : EFFECT_FORMAT_SCALED);
 
         GFX_update_instrument_widget(patch);
+
+        // The plugin reports the new value texts now. Read the ones the
+        // summary could not compute: a clamped control has no known display
+        // scale, so its text cannot be interpolated from the old one (see
+        // FxInstrumentParamState::is_clamped). Reading it back makes the
+        // summary say "Release 0 ms -> 40 ms" instead of "0% -> 2%".
+        for (radium::llm::FxInstrumentChange &change : instrument_changes){
+          if (change.value_is_native || change.old_display.isEmpty() || !change.new_display.isEmpty())
+            continue;
+
+          char display_value[256] = {0};
+          PLUGIN_get_display_value_string(plugin, change.effect_num, display_value, sizeof(display_value));
+          const QString new_display = radium::llm::fx_display_text_value(QString::fromUtf8(display_value));
+          if (!new_display.isEmpty() && new_display != change.old_display)
+            change.new_display = new_display;
+        }
 
         // Update the mixer strip immediately when the mute/bypass/solo
         // buttons changed.
@@ -1183,7 +1199,7 @@ public:
       // keeps all the nested ADD_UNDO calls (patch creation, chip positions,
       // effect values, mixer connections) inside a single undo record.
       auto apply_reply = [read_catalog, apply_changes, apply_modulations, apply_plugins, apply_remove_plugins](QVector<radium::llm::FxChange> &changes,
-                                                                                                                const QVector<radium::llm::FxInstrumentChange> &instrument_changes,
+                                                                                                                QVector<radium::llm::FxInstrumentChange> &instrument_changes,
                                                                                                                 const QVector<radium::llm::FxModulation> &modulations,
                                                                                                                 const QVector<radium::llm::FxPlugin> &add_plugins,
                                                                                                                 const QVector<radium::llm::FxPlugin> &remove_plugins) -> bool
@@ -1222,69 +1238,81 @@ public:
         return true;
       };
 
-      // Asks the user whether to create a Faust Dev 2 effect, and starts the
-      // existing Faust Dev 2 LLM generation flow on the new instrument if the
-      // user accepts.
+      // Asks in the LLM terminal whether to create a Faust Dev 2 effect, and
+      // starts the existing Faust Dev 2 LLM generation flow on the new
+      // instrument if the user accepts. The question and its Yes/No buttons
+      // belong to the conversation, so no modal dialog opens and keyboard
+      // focus stays where it is.
       auto create_faust_effect = [this](const QString &description, const QString &requested_name) -> bool
       {
-        struct Patch *source_patch = _patch.data();
-        if (source_patch == NULL)
+        if (_patch.data() == NULL || _fx_tune_widget == NULL)
           return false;
 
         const QString instrument_name = radium::llm::fx_make_faust_instrument_name(requested_name.isEmpty() ? description : requested_name);
 
+        auto start_creation = [this, description, instrument_name]() -> bool
         {
-          MyQMessageBox *msg_box = MyQMessageBox::create(false, this);
-          msg_box->setAttribute(Qt::WA_DeleteOnClose);
-          msg_box->setWindowTitle("Create Faust Dev 2 effect");
-          msg_box->setText(QString("No matching effect plugin is available.\n\n"
-                                   "Should I create a Faust Dev 2 effect named \"%1\" for \"%2\"?").arg(instrument_name, description));
-          msg_box->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-          msg_box->setDefaultButton(QMessageBox::Yes);
-          if (safeExec(msg_box, false) != QMessageBox::Yes)
-            return true; // The user declined. This is not an error.
-        }
+          struct Patch *source_patch = _patch.data();
+          if (source_patch == NULL)
+            return false;
 
-        radium::ScopedUndo scoped_undo;
+          radium::ScopedUndo scoped_undo;
 
-        double x,y;
-        MW_set_autopos(&x, &y);
+          double x,y;
+          MW_set_autopos(&x, &y);
 
-        instrument_t new_id = createAudioInstrument("Faust Dev 2", "Faust Dev 2", instrument_name.toUtf8().constData(), x, y, false, true);
-        if (!isLegalInstrument(new_id))
-          return false;
+          instrument_t new_id = createAudioInstrument("Faust Dev 2", "Faust Dev 2", instrument_name.toUtf8().constData(), x, y, false, true);
+          if (!isLegalInstrument(new_id))
+            return false;
 
-        struct Patch *new_patch = PATCH_get_from_id(new_id);
-        if (new_patch == NULL)
-          return false;
+          struct Patch *new_patch = PATCH_get_from_id(new_id);
+          if (new_patch == NULL)
+            return false;
 
 #if defined(WITH_FAUST_DEV) && defined(WITH_FAUST_DEV2)
-        {
-          // Start with an inaudible/neutral passthrough until the LLM has
-          // generated the real effect. This avoids briefly inserting the
-          // default Faust synth into the signal path.
-          SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
-          if (new_plugin != NULL){
-            FAUST2_set_code(new_plugin, QString("process = _,_;\n"));
-            FAUST2_start_compilation(new_plugin);
+          {
+            // Start with an inaudible/neutral passthrough until the LLM has
+            // generated the real effect. This avoids briefly inserting the
+            // default Faust synth into the signal path.
+            SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+            if (new_plugin != NULL){
+              FAUST2_set_code(new_plugin, QString("process = _,_;\n"));
+              FAUST2_start_compilation(new_plugin);
+            }
           }
-        }
 #endif
 
-        if (insert_effect_patch_after(source_patch, new_patch) == NULL)
-          return false;
+          if (insert_effect_patch_after(source_patch, new_patch) == NULL)
+            return false;
 
 #if defined(WITH_FAUST_DEV) && defined(WITH_FAUST_DEV2)
-        if (!FAUSTWIDGET_generate_effect(new_id, description)){
-          GFX_addMessage("Could not start the Faust Dev 2 generation.");
-          return false;
-        }
+          if (!FAUSTWIDGET_generate_effect(new_id, description)){
+            GFX_addMessage("Could not start the Faust Dev 2 generation.");
+            return false;
+          }
 
-        GFX_addMessage("Creating a Faust Dev 2 effect for \"%s\".", description.toUtf8().constData());
+          GFX_addMessage("Creating a Faust Dev 2 effect for \"%s\".", description.toUtf8().constData());
 #else
-        GFX_addMessage("Faust Dev 2 is not available in this build.");
-        return false;
+          GFX_addMessage("Faust Dev 2 is not available in this build.");
+          return false;
 #endif
+
+          return true;
+        };
+
+        // Make the terminal visible, so the question cannot be missed when it
+        // was hidden while the request was running.
+        if (!_fx_tune_widget->isVisible() && _llm_checkbox != NULL)
+          _llm_checkbox->setChecked(true);
+
+        const QString question = QString("No matching effect plugin is available.\n"
+                                         "Should I create a Faust Dev 2 effect named \"%1\" for \"%2\"?").arg(instrument_name, description);
+
+        if (!_fx_tune_widget->ask_confirmation(question, [this, start_creation](bool yes){
+              if (yes && !start_creation())
+                GFX_addMessage("Could not create the Faust Dev 2 effect.");
+            }))
+          return false;
 
         return true;
       };

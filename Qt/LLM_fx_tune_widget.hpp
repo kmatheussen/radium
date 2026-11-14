@@ -68,7 +68,7 @@ public:
 	                   std::function<QVector<radium::llm::FxPlugin>()> read_plugin_catalog,
 	                   std::function<QVector<radium::llm::FxPlugin>()> read_inserted_plugins,
 	                   std::function<bool(QVector<radium::llm::FxChange> &changes,
-	                                      const QVector<radium::llm::FxInstrumentChange> &instrument_changes,
+	                                      QVector<radium::llm::FxInstrumentChange> &instrument_changes,
 	                                      const QVector<radium::llm::FxModulation> &modulations,
 	                                      const QVector<radium::llm::FxPlugin> &add_plugins,
 	                                      const QVector<radium::llm::FxPlugin> &remove_plugins)> apply_reply,
@@ -89,6 +89,7 @@ public:
 		_prompt_history = radium::llm::load_prompt_history(LLM_FX_PROMPT_HISTORY_SETTINGS_KEY);
 
 		_prompt_format.setFontWeight(QFont::Bold);
+		_question_format.setFontWeight(QFont::Bold);
 		_error_format.setForeground(QColor(200, 60, 60));
 
 		QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -175,6 +176,17 @@ public:
 		_cancel_button->setEnabled(false);
 		controls_layout->addWidget(_cancel_button);
 
+		// Shown only while a confirmation question is pending, so a question
+		// is answered in the terminal instead of in a modal dialog.
+		_confirm_yes_button = new QPushButton("Yes", frame);
+		_confirm_yes_button->setToolTip("Confirm the question above");
+		controls_layout->addWidget(_confirm_yes_button);
+		_confirm_no_button = new QPushButton("No", frame);
+		_confirm_no_button->setToolTip("Decline the question above");
+		controls_layout->addWidget(_confirm_no_button);
+		_confirm_yes_button->hide();
+		_confirm_no_button->hide();
+
 		controls_layout->addWidget(_menu_button);
 
 		frame_layout->addLayout(controls_layout);
@@ -182,6 +194,8 @@ public:
 		QObject::connect(_tune_button, &QPushButton::clicked, [this](){ submit_prompt(); });
 		QObject::connect(_cancel_button, &QPushButton::clicked, [this](){ _session.cancel(); });
 		QObject::connect(_prompt_edit, &QLineEdit::returnPressed, [this](){ submit_prompt(); });
+		QObject::connect(_confirm_yes_button, &QPushButton::clicked, [this](){ answer_confirmation(true); });
+		QObject::connect(_confirm_no_button, &QPushButton::clicked, [this](){ answer_confirmation(false); });
 	}
 
 	~LLM_fx_tune_widget()
@@ -221,7 +235,26 @@ public:
 	{
 		if (measurement_active_callback)
 		  measurement_active_callback(false);
+		_confirmation_pending = false;
+		_confirmation_callback = nullptr;
 		_session.shutdown();
+	}
+
+	// Asks a yes/no question in the terminal instead of opening a modal
+	// dialog. The callback runs after the user clicks Yes or No. While the
+	// question is pending, the prompt and Tune button are disabled, so the
+	// only answers are the two buttons. Returns false if a question is
+	// already pending.
+	bool ask_confirmation(const QString &question, std::function<void(bool)> callback)
+	{
+		if (_confirmation_pending)
+			return false;
+
+		append_terminal_text(question, _question_format);
+		_confirmation_callback = std::move(callback);
+		_confirmation_pending = true;
+		update_controls();
+		return true;
 	}
 
 	bool is_busy(void) const
@@ -274,7 +307,7 @@ private:
 	void submit_prompt(void)
 	{
 		const QString prompt = _prompt_edit->text().trimmed();
-		if (prompt.isEmpty() || _session.is_busy())
+		if (prompt.isEmpty() || _session.is_busy() || _confirmation_pending)
 			return;
 
 		append_terminal_text("> " + prompt, _prompt_format);
@@ -380,10 +413,36 @@ private:
 
 	void set_busy(bool busy)
 	{
-		_tune_button->setEnabled(!busy);
-		_prompt_edit->setEnabled(!busy);
-		_menu_button->setEnabled(!busy);
-		_cancel_button->setEnabled(busy);
+		_busy = busy;
+		update_controls();
+	}
+
+	void update_controls(void)
+	{
+		const bool blocked = _busy || _confirmation_pending;
+		_tune_button->setEnabled(!blocked);
+		_prompt_edit->setEnabled(!blocked);
+		_menu_button->setEnabled(!blocked);
+		_cancel_button->setEnabled(_busy);
+		_confirm_yes_button->setVisible(_confirmation_pending);
+		_confirm_no_button->setVisible(_confirmation_pending);
+	}
+
+	void answer_confirmation(bool yes)
+	{
+		if (!_confirmation_pending)
+			return;
+
+		_confirmation_pending = false;
+		std::function<void(bool)> callback = std::move(_confirmation_callback);
+		_confirmation_callback = nullptr;
+
+		if (!yes)
+			append_terminal_text("Not creating the effect.", _status_format);
+
+		update_controls();
+		if (callback)
+			callback(yes);
 	}
 
 	// The transcript shows 9 text rows; the prompt entry row below counts as
@@ -397,11 +456,17 @@ private:
 	FocusSnifferQLineEdit *_prompt_edit = NULL;
 	QPushButton *_tune_button = NULL;
 	QPushButton *_cancel_button = NULL;
+	QPushButton *_confirm_yes_button = NULL;
+	QPushButton *_confirm_no_button = NULL;
 
 	QTextCharFormat _prompt_format;
+	QTextCharFormat _question_format;
 	QTextCharFormat _status_format;
 	QTextCharFormat _error_format;
 
 	QStringList _prompt_history;
 	int _prompt_history_index = -1;
+	bool _busy = false;
+	bool _confirmation_pending = false;
+	std::function<void(bool)> _confirmation_callback;
 };

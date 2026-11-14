@@ -4008,13 +4008,41 @@ static inline void llm_log_append(const QString &text)
 	}
 }
 
-// A short fingerprint of the request body, so two log entries can be compared
-// at a glance: a changed prefix (e.g. an edited system prompt) is exactly what
-// breaks the provider's prompt cache, and seeing the hash change explains a
-// sudden cache-hit drop.
+// A short fingerprint of the complete request body. Two attempts with the
+// same fingerprint sent the identical request (that is how a retry of a
+// failed prompt is recognised), but consecutive turns virtually never have
+// the same one, because the body contains the newest user message: use
+// llm_prompt_fingerprint to see whether the cacheable prefix stayed the same.
 static inline QString llm_body_fingerprint(const QByteArray &body)
 {
 	return QString::fromUtf8(QCryptographicHash::hash(body, QCryptographicHash::Sha1).toHex().left(12));
+}
+
+// A short fingerprint of the part of the request that is shared by every turn
+// with an unchanged system prompt. It is what the provider's prompt cache is
+// keyed on, so comparing it between log entries shows whether a prompt edit
+// invalidated the prefix (and explains a sudden cache-hit drop). Empty when the
+// body has no system message.
+static inline QString llm_prompt_fingerprint(const QByteArray &body)
+{
+	QJsonParseError parse_error;
+	const QJsonDocument body_doc = QJsonDocument::fromJson(body, &parse_error);
+	if (body_doc.isNull())
+		return QString();
+
+	const QJsonArray messages = body_doc.object().value(QStringLiteral("messages")).toArray();
+	if (messages.isEmpty())
+		return QString();
+
+	const QJsonObject first = messages.at(0).toObject();
+	if (first.value(QStringLiteral("role")).toString() != QStringLiteral("system"))
+		return QString();
+
+	const QByteArray system_prompt = first.value(QStringLiteral("content")).toString().toUtf8();
+	if (system_prompt.isEmpty())
+		return QString();
+
+	return QString::fromUtf8(QCryptographicHash::hash(system_prompt, QCryptographicHash::Sha1).toHex().left(12));
 }
 
 static inline void llm_log_start(const LLMConfig &config,
@@ -4029,7 +4057,10 @@ static inline void llm_log_start(const LLMConfig &config,
 	entry += "temperature: " + QString::number(temperature) + "\n";
 	entry += "thinking: " + (thinking_enabled ? QString("enabled (effort %1)").arg(effort) : QString("disabled")) + "\n";
 	entry += "request bytes: " + QString::number(body.size()) + "\n";
-	entry += "prompt sha1: " + llm_body_fingerprint(body) + "\n";
+	const QString prompt_fingerprint = llm_prompt_fingerprint(body);
+	if (!prompt_fingerprint.isEmpty())
+		entry += "prompt sha1: " + prompt_fingerprint + "\n";
+	entry += "body sha1: " + llm_body_fingerprint(body) + "\n";
 	QJsonParseError parse_error;
 	QJsonDocument body_doc = QJsonDocument::fromJson(body, &parse_error);
 	if (!body_doc.isNull())
@@ -4112,7 +4143,7 @@ static inline void llm_log_summary(const QString &model,
 	summary["session_cost"] = std::round(session_cost * 1e8) / 1e8;
 	summary["elapsed_ms"] = (double)elapsed_ms;
 	if (!request_fingerprint.isEmpty())
-	  summary["prompt_sha1"] = request_fingerprint;
+	  summary["body_sha1"] = request_fingerprint;
 	summary["truncated"] = truncated;
 	if (!error.isEmpty())
 	  summary["error"] = error;

@@ -688,7 +688,9 @@ static inline QString build_fx_system_prompt_rules(void)
 	  "5) The built-in system effects can shape EQ/filtering, compressor dynamics, pitch, panning and Haas width, "
 	  "note duplication (the 'voice' effects) and the send levels to the Reverb and Chorus mixer buses. They cannot "
 	  "create distortion, saturation, wah, phaser/flanger, delay/echo, amp simulation or other effects that need a "
-	  "dedicated plugin. First check whether the current instrument has a control for the requested effect; insert an "
+	  "dedicated plugin. A request for a distorted, grungy, fuzzy or amped sound ('make it grungy', 'sound like "
+	  "Nirvana') is that case: EQ and compression can shape such a tone but cannot create the distortion itself. "
+	  "First check whether the current instrument has a control for the requested effect; insert an "
 	  "effect plugin only if it does not. Use one of the plugins from the 'Available effect plugins' "
 	  "list at the end of the user message (it only lists the installed plugins whose names match this request) with the "
 	  "\"add_plugins\" array. If no suitable plugin is listed, do not invent one: "
@@ -753,8 +755,8 @@ static inline QString build_fx_system_prompt_rules(void)
 	  "listed effect plugin. Give a short, concrete description of the effect (including important character, "
 	  "e.g. \"a smooth autotune effect with medium retune speed\", not just \"an effect\"). Also set "
 	  "\"create_faust_name\" to a very short instrument name (one to three words, e.g. \"Autotune\") that will "
-	  "be used as the new instrument's name. Leave both empty in all other replies. The host shows a confirmation "
-	  "prompt; you never create the instrument yourself.\n"
+	  "be used as the new instrument's name. Leave both empty in all other replies. The host asks the user to "
+	  "confirm in the LLM terminal; you never create the instrument yourself.\n"
 	  "\n"
 	  "Frequency guide for subjective terms (use the peaking EQ bands and the shelves):\n"
 	  "- rumble/sub: below 60 Hz; warmth/weight: 100-400 Hz; mud/boxiness: 200-500 Hz; honk/nasal: 500-1000 Hz.\n"
@@ -799,13 +801,20 @@ static inline QString build_fx_system_prompt_rules(void)
 	  "a rate of 2/1 is 4 Hz). When the user asks for a note-length value (delay, pre-delay, attack, width, voice start) or "
 	  "a rate in Hz, compute it from the tempo instead of guessing. "
 	  "If the peak is above 0 dB the output is clipping: lowering the level comes first, before any tone change. "
+	  "Before a change that raises the level, keep the true peak below 0 dB afterwards: a boost of N dB needs N dB of "
+	  "headroom, and it is more than that in practice when a shelf or low boost meets the band where the material has most "
+	  "of its energy and the compressor pushes the result up again. For a vague 'more'/'louder' request, prefer a tone or "
+	  "dynamics change over raising the output level at all. "
 	  "For volume requests ('louder', 'quieter', 'keep the same volume as before'): use the 'at its loudest, 400 ms' loudness "
 	  "figure (LUFS). It describes the sound itself; the window average is pulled down when the window happens to contain "
 	  "silence (a decaying note, a gap), and the 'right now' figure can be inside a decay - never match a level with either "
 	  "of those. The change you "
 	  "make, in dB, should equal (target loudness - current loudness), applied with ONE control (makeup gain, or the instrument's "
 	  "output gain if it has one) - do not stack several small corrections, and do not guess the amount: the measurement "
-	  "of the previous turn, listed in the history, is the reference for 'before'. If that difference is more than about "
+	  "of the previous turn, listed in the history, is the reference for 'before'. Do not change the compressor's ratio, "
+	  "threshold, attack or release in the same reply as a volume target: the extra gain reduction they cause is not in that "
+	  "arithmetic, so the level will miss (lowering the threshold by 6 dB at 6:1 adds about 5 dB of gain reduction). When a "
+	  "reply has to change both, raise the makeup gain by the expected extra gain reduction as well. If that difference is more than about "
 	  "12 dB, the two measurements almost certainly describe different material (a different note, or a decay versus a "
 	  "sustained sound): make a moderate change (or leave the level alone) and say in the explanation why the level cannot "
 	  "be matched exactly. Also check the true peak: a level change must not push it above 0 dB.  If the request is relative and no "
@@ -820,7 +829,14 @@ static inline QString build_fx_system_prompt_rules(void)
 	  "listed under 'Applied in that turn' in the previous user message by setting those controls back to their old "
 	  "values (a reverted On/Off switch goes back to its old value too), then apply what the user actually asked for. "
 	  "Leave out the reverts for controls the new request changes anyway. Do not stack the new request on top of a "
-	  "reply the user rejected.");
+	  "reply the user rejected.\n"
+	  "Repeated complaints: a user message that reports the same problem again ('still there', 'it's still there', 'didn't "
+	  "help', 'not sure') means your last change did not address the cause; do not keep guessing one new control per turn. "
+	  "Read what the earlier attempts already changed (the 'Applied in that turn' lines), rule those causes out, and change "
+	  "the one plausible cause that is left. If you cannot name the cause, set \"ask\" to one question that narrows it down "
+	  "(when it happens, on which notes, before or after the attack) instead of changing something unrelated. When the way "
+	  "to remove a symptom is to switch off a feature the user asked for earlier (a granulator, a loop, a voice), say so in "
+	  "the explanation and switch it back on - or ask - once the symptom is gone.");
 }
 
 // Reference for the built-in system effects: exact name, unit, range and what
@@ -889,6 +905,11 @@ static inline QStringList fx_request_keywords(const QString &request)
 	  "really", "still", "track", "song", "mix", "way", "one", "two", "out", "off", "over",
 	  "under", "again", "back", "also", "all", "any", "but", "how", "let", "need", "only",
 	  "other", "same", "them", "they", "too", "was", "were", "you", "after", "before",
+	  // Imperative verbs of a request. "Keep same volume" would otherwise
+	  // match the plugins named "Keep Left channel only"/"Keep Right channel
+	  // only" (~/.radium/llm.log 2026-11-14T12:01:24).
+	  "keep", "keeps", "keeping", "stay", "stays", "maintain", "leave", "turn", "turns",
+	  "change", "changes", "changing", "try", "trying", "fix", "fixing", "help", "helps",
 	};
 
 	// Words of a plugin name that are too generic to identify one. Without
@@ -2077,18 +2098,24 @@ static inline void fx_parse_plugin_array(const QJsonValue &value,
 	}
 }
 
-// The value text of a plugin control. Plugin wrappers often prefix it with the
-// port name ("Bass: 200.00", "pitch_glide_length: 420"), so a trailing
-// ": <number>" is the value itself. Returns the current display text, or an
-// empty string when the host did not read one.
-static inline QString fx_parameter_display(const FxInstrumentParamState *param)
+// The value part of a plugin's display text. Plugin wrappers often prefix it
+// with the port name ("Bass: 200.00", "pitch_glide_length: 420"), so a leading
+// "<name>: " is dropped. Returns an empty string when the text is empty.
+static inline QString fx_display_text_value(const QString &display_text)
 {
-	QString display = param->current_display.trimmed();
+	QString display = display_text.trimmed();
 	if (display.isEmpty())
 		return QString();
 
 	const QRegularExpression prefix(QStringLiteral("^.*:\\s*"));
 	return display.remove(prefix);
+}
+
+// The value text of a plugin control. Returns the current display text, or an
+// empty string when the host did not read one.
+static inline QString fx_parameter_display(const FxInstrumentParamState *param)
+{
+	return fx_display_text_value(param->current_display);
 }
 
 // A plugin's display texts are opaque ("200", "35.00", "On"), but they are
@@ -2603,20 +2630,19 @@ static inline FxParseResult parse_fx_response(const QString &raw,
 		change.value_native = (float)new_value;
 		change.unit = param->unit;
 
-		// The plugin's own display texts: only for an unclamped (curated)
-		// control with no native range, where scaling the display text is
-		// meaningful. A control with a native range reports its native value,
-		// and a clamped control's display is only (re)read after the change.
+		// The plugin's own value text before the change. It is used by the
+		// summary, and it is what the host reads the new text back for after
+		// applying: a clamped control's display scale is unknown, so its new
+		// text cannot be interpolated, only read. Whatever stays unfilled here
+		// is summarized as a normalized position.
+		change.old_display = fx_parameter_display(param);
 		if (!param->has_native_range && !param->is_clamped && !param->current_display.isEmpty())
 		{
-			const QString old_display = fx_parameter_display(param);
 			// new_value is native for a native-range control and the scaled
 			// value otherwise; only the latter is evaluated here.
-			const QString new_display = fx_interpolate_display(old_display, param->current_scaled, (float)new_value);
-			if (!new_display.isEmpty() && new_display != old_display){
-				change.old_display = old_display;
+			const QString new_display = fx_interpolate_display(change.old_display, param->current_scaled, (float)new_value);
+			if (!new_display.isEmpty() && new_display != change.old_display)
 				change.new_display = new_display;
-			}
 		}
 
 		const QString param_key = param->name.toLower();
@@ -2733,6 +2759,23 @@ static inline QString fx_summarize_changes(const QVector<FxParamState> &states, 
 	return parts.join(", ");
 }
 
+// A normalized 0..1 position as a percentage, with only the decimals the value
+// needs: "0.2%" instead of a rounded "0%", "66%" instead of "66.00%".
+// Rounding to whole percent made real changes read as no-ops in the applied
+// summary ("Start Position 0% -> 0%" for 0.002, ~/.radium/llm.log
+// 2026-11-14T12:00:35).
+static inline QString fx_format_position_percent(float scaled)
+{
+	QString text = QString::number(scaled * 100.0, 'f', 2);
+	if (text.contains('.')) {
+		while (text.endsWith('0'))
+			text.chop(1);
+		if (text.endsWith('.'))
+			text.chop(1);
+	}
+	return text + "%";
+}
+
 static inline QString fx_summarize_instrument_changes(const QVector<FxInstrumentChange> &changes, int max_changes = 4)
 {
 	QStringList parts;
@@ -2757,15 +2800,15 @@ static inline QString fx_summarize_instrument_changes(const QVector<FxInstrument
 			             .arg(instrument, param_name)
 			             .arg(old_value + unit, new_value + unit));
 		}else if (!change.old_display.isEmpty() && !change.new_display.isEmpty()){
-			// The plugin's own numbers ("200" -> "170") read better than the
-			// normalized percentages ("100%" -> "85%").
+			// The plugin's own numbers ("200" -> "170", "0 ms" -> "40 ms") read
+			// better than the normalized positions ("100%" -> "85%").
 			parts.append(QString("%1: %2 %3 -> %4")
 			             .arg(instrument, param_name, change.old_display, change.new_display));
 		}else{
-			parts.append(QString("%1: %2 %3% -> %4%")
-			             .arg(instrument, param_name)
-			             .arg(change.old_value_scaled * 100.0f, 0, 'f', 0)
-			             .arg(change.value_scaled * 100.0f, 0, 'f', 0));
+			parts.append(QString("%1: %2 %3 -> %4")
+			             .arg(instrument, param_name,
+			                  fx_format_position_percent(change.old_value_scaled),
+			                  fx_format_position_percent(change.value_scaled)));
 		}
 	}
 	return parts.join(", ");
@@ -2786,15 +2829,18 @@ struct FxTuneSessionHost
 	// Applies the whole reply (effect value changes, modulation actions and
 	// plugin insertions/removals) as ONE undo step. May extend 'changes' with
 	// the extra changes it makes itself (e.g. enabling a band that was off),
-	// so the final status summary includes them.
+	// so the final status summary includes them. It fills in the
+	// 'new_display' text of an instrument change whose new value text could
+	// not be computed, so the summary can use the plugin's own units.
 	std::function<bool(QVector<FxChange> &changes,
-	                   const QVector<FxInstrumentChange> &instrument_changes,
+	                   QVector<FxInstrumentChange> &instrument_changes,
 	                   const QVector<FxModulation> &modulations,
 	                   const QVector<FxPlugin> &add_plugins,
 	                   const QVector<FxPlugin> &remove_plugins)> apply_reply;
-	// Asks the user whether to create a Faust Dev 2 instrument for an effect
-	// that no plugin can provide. Returns true if the user was asked (and the
-	// creation was started or declined), false on failure.
+	// Asks the user in the LLM terminal whether to create a Faust Dev 2
+	// instrument for an effect that no plugin can provide, and starts the
+	// creation if the answer is yes. Returns true when the question was shown
+	// (the user answers asynchronously), false on failure.
 	std::function<bool(const QString &description, const QString &name)> create_faust_effect;
 	std::function<void(const QString &text)> status;
 	std::function<void(const QString &message)> show_error;
@@ -3072,28 +3118,24 @@ private:
 				          return;
 			          }
 
-			// The deltas of this reply (complete, no "... and N more"). They
-			// go into the history so a correction can revert them, and into
-			// the log so the reply can be audited.
-			_applied_summary = fx_applied_summary(parsed, _states);
-			if (!_applied_summary.isEmpty())
-				llm_log_note("applied:\n" + _applied_summary);
-
-			// Remember the original tuning request (not a possible
-			// JSON-repair message), the final reply, and what the reply
-			// changed, so follow-up requests have the full context and can
-			// undo it. Done for every accepted reply, including questions and
-			// no-op replies, so a correction never references a turn that is
-			// missing from the history.
-			remember_turn(_request, result_or_error, _applied_summary,
-			              fx_measurement_summary(_instrument.measurement));
-
+			// The deltas of this reply (complete, no "... and N more"). They go
+			// into the history so a correction can revert them, and into the log
+			// so the reply can be audited. They are built after the reply has been
+			// applied, so the summary can use the value texts the plugin reports
+			// for the new values (the host reads them back in its apply_changes).
 			const bool nothing_to_apply = parsed.changes.isEmpty() && parsed.instrument_changes.isEmpty()
 			                              && parsed.modulations.isEmpty() && parsed.plugins.isEmpty()
 			                              && parsed.removed_plugins.isEmpty() && parsed.create_faust.isEmpty();
 
 			if (nothing_to_apply)
 			{
+				// Remember the turn (with an empty summary) even though nothing
+				// was applied, so a correction never references a turn that is
+				// missing from the history.
+				_applied_summary = fx_applied_summary(parsed, _states);
+				remember_turn(_request, result_or_error, _applied_summary,
+				              fx_measurement_summary(_instrument.measurement));
+
 				if (!parsed.answer.isEmpty())
 				{
 					// An answer to a question is a complete reply: show it
@@ -3132,10 +3174,24 @@ private:
 
 			if (_host.apply_reply && !_host.apply_reply(parsed.changes, parsed.instrument_changes, parsed.modulations, parsed.plugins, parsed.removed_plugins))
 			          {
+				          // The reply was accepted but not applied (the state changed
+				          // between reading and applying it). Keep the turn in the
+				          // history without claiming changes, so a correction can still
+				          // refer to it.
+				          remember_turn(_request, result_or_error, QString(), fx_measurement_summary(_instrument.measurement));
 				          if (_host.show_error)
 					          _host.show_error("Failed to apply the changes.");
 				          return;
 			          }
+
+			// Now that the reply is applied, the plugin reports the new value
+			// texts, so the summary can show them (e.g. "Release 0 ms -> 40 ms")
+			// instead of a normalized position.
+			_applied_summary = fx_applied_summary(parsed, _states);
+			if (!_applied_summary.isEmpty())
+				llm_log_note("applied:\n" + _applied_summary);
+			remember_turn(_request, result_or_error, _applied_summary,
+			              fx_measurement_summary(_instrument.measurement));
 
 			          if (!parsed.create_faust.isEmpty()){
 				          if (_host.create_faust_effect && !_host.create_faust_effect(parsed.create_faust, parsed.create_faust_name)){

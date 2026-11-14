@@ -417,8 +417,13 @@ static void test_prompts(void)
 	check(system_prompt.contains("0.768333, not 0.768"), "system prompt demonstrates precise scaled fallback values");
 	check(system_prompt.contains("Available effect plugins"), "system prompt points at the plugin list");
 	check(system_prompt.contains("Faust Dev 2"), "system prompt suggests Faust Dev 2 when no effect is available");
+	// From the log: "sound like Nirvana" was answered with EQ and compression
+	// even though neither can create the distortion that was asked for.
+	check(system_prompt.contains("cannot create the distortion itself"),
+	      "system prompt says a grungy/amped request needs a distortion plugin, not EQ");
 	check(system_prompt.contains("create_faust"), "system prompt explains Faust Dev 2 creation requests");
 	check(system_prompt.contains("create_faust_name"), "system prompt asks for a Faust instrument name");
+	check(system_prompt.contains("confirm in the LLM terminal"), "system prompt says the creation is confirmed in the LLM terminal");
 	check(system_prompt.contains("\"ask\""), "system prompt offers a clarifying question");
 	check(system_prompt.contains("does not count toward that limit"), "the companion On/Off switch does not count toward the change limit");
 	check(system_prompt.contains("undid the change"), "system prompt says the current values are the truth after an undo");
@@ -1215,6 +1220,24 @@ static void test_measurement_rule(void)
 	check(rules.contains("is the reference for 'before'"), "the earlier measurement is the reference for 'before'");
 	check(rules.contains("no earlier measurement exists, say so"), "the model must not pretend to match an unseen level");
 	check(rules.contains("If the peak is above 0 dB the output is clipping"), "clipping is called out");
+
+	// From the session where "More!" pushed the peak to +1.9 dB (the request
+	// was not a volume request, so the level-matching rule did not apply).
+	check(rules.contains("a boost of N dB needs N dB of headroom"), "any level-raising change is checked against the peak");
+	check(rules.contains("prefer a tone or dynamics change over raising the output level at all"),
+	      "a vague 'more' does not have to be a level raise");
+
+	// From the session where a compression change was combined with a volume
+	// target and the level missed by 5 dB.
+	check(rules.contains("Do not change the compressor's ratio"),
+	      "a compression change and a volume target are not mixed blindly");
+	check(rules.contains("adds about 5 dB of gain reduction"), "the extra gain reduction is quantified");
+
+	// From the session that changed a different control on every "still there".
+	check(rules.contains("Repeated complaints"), "repeated complaints are called out");
+	check(rules.contains("do not keep guessing one new control per turn"), "guessing again is forbidden");
+	check(rules.contains("switch off a feature the user asked for earlier"),
+	      "a symptom fix must not silently undo an earlier request");
 }
 
 static void test_song_timing(void)
@@ -1885,17 +1908,38 @@ static void test_prompt_fingerprint(void)
 {
 	printf("prompt fingerprint (cache diagnosis):\n");
 
-	const QByteArray a = QJsonDocument(QJsonObject{{QStringLiteral("model"), QStringLiteral("deepseek-v4-flash")},
-	                                               {QStringLiteral("messages"), QJsonArray{QJsonObject{{QStringLiteral("content"), build_fx_system_prompt()}}}}})
-	                      .toJson(QJsonDocument::Compact);
+	auto make_body = [](const QString &system_prompt, const QString &user_message)
+	{
+		return QJsonDocument(QJsonObject{{"model", "deepseek-v4-flash"},
+		                                 {"messages", QJsonArray{QJsonObject{{"role", "system"}, {"content", system_prompt}},
+		                                                          QJsonObject{{"role", "user"}, {"content", user_message}}}}})
+		  .toJson(QJsonDocument::Compact);
+	};
+
+	const QByteArray a = make_body(build_fx_system_prompt(), "make it warmer");
 	QByteArray b = a;
 
 	check(!llm_body_fingerprint(a).isEmpty(), "a fingerprint is produced");
 	check(llm_body_fingerprint(a).size() == 12, "the fingerprint is short enough to read in the log");
-	check(llm_body_fingerprint(a) == llm_body_fingerprint(b), "an unchanged prompt keeps its fingerprint (a cache hit is possible)");
+	check(llm_body_fingerprint(a) == llm_body_fingerprint(b), "an unchanged request keeps its fingerprint (a cache hit is possible)");
 
 	b.replace("Rules:", "Rules: (edited)");
-	check(llm_body_fingerprint(a) != llm_body_fingerprint(b), "an edited prompt changes the fingerprint (explains a cache miss)");
+	check(llm_body_fingerprint(a) != llm_body_fingerprint(b), "an edited prompt changes the body fingerprint");
+
+	// The body fingerprint always changes with a new user message, so it cannot
+	// show that the cacheable prefix stayed the same. It used to be logged as
+	// "prompt sha1", which therefore changed on every request in
+	// ~/.radium/llm.log despite an identical system prompt.
+	const QByteArray other_turn = make_body(build_fx_system_prompt(), "make it darker");
+	check(llm_body_fingerprint(a) != llm_body_fingerprint(other_turn), "a new user message changes the body fingerprint");
+
+	check(llm_prompt_fingerprint(a) == llm_prompt_fingerprint(other_turn),
+	      "an unchanged system prompt keeps the prompt fingerprint across turns");
+	check(!llm_prompt_fingerprint(a).isEmpty() && llm_prompt_fingerprint(a).size() == 12,
+	      "the prompt fingerprint is produced and short");
+	check(llm_prompt_fingerprint(a) != llm_prompt_fingerprint(make_body(build_fx_system_prompt() + "(edited)", "make it warmer")),
+	      "an edited system prompt changes the prompt fingerprint (explains a cache miss)");
+	check(llm_prompt_fingerprint(QByteArray("not json")).isEmpty(), "a body without a system message has no prompt fingerprint");
 }
 
 // The client-level policy for an empty response: retry a transient one, but
@@ -1995,6 +2039,7 @@ static void test_plugin_keywords(void)
 		FxPlugin{QString("VST"), QString("Auto-Tune"), QString("Antares")},
 		FxPlugin{QString("Ladspa"), QString("TAP Tremolo")},
 		FxPlugin{QString("Ladspa"), QString("DC Offset Remover")},
+		FxPlugin{QString("Ladspa"), QString("Keep Left channel only")},
 	};
 
 	auto names_for = [&plugins](const QString &request)
@@ -2014,6 +2059,11 @@ static void test_plugin_keywords(void)
 	check(!fx_request_keywords("Set modulation to 4 hz.").contains("hz"), "units are not keywords");
 	check(!fx_request_keywords("add a delay").contains("add"), "stopwords are not keywords");
 	check(fx_request_keywords("add a wah effect").contains("wah"), "a distinctive word is a keyword");
+	// "Keep same volume" matched "Keep Left channel only" in
+	// ~/.radium/llm.log (2026-11-14T12:01:24): the imperative verb of a
+	// request is not a plugin name.
+	check(fx_request_keywords("Keep same volume.").isEmpty(), "an imperative verb is not a keyword");
+	check(names_for("Keep same volume.").isEmpty(), "a volume request does not match a plugin by accident");
 }
 
 static void test_applied_summary(void)
@@ -2058,6 +2108,40 @@ static void test_applied_summary(void)
 		check(summary.contains("Treble 40.00 -> 50.00"), "an unclamped control is summarized in its display units");
 		check(!summary.contains("more"), "the summary is complete");
 	}
+
+	// A small move on a clamped control must not read as "0% -> 0%" (the log's
+	// "Start Position 0% -> 0%" for 0.002).
+	{
+		const FxParseResult parsed = parse_fx_response(
+		  R"({"changes":[],"instrument_changes":[{"name":"Size","value":0.002}],"explanation":"x"})",
+		  states, QVector<FxPlugin>(), QVector<FxPlugin>(), instrument);
+
+		check(parsed.ok, "a small move on a clamped control parses");
+		const QString summary = fx_applied_summary(parsed, states);
+		check(summary.contains("Size 0% -> 0.2%"), "a small clamped move keeps its decimals");
+	}
+
+	// The plugin's value text for the new value, as the host reads it back after
+	// applying (a clamped control's text cannot be interpolated).
+	{
+		FxParseResult parsed = parse_fx_response(
+		  R"({"changes":[],"instrument_changes":[{"name":"Size","value":0.35}],"explanation":"x"})",
+		  states, QVector<FxPlugin>(), QVector<FxPlugin>(), instrument);
+
+		check(parsed.ok && parsed.instrument_changes.size() == 1, "clamped control parsed");
+		check(parsed.instrument_changes[0].old_display == "0.00", "the old display text is kept even when clamped");
+		check(parsed.instrument_changes[0].new_display.isEmpty(), "the new display text is not invented");
+
+		parsed.instrument_changes[0].new_display = "0.35"; // what the host reads back
+		const QString summary = fx_applied_summary(parsed, states);
+		check(summary.contains("Uhbik-A: Size 0.00 -> 0.35"), "a read-back display text is used in the summary");
+		check(!summary.contains("Size 0% -> 35%"), "the percentage is not used when the plugin reports a value text");
+	}
+
+	check(fx_format_position_percent(0.0f) == "0%", "a whole percentage has no decimals");
+	check(fx_format_position_percent(0.002f) == "0.2%", "a small position keeps one decimal");
+	check(fx_format_position_percent(0.66f) == "66%", "a position with two decimals is trimmed");
+	check(fx_format_position_percent(1.0f) == "100%", "a full position is 100%");
 
 	// System effects, modulations and plugins are all represented.
 	{
