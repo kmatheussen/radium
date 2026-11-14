@@ -966,13 +966,10 @@
 
 (define (ra:gui_do-font gui font func)
   (define old-font (<gui> :get-font gui))
-  (if (string=? font old-font)
-      (func)
-      (begin
-        (<gui> :set-font gui font)
-        (try-finally :try func
-                     :finally (lambda ()
-                                (<gui> :set-font gui old-font))))))
+  (<gui> :set-font gui font)
+  (try-finally :try func
+               :finally (lambda ()
+                          (<gui> :set-font gui old-font))))
 
 (define (ra:gui_do-alpha gui alpha func)
   (<gui> :set-paint-opacity gui alpha)

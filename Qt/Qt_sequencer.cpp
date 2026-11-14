@@ -798,6 +798,9 @@ public:
       if (new_ != _last_mouse_move_was_inside_seqtracks_timeline) {
         //API_unregister_last_mouse_move_event();
         //printf("Unregistering\n");
+        // The timeline/seqblock mouse handlers set the cursor shape. Reset it to normal when leaving that area (e.g. into the seqtrack header), otherwise the last seqblock cursor (resize/open hand/etc.) sticks. Done before dispatching to the left part's mouse handlers below, so they can still override it.
+        if (!new_)
+          setCursor(Qt::ArrowCursor);
         _last_mouse_move_was_inside_seqtracks_timeline = new_;
       }
       for_seqtracks_timeline = new_;
@@ -3418,18 +3421,24 @@ private:
   QColor _curr_indicator_color;  
   
   QRect get_line_rect_x(double x, const double width){
-    int x1 = floor(x-width/2.0) - 1; // Must decrement by 1. 'floor' is not enough, for some reason
-    int x2 = floor(x+width/2.0) + 1; // Must increment by 1. 'ceil' is not enough, for some reason
-    int y1 = ceil(t_y1) - 1;
-    int y2 = ceil(t_y2) + 1;
+    // The line is antialiased and can land on a fractional x position, so
+    // invalidate a few extra pixels. With only 1 pixel extra, the antialiased
+    // fringe of the old line could be left behind, creating a trail when
+    // moving the mouse over an empty seqtrack. (Over a seqblock, the seqblock
+    // repaint happened to clear the fringe.)
+    int x1 = floor(x-width/2.0) - 3;
+    int x2 = floor(x+width/2.0) + 3;
+    int y1 = ceil(t_y1) - 3;
+    int y2 = ceil(t_y2) + 3;
     return QRect(x1, y1, x2-x1, y2-y1);
   }
 
   QRect get_line_rect_y(double y, const double width){
-    int y1 = floor(y-width/2.0) - 1; // Must decrement by 1. 'floor' is not enough, for some reason
-    int y2 = floor(y+width/2.0) + 1; // Must increment by 1. 'ceil' is not enough, for some reason
-    int x1 = ceil(t_x1) - 1;
-    int x2 = ceil(t_x2) + 1;
+    // See get_line_rect_x().
+    int y1 = floor(y-width/2.0) - 3;
+    int y2 = floor(y+width/2.0) + 3;
+    int x1 = ceil(t_x1) - 3;
+    int x2 = ceil(t_x2) + 3;
     return QRect(x1, y1, x2-x1, y2-y1);
   }
 
@@ -3438,14 +3447,28 @@ public:
 
   void update_indicator_type(QWidget *parent){
     if (g_sequencer_indicator_type != _curr_indicator_type || g_sequencer_indicator_color != _curr_indicator_color){
+      const QRect old_x_rect = _curr_indicator_x_rect;
+      const QRect old_y_rect = _curr_indicator_y_rect;
+
       _curr_indicator_type = g_sequencer_indicator_type;
       _curr_indicator_width = _curr_indicator_type==0 ? _indicator0_width : _indicator1_width;
       _curr_indicator_color = g_sequencer_indicator_color;
+
+      // The width changed, so the indicator rectangles must be recomputed
+      // before invalidating them. Otherwise the old (narrow) rectangle would
+      // not cover the new (wider) line, or vice versa.
+      if (_curr_indicator_x >= 0 && !_curr_indicator_x_rect.isNull())
+        _curr_indicator_x_rect = get_line_rect_x(_curr_indicator_x, _curr_indicator_width);
+
+      if (_curr_indicator_y > 0 && !_curr_indicator_y_rect.isNull())
+        _curr_indicator_y_rect = get_line_rect_y(_curr_indicator_y, _curr_indicator_width);
       
       parent->update(_last_painted_indicator_x_rect);
+      parent->update(old_x_rect);
       parent->update(_curr_indicator_x_rect);
       
       parent->update(_last_painted_indicator_y_rect);
+      parent->update(old_y_rect);
       parent->update(_curr_indicator_y_rect);
     }
   }
@@ -4426,8 +4449,9 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   int get_sequencer_left_part_width(void) const {
-    // 1.5 * 1.5 = 2.25: 50% wider than before, to make room for the mixer strip path.
-    return 1.5 * 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
+    // The extra 50% width is only used when the mixer path is shown.
+    const double scale = getShowMixerPathInSeqtrackHeaders() ? 1.5 * 1.5 : 1.5;
+    return scale * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
   }
 
   int get_sequencer_right_part_width(int systemfontheight) const {

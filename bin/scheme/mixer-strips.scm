@@ -3326,6 +3326,7 @@
 !!#
 
 (<declare-variable> FROM_C-reconfigure-sequencer-left-part)
+(<declare-variable> update-mixer-strip-path-v2-areas)
 
 (define (remake-mixer-strips . list-of-modified-instrument-ids)
   (FROM_C-reconfigure-sequencer-left-part)
@@ -3357,7 +3358,9 @@
               (<gui> :update-recursively (a-mixer-strips-object :gui))  ;; In Qt, it's not enough to call update on the parent, for some reason. (Advice for other programmers: It's much faster to draw everything manually in semi-large or larger programs, both in terms of CPU and development time (especially in development time), than to use qt's widget system. It will probably look better too. Not only is Qt's widget system extremely slow, it's also very buggy (widgets "jump" all over the place, plus all the more serious bugs), and when you try to file bug reports they are very likely be marked as "not a bug" by the developers. In addition, you have all these insane workarounds about temporarily turning off updates, forced dealyed redrawing, and so forth.)
               ;;(<gui> :update (a-mixer-strips-object :gui)) ;; Doesn't always work.
               )
-            *mixer-strips-objects*))
+            *mixer-strips-objects*)
+  (when (provided? 'mixer-strips-v2.scm)
+    (update-mixer-strip-path-v2-areas)))
 
 
 (define (get-mixer-strips-object-from-gui mixer-strips-gui)

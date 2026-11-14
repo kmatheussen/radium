@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../bin/packages/faust/architecture/faust/gui/Soundfile.h"
 #include "../bin/packages/faust/architecture/faust/gui/LibsndfileReader.h"
 
+#include "Faust_latency.hpp"
+
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
@@ -208,6 +210,7 @@ struct FaustDev2Dsp
 	float *param_values;      // current values, indexed by APIUI id
 	int num_inputs;
 	int num_outputs;
+	int latency_samples;      // declared by the Faust program (see Faust_latency.hpp)
 
 	FaustDev2Dsp()
 		: poly_dsp(NULL)
@@ -224,6 +227,7 @@ struct FaustDev2Dsp
 		, param_values(NULL)
 		, num_inputs(0)
 		, num_outputs(0)
+		, latency_samples(0)
 	{
 	}
 
@@ -416,6 +420,7 @@ static FaustDev2Dsp *create_dsp_data(dsp_factory *factory,
 	dsp_data->num_params = dsp_data->api_ui.getParamsCount();
 	dsp_data->num_inputs = final_dsp->getNumInputs();
 	dsp_data->num_outputs = final_dsp->getNumOutputs();
+	dsp_data->latency_samples = radium::faust_get_latency_samples(mono_dsp, sample_rate);
 
 	dsp_data->param_values = (float*)V_malloc(sizeof(float) * dsp_data->num_params);
 	for (int i = 0; i < dsp_data->num_params; i++)
@@ -753,6 +758,8 @@ static void perform_compile_completion(instrument_t patch_id,
 	devdata->ready.svg_succeeded = (svg_dir != NULL);
 	devdata->ready.num_inputs = dsp_data->num_inputs;
 	devdata->ready.num_outputs = dsp_data->num_outputs;
+
+	plugin->num_visible_outputs = R_MIN(MAX_CHANNELS, dsp_data->num_outputs);
 
 	// Permanent diagnostic: record what was actually compiled (channel
 	// counts, instrument/effect classification, and the first 400 chars
@@ -1206,6 +1213,19 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 }
 
 #pragma GCC diagnostic pop
+
+
+// Returns the latency declared by the Faust program (see Faust_latency.hpp).
+static int RT_get_latency(const struct SoundPlugin *plugin)
+{
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	FaustDev2Dsp *dsp_data = devdata->dsp_data;
+
+	if (dsp_data == NULL)
+		return 0;
+
+	return dsp_data->latency_samples;
+}
 
 
 static void play_note(SoundPlugin *plugin, int block_delta_time, note_t note)
@@ -1881,6 +1901,7 @@ void create_faust_dev2_plugin(void)
 	plugin_type->get_display_value_string = get_display_value_string;
 	plugin_type->get_effect_description   = get_effect_description;
 	plugin_type->effect_is_visible = effect_is_visible;
+	plugin_type->RT_get_latency   = RT_get_latency;
 
 	plugin_type->info =
 		"HTML: FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>."

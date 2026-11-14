@@ -296,7 +296,9 @@ void radium::RhiWindow::QRHI_request_update_from_thread(void)
 	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
 #if THREADED_GFX
-	QMetaObject::invokeMethod(qApp->thread(), [this] ()
+	// Post with the window as context, so Qt drops the queued call if the
+	// window is deleted before it is delivered (can happen at shutdown).
+	QMetaObject::invokeMethod(this, [this] ()
 		{
 			requestUpdate();
 		});
@@ -332,7 +334,17 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 		
 			QSemaphore finished_initing;
 
-			auto initfunc = [this, &finished_initing, font]
+			const bool configured_null_backend = _graphicsApi == QRhi::Null;
+
+			auto show_backend_message = [](const QString &message)
+			{
+				QMetaObject::invokeMethod(qApp->thread(), [message]
+					{
+						GFX_Message(NULL, "%s", message.toUtf8().constData());
+					});
+			};
+
+			auto initfunc = [this, &finished_initing, font, configured_null_backend, show_backend_message]
 			{
 				THREADING_init_qrhi_thread_type();
 
@@ -404,14 +416,16 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 					_rhi = QRhi::create(QRhi::Null, &params);
 					_graphicsApi = QRhi::Null;
 
-					QMetaObject::invokeMethod(qApp->thread(), [api_name]
-						{
-							GFX_Message(NULL,
-							            "Failed to create the \"%s\" graphics backend. Radium will run without graphics in the editor.\n\n"
-							            "Please make sure that the graphics drivers are installed and working properly. "
-							            "(You can also select another graphics backend in Preferences.)",
-							            api_name.toUtf8().constData());
-						});
+					show_backend_message(
+						QString("Failed to create the \"%1\" graphics backend, so Radium has fallen back to the Null backend and will run without graphics in the editor.\n\n"
+						        "Please make sure that the graphics drivers are installed and working properly. Then select a proper graphics backend under Edit -> Preferences -> GPU and restart Radium.")
+						.arg(api_name));
+				}
+				else if (configured_null_backend)
+				{
+					show_backend_message(
+						QString("Radium is configured to use the Null graphics backend, so the editor will not be drawn.\n\n"
+						        "To use the editor, select a proper graphics backend under Edit -> Preferences -> GPU and restart Radium."));
 				}
 //! [rhi-init]
 

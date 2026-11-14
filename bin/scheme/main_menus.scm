@@ -5,7 +5,7 @@
 
 
 (define (include-menu-item? line)
-  (set! line (string-strip line))
+  ;; The caller already passes a stripped string.
   (cond ((and (string-starts-with? line "[Linux]")
               (not (string=? (<ra> :get-os-name) "linux")))
          #f)
@@ -29,13 +29,12 @@
 
 
 (define (get-menu-indent-level line)
-  (let loop ((level 0)
-             (chars (string->list line)))
-    (if (or (null? chars)
-            (not (char=? #\tab (car chars))))
-        level
-        (loop (1+ level)
-              (cdr chars)))))
+  (let ((len (string-length line)))
+    (let loop ((i 0))
+      (if (and (< i len)
+               (char=? #\tab (string-ref line i)))
+          (loop (1+ i))
+          i))))
 
 (define-struct menu-line
   :indentation
@@ -49,8 +48,39 @@
 
 
 (define (create-menu-line-from-line line)
-  (define parts (map string-strip (string-split line #\|)))
-  (define parts2 (map string-strip (string-split (car parts) #\^)))
+  ;; Most lines have a single '|' and no '^'. Avoid the C++ string-split
+  ;; call for those; fall back to it only for the rare multi-separator lines.
+  (define pipe-pos (string-position "|" line))
+  (define parts
+    (if pipe-pos
+        (let ((before (substring line 0 pipe-pos))
+              (after (substring line (+ pipe-pos 1))))
+          (if (string-position "|" after)
+              (string-split line #\|)
+              (cond ((string=? before "")
+                     (if (string=? after "") '() (list after)))
+                    ((string=? after "")
+                     (list before))
+                    (else
+                     (list before after)))))
+        (list line)))
+  (define parts (map string-strip parts))
+  (define text-and-keybinding (car parts))
+  (define caret-pos (string-position "^" text-and-keybinding))
+  (define parts2
+    (if caret-pos
+        (let ((before (substring text-and-keybinding 0 caret-pos))
+              (after (substring text-and-keybinding (+ caret-pos 1))))
+          (if (string-position "^" after)
+              (string-split text-and-keybinding #\^)
+              (cond ((string=? before "")
+                     (if (string=? after "") '() (list (string-strip after))))
+                    ((string=? after "")
+                     (list (string-strip before)))
+                    (else
+                     (list (string-strip before)
+                           (string-strip after))))))
+        (list text-and-keybinding)))
   (define command (cl-cadr parts))
   ;;(c-display "command:" command (and command (to-list (<ra> :get-keybindings-from-command command))))
   (define keybindings (if (cl-cadr parts2)
@@ -96,7 +126,10 @@
                     (if (or (string=? "" line)
                             (string-starts-with? line "#"))
                         ""
-                        ((string-split line #\#) 0))) ;; remove comments
+                        (let ((comment-pos (string-position "#" line)))
+                          (if comment-pos
+                              (substring line 0 comment-pos)
+                              line)))) ;; remove comments
                   (get-all-lines-in-file wfilename)))))
 
 #!!
@@ -501,6 +534,11 @@
               "-------------"
               "Help keybindings" show-keybinding-help-window))
 
+(define *prewarm-popup-menus-during-startup*
+  (or (<ra> :release-mode)
+      ;; In DEBUG builds, pre-warm occasionally to exercise the pre-warm code paths.
+      (= (random 5) 0)))
+
 (define (generate-main-menus)
   (<ra> :wait-until-nsm-has-inited)
   (define menus-options '())
@@ -521,13 +559,18 @@
   ;; Also build the search popup args now, so the first open of the hamburger menu doesn't have to wait.
   (make-main-menu-search-popup-args menus-options)
   (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list))
-  ;; Pre-build the (click me)/F12 "Instruments/effects" sub menu, so opening that menu
-  ;; for the first time doesn't have to look up keybindings for every plugin.
-  (prewarm-track-instrument-popup-menu)
-  ;; Pre-build the modular mixer's "Insert plugin" sub menu for the same reason.
-  (prewarm-module-insert-plugin-popup-menu)
-  ;; Pre-build the mixer's "Instruments/effects" sub menu for the same reason.
-  (prewarm-mixer-insert-sound-object-popup-menu))
+  ;; Pre-building these caches makes the first open of the corresponding popup
+  ;; menus fast, but it is expensive and delays startup. DEBUG builds mostly
+  ;; build the caches lazily on first use instead, but pre-warm occasionally
+  ;; to catch problems in the pre-warm code.
+  (when *prewarm-popup-menus-during-startup*
+    ;; Pre-build the (click me)/F12 "Instruments/effects" sub menu, so opening that menu
+    ;; for the first time doesn't have to look up keybindings for every plugin.
+    (prewarm-track-instrument-popup-menu)
+    ;; Pre-build the modular mixer's "Insert plugin" sub menu for the same reason.
+    (prewarm-module-insert-plugin-popup-menu)
+    ;; Pre-build the mixer's "Instruments/effects" sub menu for the same reason.
+    (prewarm-mixer-insert-sound-object-popup-menu)))
 
 #!!
 

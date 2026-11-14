@@ -1477,6 +1477,7 @@ public:
 protected:
 
   double _time_of_last_alt = -1;
+  QPoint _lalt_press_cursor_pos;
   bool menu_was_active_at_least_key_press = false;
   bool last_released_key_was_lalt = false;  
   bool last_key_was_lalt = false;
@@ -1573,6 +1574,19 @@ protected:
       bool must_return_true = false;
 
       bool menu_is_active = GFX_MenuActive();
+
+      if (modifier==EVENT_ALT_L) {
+        if (is_key_press) {
+          if (tevent_autorepeat==false)
+            _lalt_press_cursor_pos = QCursor::pos();
+        } else if (g_last_pressed_key==EVENT_ALT_L) {
+          // The window manager grabs the pointer when left alt is used as a modifier to
+          // drag a window (e.g. Alt+drag on X11). Qt might not see the mouse press then, so
+          // use mouse movement to detect that this was a drag and not a plain alt tap.
+          if ((QCursor::pos() - _lalt_press_cursor_pos).manhattanLength() > 5)
+            CancelMaybeNavigateMenus();
+        }
+      }
       
       //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d. Scancode: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press, OS_SYSTEM_get_scancode(event));
 
@@ -1595,7 +1609,12 @@ protected:
           GFX_CloseHamburgerPopup();
         }
 
-      } else if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
+      } else if (modifier==EVENT_ALT_L
+                 && (OS_GFX_main_window_has_focus()
+                     // Also open the hamburger popup when the sequencer or mixer runs in its
+                     // own window and has keyboard focus.
+                     || (SETTINGS_read_bool("show_main_menu_bar", false)==false
+                         && GFX_ActiveWindowHasHamburgerButton()))){
 
         //printf(   " last_key_was_alt: %d. Time now: %f. last time: %f. press: %d. Menu active: %d.  Duration: %f\n", last_released_key_was_lalt, TIME_get_ms(), _time_of_last_alt, is_key_press, GFX_MenuActive(), TIME_get_ms()- _time_of_last_alt);
 
@@ -2278,6 +2297,14 @@ protected:
       CancelMaybeNavigateMenus();
       break;
 
+    case QEvent::Move:
+    case QEvent::Resize:
+      // A window manager may grab the pointer when left alt is used as a modifier to move
+      // or resize a window (e.g. Alt+drag on X11). Don't open the main menus after that.
+      if (obj->isWidgetType() && static_cast<QWidget*>(obj)->isWindow())
+        CancelMaybeNavigateMenus();
+      break;
+
     case QEvent::Close:
       if (true || qobject_cast<QMenu*>(obj)==NULL){
         //printf("        CLOSE\n");
@@ -2748,6 +2775,28 @@ static DEFINE_ATOMIC(bool, g_request_to_stop_playing) = false;
 
 int64_t g_main_timer_num_calls = 0;
 
+#if FOR_MACOSX
+// Fallback for platforms that do not deliver mouse move events to widgets.
+// This is seen in full screen on macOS: mouse presses and drags work, but
+// hover events are not delivered, so for instance the cursor does not change
+// shape when hovering a splitter handle. Sync the cursor of the window under
+// the mouse pointer with the cursor of the widget under the mouse pointer.
+static void update_window_cursor_from_mouse_pos(void)
+{
+	QWidget *widget = QApplication::widgetAt(QCursor::pos());
+
+	if (widget == NULL)
+		return;
+
+	QWidget *window = widget->window();
+
+	if (window == NULL || window->windowHandle() == NULL)
+		return;
+
+	window->windowHandle()->setCursor(widget->cursor());
+}
+#endif
+
 namespace{
   struct NoKeyboardEventsQMessageBox : public QMessageBox {
     NoKeyboardEventsQMessageBox(QWidget *parent)
@@ -2894,6 +2943,11 @@ protected:
       {
         last_mouse_pos = mouse_pos;
         FOCUSFRAMES_update_from_mouse_pos();
+#if FOR_MACOSX
+        // Also make sure the cursor changes shape when hovering widgets,
+        // since the platform does not always send mouse move events.
+        update_window_cursor_from_mouse_pos();
+#endif
       }
     }
 
@@ -3705,6 +3759,44 @@ Area GetScreenSize(struct Tracker_Windows *tvisual){
   return ret;
 }
 
+// Re-run the layout of the main horizontal splitter after entering or leaving
+// full screen. The splitter handles are only a couple of pixels wide, so if
+// the splitter is not laid out again after the window has been resized, the
+// handles can end up at positions where they can not be grabbed. Grabbing a
+// handle re-runs the layout of the whole splitter, which is why moving one
+// handle can make the other handles start working again.
+static void update_main_x_splitter_after_fullscreen(void)
+{
+	if (g_editor==NULL)
+		return;
+
+	QSplitter *splitter = g_editor->xsplitter;
+
+	if (splitter != NULL)
+		splitter->refresh();
+
+	GFX_update_main_x_splitter_grow_widget();
+
+#if USE_OPENGL
+	// Make sure the native window used by the editor is resized to match the
+	// widget it is embedded in. QWindowContainer syncs the embedded window's
+	// geometry when it receives a QEvent::PolishRequest. This matters after
+	// entering full screen, where the editor's native window otherwise can be
+	// left with an old geometry that covers the splitter handles.
+	if (g_editor->gl_widget != NULL)
+		QCoreApplication::postEvent(g_editor->gl_widget, new QEvent(QEvent::PolishRequest));
+#endif
+}
+
+static void schedule_update_main_x_splitter_after_fullscreen(void)
+{
+	// Run after the layout has settled. The later calls handle layouts that
+	// are still pending when the event loop is re-entered.
+	QTimer::singleShot(0, []{ update_main_x_splitter_after_fullscreen(); });
+	QTimer::singleShot(100, []{ update_main_x_splitter_after_fullscreen(); });
+	QTimer::singleShot(1000, []{ update_main_x_splitter_after_fullscreen(); });
+}
+
 #if defined(FOR_MACOSX) && defined(USE_QT6)
 
 // Make the main window layout run with the current widget geometry right
@@ -3803,6 +3895,8 @@ extern "C" void OS_OSX_toggle_main_window_fullscreen(void)
     g_editor->editor_layout_widget->show();
     schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
   }
+
+  schedule_update_main_x_splitter_after_fullscreen();
 }
 
 #endif
@@ -3836,6 +3930,8 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
     g_editor->editor_layout_widget->show();
     schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
   }
+
+  schedule_update_main_x_splitter_after_fullscreen();
 
 #if defined(FOR_WINDOWS)
   OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
@@ -3900,6 +3996,8 @@ void GFX_toggleCurrWindowFullScreen(void){
           g_editor->editor_layout_widget->show();
           schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
         }
+
+        schedule_update_main_x_splitter_after_fullscreen();
 #endif
 
 #if defined(FOR_WINDOWS)

@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../pluginhost/JuceLibraryCode/JuceHeader.h"
 
+#include "RadiumChildProcess.h"
 
 #define USE_EMBEDDED_NATIVE_WINDOW 0
 
@@ -1737,9 +1738,11 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   // Add events to the midi buffer created by the virtual keyboard.
   {
-	  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);{
+	  int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);
+	  {
 		  data->keyboardState.processNextMidiBuffer(data->midi_buffer, 0, num_frames, true);
-	  }CRASHREPORTER_unset_plugin_name(pos);
+	  }
+	  CRASHREPORTER_unset_plugin_name(pos);
   }
   
   // 1. Process audio
@@ -1935,8 +1938,15 @@ static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
     AEffect *aeffect = (AEffect*)instance->getPlatformSpecificData();
     
     // "[return value]: tail size (for example the reverb time of a reverb plug-in); 0 is default (return 1 for 'no tail')"
-    int tail = aeffect->dispatcher(aeffect, effGetTailSize,
-                                   0, 0, 0, 0);
+
+	int tail;
+	
+	int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);
+	{
+		aeffect->dispatcher(aeffect, effGetTailSize,
+							0, 0, 0, 0);
+	}
+	CRASHREPORTER_unset_plugin_name(pos);
     
     if (tail==0)
       return -1; // i.e unable to report
@@ -2021,9 +2031,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
           
           {
             radium::PlayerRecursiveLock lock;
-            aeffect->dispatcher(aeffect,effGetParamDisplay,
-                                effect_num, 0, (void *) disp, 0.0f);
-          }
+			int pos = CRASHREPORTER_set_plugin_name(plugin->type->name);
+			{
+				aeffect->dispatcher(aeffect,effGetParamDisplay,
+									effect_num, 0, (void *) disp, 0.0f);
+			}CRASHREPORTER_unset_plugin_name(pos);
+		  }
           
           if (disp[0]==0){
             snprintf(buffer,buffersize-1,"%f%s",aeffect->getParameter(aeffect,effect_num),label);//plugin->type_data->params[effect_num].label);
@@ -2158,6 +2171,41 @@ static void hide_gui(struct SoundPlugin *plugin){
   //OS_WINDOWS_move_main_window_to_front();
 }
 
+// Select the layout with the largest supported number of channels for the main
+// bus in the given direction, the same way Radium always has.
+//
+// Bus::setCurrentLayout() re-checks the current layout and calls jassertfalse
+// (which aborts in debug builds) when the plugin has already rejected the
+// layout returned by enableAllBuses(). This happens for u-he synths that expose
+// an "Audio Input" bus (Zebra2, Bazille, ACE): the wrapper returns false for the
+// all-enabled arrangement, but the bus layout is still updated.
+//
+// So only use Bus::setCurrentLayout() when it cannot assert, i.e. when the
+// plugin accepts its current layout. Doing it this way also keeps JUCE's "next
+// best layout" selection for plugins with coupled buses, so the channel
+// configuration stays identical to previous Radium versions.
+//
+// audio/Juce_plugin_scanner.cpp has a similar helper. It does not have the
+// supported-current-layout check because it only runs a plugin test.
+//
+static void set_main_bus_layout(juce::AudioPluginInstance &instance, bool is_input){
+  if (instance.getBusCount(is_input) == 0)
+    return;
+
+  juce::AudioProcessor::Bus *bus = instance.getBus(is_input, 0);
+  if (bus == NULL)
+    return;
+
+  const int max_channels = bus->getMaxSupportedChannels(64);
+  if (max_channels <= 0)
+    return;
+
+  if (!instance.checkBusesLayoutSupported(instance.getBusesLayout()))
+    return; // Leave the layout as enableAllBuses() left it. setCurrentLayout() would assert here.
+
+  bus->setCurrentLayout(bus->supportedLayoutWithChannels(max_channels));
+}
+
 
 static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const TypeData *type_data, float sample_rate, int block_size){
   
@@ -2197,38 +2245,39 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
 
           instance->enableAllBuses();
 
-          int num_input_buses = instance->getBusCount(true);
-          int num_output_buses = instance->getBusCount(false);
-
-          if (num_input_buses > 0){
-            auto *bus = instance->getBus(true, 0);
-            bus->setCurrentLayout(bus->supportedLayoutWithChannels(bus->getMaxSupportedChannels(64)));
-          }
-
-          if (num_output_buses > 0){
-            auto *bus = instance->getBus(false, 0);
-            bus->setCurrentLayout(bus->supportedLayoutWithChannels(bus->getMaxSupportedChannels(64)));
-          }
+          set_main_bus_layout(*instance, true);
+          set_main_bus_layout(*instance, false);
 
 #if !defined(RELEASE)
           {
-            auto layout = instance->getBusesLayout();
-            int num_input_buses = instance->getBusCount(true);
-            int num_output_buses = instance->getBusCount(false);
-            printf("------. num input buses: %d. num output buses: %d. num channels: %d/%d, channel set sizes: %d / %d. channel types: %d / %d.\n"
+            // Beware that a plugin may have no buses at all in a direction (a
+            // synth typically has no input buses), in which case touching bus 0
+            // makes JUCE's Array bounds assertion (and thus abort()) trigger.
+            const auto layout = instance->getBusesLayout();
+            const int num_input_buses = instance->getBusCount(true);
+            const int num_output_buses = instance->getBusCount(false);
+
+            auto arrangement = [&layout](bool is_input, int num_buses) -> juce::String {
+              if (num_buses <= 0)
+                return "no bus";
+              auto channels = layout.getChannelSet(is_input, 0);
+              return channels.size() == 0 ? juce::String("no channels") : channels.getSpeakerArrangementAsString();
+            };
+
+            auto num_channels = [&layout](bool is_input, int num_buses) -> int {
+              return num_buses > 0 ? layout.getNumChannels(is_input, 0) : 0;
+            };
+
+            printf("------. num input buses: %d. num output buses: %d. num channels: %d/%d.\n"
                    "           Speaker arrs: \"%s\" / \"%s\"\n",
                    num_input_buses,
                    num_output_buses,
-                   layout.getNumChannels(true, 0),
-                   layout.getNumChannels(false, 0),
-                   layout.getChannelSet(true, 0).size(),
-                   layout.getChannelSet(false, 0).size(),
-                   (int)layout.getChannelSet(true, 0).size()==0 ? -1 : layout.getChannelSet(false, 0).getTypeOfChannel(0),
-                   (int)layout.getChannelSet(false, 0).size()==0 ? -1 : layout.getChannelSet(true, 0).getTypeOfChannel(0),
-                   layout.getChannelSet(false, 0).size()==0 ? "nochannels" : layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8(),
-                   layout.getChannelSet(false, 0).size()==0 ? "nochannels" : layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8()
+                   num_channels(true, num_input_buses),
+                   num_channels(false, num_output_buses),
+                   arrangement(true, num_input_buses).toRawUTF8(),
+                   arrangement(false, num_output_buses).toRawUTF8()
                    );
-                    
+                     
             //getchar();
           }
 #endif
@@ -2956,7 +3005,7 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
   args.add(juce::Base64::toBase64(get_container_descriptions_filename(container_filename)));
   args.add(juce::String(int(g_dpi)));
                         
-  juce::ChildProcess process;
+  radium::ChildProcess process;
 
   if (process.start(args)==false){
     GFX_Message2(NULL, true, "Error: Unable to launch %s", executable.toRawUTF8());

@@ -3539,10 +3539,46 @@ int getCurrSeqtrackUnderMouse(bool forgiving, bool only_inside_timeline){
   return seqtracknum;
 }
 
+static bool g_show_mixer_path_in_seqtrack_headers = false;
+
+bool getShowMixerPathInSeqtrackHeaders(void){
+  return g_show_mixer_path_in_seqtrack_headers;
+}
+
+void setShowMixerPathInSeqtrackHeaders(bool doit){
+  if (g_show_mixer_path_in_seqtrack_headers == doit)
+    return;
+
+  g_show_mixer_path_in_seqtrack_headers = doit;
+  SEQUENCER_update(SEQUPDATE_TRACKORDER);
+}
+
+bool switchShowMixerPathInSeqtrackHeaders(void){
+  bool ret = !g_show_mixer_path_in_seqtrack_headers;
+  setShowMixerPathInSeqtrackHeaders(ret);
+  return ret;
+}
+
 void setCurrSeqtrackUnderMouse(int seqtracknum){
   if (g_curr_seqtrack_under_mouse != seqtracknum){
+    const int old = g_curr_seqtrack_under_mouse;
     g_curr_seqtrack_under_mouse = seqtracknum;
-    SEQUENCER_update(SEQUPDATE_EVERYTHING); // TODO: This can be optimized by only updating old and new seqtrack + navigators.
+
+    // The seqblock area paints a lighter background for the seqtrack under the
+    // mouse, so the old and new rows must be repainted. Otherwise the mouse
+    // indicator, which only invalidates a narrow vertical strip, leaves a
+    // trail of highlighted strips behind the cursor.
+    // Using SEQUPDATE_EVERYTHING here rebuilt the whole left part, which
+    // interrupted mouse drags in the mixer strip path scrollbar when the
+    // pointer moved above or below the scrollbar. Updating just the affected
+    // rows avoids that.
+    if (old >= 0 && old < root->song->seqtracks.num_elements)
+      SEQTRACK_update_with_borders(getSeqtrackFromNum(old));
+
+    if (seqtracknum >= 0 && seqtracknum < root->song->seqtracks.num_elements)
+      SEQTRACK_update_with_borders(getSeqtrackFromNum(seqtracknum));
+
+    SEQUENCER_update(SEQUPDATE_HEADERS | SEQUPDATE_NAVIGATOR);
   }
 }
 

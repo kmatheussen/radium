@@ -17,6 +17,8 @@ void GFX_set_pending_popup_position(int x, int y, bool is_hamburger);
 // ("(click me)") of the given track. tracknum -1 means the current track.
 void GFX_set_track_header_popup_position(int tracknum);
 void GFX_set_hamburger_button(QWidget *button);
+void GFX_register_hamburger_button(QWidget *button);
+bool GFX_ActiveWindowHasHamburgerButton(void);
 void GFX_open_hamburger_popup_menu(QWidget *button);
 bool GFX_HamburgerPopupIsOpen(void);
 void GFX_CloseHamburgerPopup(void);

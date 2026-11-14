@@ -8,14 +8,21 @@ source $(dirname "${0}")/bash_setup.sh
 assert_exe_exists()
 {
 	if ! command -v "${1}" >/dev/null 2>&1 ; then
-		handle_failure "\"${1}\" doesn't seem to exist."
+		handle_failure "Executable \"${1}\" doesn't seem to exist."
     fi
 }
 
 assert_file_exists()
 {
     if [ ! -f "$1" ] ; then
-		handle_failure "\"${1}\" doesn't seem to exist."
+		handle_failure "File \"${1}\" doesn't seem to exist."
+    fi
+}
+
+assert_dir_exists()
+{
+    if [ ! -d "$1" ] ; then
+		handle_failure "Directory \"${1}\" doesn't seem to exist."
     fi
 }
 

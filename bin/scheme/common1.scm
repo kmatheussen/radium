@@ -523,22 +523,9 @@
         ((string=? string* "")
          '())
         (else
-         ;;(c-display "a1")
-         (let ((splitted (split-list (string->list string*)
-                                     (lambda (ch2)
-                                       ;;(c-display "a1b: " ch "/" ch2)
-                                       (char=? ch ch2)))))
-           ;;(c-display "a2")
-           (cond ((null? (cadr splitted))
-                  ;;(c-display "a3")
-                  (list string*))
-                 ((null? (car splitted))
-                  ;;(c-display "a4")
-                  (string-split (list->string (cdr (cadr splitted))) ch))
-                 (else
-                  ;;(c-display "a4")
-                  (cons (list->string (car splitted))
-                        (string-split (list->string (cdr (cadr splitted))) ch))))))))
+         ;; Use the C++ splitter for character separators too. Passing #f
+         ;; preserves the old behavior of dropping empty parts.
+         (vector->list (<ra> :string-split string* (string ch) #f)))))
 
 (***assert*** (string-split "a,c" #\,)
               (list "a" "c"))
@@ -584,17 +571,14 @@
 (***assert*** (string-starts-with? "ab" "a") #t)
 
 (define (string-ends-with? string* endswith)
-  (define (loop string* startswith)
-    (cond ((null? startswith)
-           #t)
-          ((null? string*)
-           #f)
-          ((char=? (car string*) (car startswith))
-           (loop (cdr string*) (cdr startswith)))
-          (else
-           #f)))
-  (loop (reverse! (string->list string*))
-        (reverse! (string->list endswith))))
+  (let ((end-len (string-length endswith))
+        (len (string-length string*)))
+    (and (>= len end-len)
+         (let loop ((i 0))
+           (or (= i end-len)
+               (and (char=? (string-ref string* (+ (- len end-len) i))
+                            (string-ref endswith i))
+                    (loop (+ i 1))))))))
 
 (***assert*** (string-ends-with? "" "") #t)
 (***assert*** (string-ends-with? "asdf" "df") #t)
@@ -667,19 +651,23 @@
       (char=? char* #\tab)))
 
 (define (string-strip-right string*)
-  (list->string
-   (reverse!
-    (remove-while (reverse! (string->list string*))
-                  is-whitespace?))))
+  (let ((len (string-length string*)))
+    (let loop ((i len))
+      (if (and (> i 0)
+               (is-whitespace? (string-ref string* (- i 1))))
+          (loop (- i 1))
+          (substring string* 0 i)))))
 
 (***assert*** (string-strip-right "   as dfasdf \n\n ")
               "   as dfasdf")
 
 (define (string-strip-left string*)
-  ;;(assert (< (string-length string*) 1000))
-  (list->string
-   (remove-while (string->list string*)
-                  is-whitespace?)))
+  (let ((len (string-length string*)))
+    (let loop ((i 0))
+      (if (and (< i len)
+               (is-whitespace? (string-ref string* i)))
+          (loop (+ i 1))
+          (substring string* i len)))))
 
 (***assert*** (string-strip-left "   as dfasdf \n\n ")
               "as dfasdf \n\n ")

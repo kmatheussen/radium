@@ -295,6 +295,16 @@ static void dev_play_note(struct SoundPlugin *plugin, int time, note_t note){
       play_note2(data, time, note);
 }
 
+static int dev_RT_get_latency(const struct SoundPlugin *plugin){
+  Devdata *devdata = (Devdata*)plugin->data;
+  Data *data = devdata->reply.data;
+  
+  if (data == NULL)
+    return 0;
+
+  return data->latency_samples;
+}
+
 static void dev_set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
@@ -530,6 +540,7 @@ void create_faust_plugin(void){
   plugin_type->get_display_value_string = dev_get_display_value_string;
   plugin_type->get_effect_description   = dev_get_effect_description;
   plugin_type->effect_is_visible = dev_effect_is_visible;
+  plugin_type->RT_get_latency   = dev_RT_get_latency;
 
   plugin_type->show_gui = dev_show_gui;
   plugin_type->hide_gui = dev_hide_gui;

@@ -1,3 +1,5 @@
+#include "Faust_latency.hpp"
+
 #if defined(CLASSNAME)
 static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin){
   return (Data*)plugin->data;
@@ -355,6 +357,7 @@ static void create_automation_values(Data *data){
 static Data *create_effect_plugin_data2(float samplerate, dsp *initialized_dsp){
   Data *data = new Data;
   data->samplerate = samplerate;
+  data->latency_samples = radium::faust_get_latency_samples(initialized_dsp, samplerate);
 
   Voice *voice = &data->voices[0];
   voice->dsp_instance = initialized_dsp;
@@ -365,6 +368,14 @@ static Data *create_effect_plugin_data2(float samplerate, dsp *initialized_dsp){
   create_automation_values(data);
   
   return data;
+}
+
+// Returns the latency declared by the Faust program (see Faust_latency.hpp).
+static int RT_get_latency(const struct SoundPlugin *plugin){
+  Data *data = (Data*)plugin->data;
+  if (data==NULL)
+    return 0;
+  return data->latency_samples;
 }
 
 #if defined(CLASSNAME)
@@ -668,6 +679,7 @@ static void fill_type(SoundPluginType *type){
  type->get_effect_value         = get_effect_value;
  type->get_display_value_string = get_display_value_string;
  type->get_effect_description   = get_effect_description;
+ type->RT_get_latency           = RT_get_latency;
 
 #ifndef FAUST_SYSTEM_EFFECT
  if (strcmp(DSP_NAME, "Multiband Compressor")){   

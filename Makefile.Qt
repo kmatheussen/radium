@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 8.2.59
+RADIUM_VERSION = 8.3.57
 
 
 SHELL := /usr/bin/env bash
@@ -466,7 +466,8 @@ DEFAULT_UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanit
 #UNDEFINED_SANITIZE_OPTS=
 
 ifdef USING_CLANG
-	DEFAULT_UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function
+	# Commented out, don't remember why it was added
+	#DEFAULT_UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function
 endif
 
 ifeq ($(BUILD_OPTIMIZED), RELEASE)

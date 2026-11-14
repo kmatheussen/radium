@@ -1308,7 +1308,7 @@ void CRASHREPORTER_init(void){
 
 #endif
 
-  mysleep(1000);
+  //mysleep(1000);
 }
 
 
