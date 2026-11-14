@@ -597,18 +597,6 @@ public:
     
   QElapsedTimer time_of_last_minheight_inc;
   int number_of_minheight_incs = 0;
-
-  // Used to stop the auto-fit when the parent clamps the widget, and to keep
-  // the DOWN adjustment from restarting the UP/DOWN cycle indefinitely.
-  int _last_fit_height = -1;
-  int _num_fit_attempts_without_height_increase = 0;
-  bool _did_down_since_show = false;
-
-  void reset_height_adjustment(void){
-    _last_fit_height = -1;
-    _num_fit_attempts_without_height_increase = 0;
-    _did_down_since_show = false;
-  }
   
   void call_regularly_for_painters(void){
     
@@ -626,66 +614,33 @@ public:
   void adjust_height_to_fit_content(void){
     // Only the normal small instrument widget is auto-sized. Half/Full mode
     // and the mixer set the height explicitly.
-    if (_size_type != SIZETYPE_NORMAL || instrumentInMixer()) {
-      reset_height_adjustment();
+    if (_size_type != SIZETYPE_NORMAL || instrumentInMixer())
       return;
-    }
 
     QScrollBar *scrollbar = scrollArea->verticalScrollBar();
-    const bool needs_more_height = scrollbar->isVisible() && scrollbar->maximum() > 0;
-    const int curr_minimum_height = minimumHeight();
 
-    if (needs_more_height) {
-      const int curr_height = height();
-      if (curr_height <= 0)
-        return;
+    // maximum() is the number of pixels the content overflows the viewport.
+    // Adding it to the current height makes all content fit in one step.
+    if (!scrollbar->isVisible() || scrollbar->maximum() <= 0)
+      return;
 
-      // If a larger minimum height does not make the widget taller, the
-      // parent is clamping it. Stop instead of increasing minimumHeight
-      // forever.
-      if (curr_height <= _last_fit_height)
-        _num_fit_attempts_without_height_increase++;
-      else
-        _num_fit_attempts_without_height_increase = 0;
-      _last_fit_height = curr_height;
+    const int curr_height = height();
+    if (curr_height <= 0)
+      return;
 
-      if (_num_fit_attempts_without_height_increase >= 5)
-        return;
+    int new_minimum_height = curr_height + scrollbar->maximum() + 1;
 
-      // Use the actual height as the starting point. If minimumHeight() is
-      // below the visible height, increasing it by only 5 each tick would
-      // spend a long time catching up without any visible size change.
-      int new_minimum_height = std::max(curr_minimum_height, curr_height) + 5;
+    const int max_height = window()->height();
+    if (max_height > 0 && new_minimum_height > max_height)
+      new_minimum_height = max_height;
 
-      const int max_height = window()->height();
-      if (max_height > 0 && new_minimum_height > max_height)
-        new_minimum_height = max_height;
+    if (new_minimum_height <= minimumHeight())
+      return;
 
-      if (new_minimum_height <= curr_minimum_height)
-        return;
-
-      printf("  **UP** MINIMIZING UP to %d\n", new_minimum_height);
-      setMinimumHeight(new_minimum_height);
-      time_of_last_minheight_inc.restart();
-      number_of_minheight_incs++;
-      
-    } else {
-      _last_fit_height = -1;
-      _num_fit_attempts_without_height_increase = 0;
-
-      // Try to lower the minimum height once after it has been stable. If
-      // that makes the scroll bar reappear, the UP code restores the height;
-      // don't try to lower it again until the widget is shown again.
-      if (!_did_down_since_show && curr_minimum_height > 5) {
-
-        if (time_of_last_minheight_inc.elapsed() > 1000 && number_of_minheight_incs < 3) {
-          printf("  **DOWN** MINIMIZING DOWN to %d\n", curr_minimum_height-5);
-          setMinimumHeight(curr_minimum_height-5);
-          number_of_minheight_incs = 0;
-          _did_down_since_show = true;
-        }
-      }
-    }
+    printf("  **UP** MINIMIZING UP to %d\n", new_minimum_height);
+    setMinimumHeight(new_minimum_height);
+    time_of_last_minheight_inc.restart();
+    number_of_minheight_incs++;
   }
 
   void calledRegularlyByParent(void){
@@ -1108,6 +1063,8 @@ private:
 
   QVector<QWidget*> hidden_widgets;
   int height_before_large;
+  int minimum_height_before_large = -1;
+  bool _is_hiding = false;
 
   void set_half_height(void){
     setFixedHeight(g_main_window->height() / 2);
@@ -1124,6 +1081,12 @@ private:
       hidden_widgets.clear();
 
       height_before_large = height();
+
+      // Remember the normal-mode minimum height, so we can go straight back
+      // to it when leaving Half/Full mode. Do not overwrite a valid stored
+      // value with the temporary minimum used while the widget is hidden.
+      if (minimum_height_before_large <= 0 || minimumHeight() > 10)
+        minimum_height_before_large = minimumHeight();
       
       for (int i = 0; i < effects_layout->count(); ++i){
         QWidget *widget = effects_layout->itemAt(i)->widget();
@@ -1192,8 +1155,13 @@ private:
       MW_instrument_widget_set_size(this, _size_type, SIZETYPE_NORMAL);
     
     _size_type = SIZETYPE_NORMAL;
-    
-    setMinimumHeight(10);
+
+    if (!_is_hiding && minimum_height_before_large > 0) {
+      setMinimumHeight(minimum_height_before_large);
+      minimum_height_before_large = -1;
+    } else {
+      setMinimumHeight(10);
+    }
     setMaximumHeight(16777214);
     //resize(width(), height_before_large);
     
@@ -1315,7 +1283,9 @@ public:
       // kept so that half/full mode is entered the next time the widget is
       // shown.
       _patch->widget_height_type = _size_type;
+      _is_hiding = true;
       change_height(SIZETYPE_NORMAL);
+      _is_hiding = false;
       //show_small();  // If not, all instrument widgets will have large height.
     }
   }
@@ -1325,8 +1295,6 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, true);
-
-    reset_height_adjustment();
     
     // Restore the saved size type. The saved patch state is authoritative
     // since _size_type_before_hidden can be clobbered by a hide event that
