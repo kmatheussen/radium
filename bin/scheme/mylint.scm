@@ -81,17 +81,14 @@
            (func elements)))))
   
 (define (string-starts-with? string startswith)
-  (define (loop string startswith)
-    (cond ((null? startswith)
-           #t)
-          ((null? string)
-           #f)
-          ((char=? (car string) (car startswith))
-           (loop (cdr string) (cdr startswith)))
-          (else
-           #f)))
-  (loop (string->list string)
-        (string->list startswith)))
+  (let ((prefix-len (string-length startswith))
+        (len (string-length string)))
+    (and (>= len prefix-len)
+         (let loop ((i 0))
+           (or (= i prefix-len)
+               (and (char=? (string-ref string i)
+                            (string-ref startswith i))
+                    (loop (+ i 1))))))))
 
 ;; redefined later
 (define <-> (if (defined? '<->)

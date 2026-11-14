@@ -226,13 +226,36 @@
 
 
 (define (get-keybindings-from-command-without-focus-and-mouse command)
-  (remove-duplicates-in-sorted-list equal?
-                                    (map (lambda (keybindings)
-                                           (remove (lambda (keybinding)
-                                                     (or (string-starts-with? keybinding "FOCUS_")
-                                                         (string-starts-with? keybinding "MOUSE_")))
-                                                   (string-split keybindings #\space)))
-                                         (to-list (<ra> :get-keybindings-from-command command)))))
+  (define (remove-focus-and-mouse-suffix keybindings)
+    (let ((focus-pos (string-position " FOCUS_" keybindings))
+          (mouse-pos (string-position " MOUSE_" keybindings)))
+      (define cut-pos (cond ((and focus-pos mouse-pos)
+                             (min focus-pos mouse-pos))
+                            (focus-pos
+                             focus-pos)
+                            (mouse-pos
+                             mouse-pos)
+                            (else
+                             #f)))
+      (if cut-pos
+          (substring keybindings 0 cut-pos)
+          keybindings)))
+  ;; The raw keybinding list contains one entry per focus/mouse combination.
+  ;; Most of them become identical after removing those suffixes, so
+  ;; deduplicate before splitting. This turns e.g. 32 entries into 2.
+  (define seen (hash-table))
+  (remove-duplicates-in-sorted-list
+   equal?
+   (map (lambda (keybindings)
+          (string-split keybindings #\space))
+        (keep (lambda (keybindings)
+                (if (seen keybindings)
+                    #f
+                    (begin
+                      (set! (seen keybindings) #t)
+                      #t)))
+              (map remove-focus-and-mouse-suffix
+                   (to-list (<ra> :get-keybindings-from-command command)))))))
 
 #!!
 (get-keybindings-from-command-without-focus-and-mouse "ra.pasteSeqblocks")
