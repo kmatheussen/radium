@@ -1,0 +1,252 @@
+--- a/pure-data/src/g_canvas.h
++++ b/pure-data/src/g_canvas.h
+@@ -125,6 +125,7 @@
+     int e_selectline_index2;
+     int e_selectline_inno;
+     t_outconnect *e_selectline_tag;
++    unsigned int e_selectline_color; /* base color of the selected line */
+     unsigned int e_onmotion: 3;     /* action to take on motion */
+     unsigned int e_lastmoved: 1;    /* one if mouse has moved since click */
+     unsigned int e_textdirty: 1;    /* one if e_textedfor has changed */
+@@ -286,6 +287,7 @@
+     t_float i_graph_lastxpix, i_graph_lastypix;       /* state for dragging */
+     unsigned int i_foregroundcolor, i_backgroundcolor;  /* color of fg & bg */
+     unsigned int i_selectcolor, i_gopcolor;             /* ...selection and GOP */
++    unsigned int i_signalcolor;                         /* signal patch cords */
+ };
+ 
+ void g_editor_newpdinstance(void);
+--- a/pure-data/src/g_canvas.c
++++ b/pure-data/src/g_canvas.c
+@@ -1018,11 +1018,13 @@
+         linetraverser_start(&t, x);
+         while ((oc = linetraverser_next(&t)))
+         {
++            int issignal = (outlet_getsymbol(t.tr_outlet) == &s_signal);
+             sprintf(tag, "l%p", oc);
+-            pdgui_vmess("pdtk_canvas_create_patchcord", "crr iik iiii",
++            pdgui_vmess("pdtk_canvas_create_patchcord", "crr iik i iiii",
+                 glist_getcanvas(x), tag, "-",
+-                    0, (outlet_getsymbol(t.tr_outlet) == &s_signal ? 2:1)
+-                        * x->gl_zoom, THISGUI->i_foregroundcolor,
++                    0, (issignal ? 2:1) * x->gl_zoom,
++                        issignal ? THISGUI->i_signalcolor :
++                            THISGUI->i_foregroundcolor, issignal,
+                     t.tr_lx1, t.tr_ly1, t.tr_lx2, t.tr_ly2);
+         }
+     }
+@@ -1042,6 +1044,15 @@
+             pdgui_vmess(0, "crs iiii",
+                 glist_getcanvas(x), "coords", tag,
+                 t.tr_lx1,t.tr_ly1, t.tr_lx2,t.tr_ly2);
++                /* Tk's "coords" only moves the first item matching a tag,
++                   so the dashed signal overlay needs its own update. */
++            if (outlet_getsymbol(t.tr_outlet) == &s_signal)
++            {
++                sprintf(tag, "l%p-dash", oc);
++                pdgui_vmess(0, "crs iiii",
++                    glist_getcanvas(x), "coords", tag,
++                    t.tr_lx1,t.tr_ly1, t.tr_lx2,t.tr_ly2);
++            }
+         }
+     }
+ }
+@@ -2245,6 +2256,7 @@
+     THISGUI->i_backgroundcolor = 0xFFFFFF;
+     THISGUI->i_selectcolor = 0x0000FF;
+     THISGUI->i_gopcolor = 0xFF0000;
++    THISGUI->i_signalcolor = 0xE6B800;  /* golden yellow */
+     g_editor_newpdinstance();
+     g_template_newpdinstance();
+ }
+--- a/pure-data/src/g_editor.c
++++ b/pure-data/src/g_editor.c
+@@ -54,6 +54,7 @@
+ static void canvas_dopaste(t_canvas *x, t_binbuf *b);
+ static void canvas_paste(t_canvas *x);
+ static void canvas_clearline(t_canvas *x);
++static t_gobj *glist_nth(t_glist *x, int n);
+ 
+     /* Radium: object copy/paste uses a process-global buffer instead of the
+     per-instance copy_binbuf, so that objects can be copied between the
+@@ -82,7 +83,9 @@
+ static void _editor_selectlinecolor(t_glist *x, unsigned int color)
+ {
+     char tag[128];
+-    sprintf(tag, "l%p", x->gl_editor->e_selectline_tag);
++        /* only recolor the core line; a signal cord also has a black dashed
++           overlay that should stay black when the cord is selected */
++    sprintf(tag, "l%p-core", x->gl_editor->e_selectline_tag);
+     pdgui_vmess(0, "crs rk",
+         x, "itemconfigure", tag,
+         "-fill", color);
+@@ -101,6 +104,13 @@
+         x->gl_editor->e_selectline_index2 = index2;
+         x->gl_editor->e_selectline_inno = inno;
+         x->gl_editor->e_selectline_tag = oc;
++        {
++            t_gobj *src = glist_nth(x, index1);
++            t_object *objsrc = src ? pd_checkobject(&src->g_pd) : 0;
++            x->gl_editor->e_selectline_color =
++                (objsrc && obj_issignaloutlet(objsrc, outno)) ?
++                    THISGUI->i_signalcolor : THISGUI->i_foregroundcolor;
++        }
+         _editor_selectlinecolor(x, THISGUI->i_selectcolor);
+     }
+ }
+@@ -110,7 +120,7 @@
+     if (x->gl_editor)
+     {
+         x->gl_editor->e_selectedline = 0;
+-        _editor_selectlinecolor(x, THISGUI->i_foregroundcolor);
++        _editor_selectlinecolor(x, x->gl_editor->e_selectline_color);
+     }
+ }
+ 
+@@ -1847,6 +1857,7 @@
+     x->e_connectbuf = binbuf_new();
+     x->e_deleted = binbuf_new();
+     x->e_glist = owner;
++    x->e_selectline_color = THISGUI->i_foregroundcolor;
+     sprintf(buf, ".x%lx", (t_int)owner);
+     x->e_guiconnect = guiconnect_new(&owner->gl_pd, gensym(buf));
+     return (x);
+@@ -2778,6 +2789,7 @@
+             int x11=0, x12=0, x21=0, x22=0;
+             int y11=0, y12=0, y21=0, y22=0;
+             int noutlets1, ninlets, lx1, ly1, lx2, ly2;
++            int issignal = obj_issignaloutlet(src, nout);
+             char tag[128];
+             sprintf(tag, "l%p", oc);
+             gobj_getrect(&src->ob_g, x, &x11, &y11, &x12, &y12);
+@@ -2794,10 +2806,11 @@
+                              ((x22-x21-iow) * nin)/(ninlets-1) : 0)
+                 + iom;
+             ly2 = y21;
+-            pdgui_vmess("pdtk_canvas_create_patchcord", "crr ii k iiii",
++            pdgui_vmess("pdtk_canvas_create_patchcord", "crr iik i iiii",
+                 glist_getcanvas(x), tag, "-",
+-                    0, (obj_issignaloutlet(src, nout) ? 2 : 1) * x->gl_zoom,
+-                        THISGUI->i_foregroundcolor,
++                    0, (issignal ? 2 : 1) * x->gl_zoom,
++                        issignal ? THISGUI->i_signalcolor :
++                            THISGUI->i_foregroundcolor, issignal,
+                             lx1,ly1, lx2,ly2);
+             canvas_undo_add(x, UNDO_CONNECT, "connect",
+                 canvas_undo_set_connect(x,
+@@ -4641,12 +4654,14 @@
+     if (!(oc = obj_connect(objsrc, outno, objsink, inno))) goto bad;
+     if (glist_isvisible(x) && x->gl_havewindow)
+     {
++        int issignal = obj_issignaloutlet(objsrc, outno);
+         char tag[128];
+         sprintf(tag, "l%p", oc);
+-        pdgui_vmess("pdtk_canvas_create_patchcord", "crr iik iiii",
++        pdgui_vmess("pdtk_canvas_create_patchcord", "crr iik i iiii",
+             glist_getcanvas(x), tag, "-",
+-                0, (obj_issignaloutlet(objsrc, outno) ? 2 : 1) * x->gl_zoom,
+-                    THISGUI->i_foregroundcolor,
++                0, (issignal ? 2 : 1) * x->gl_zoom,
++                    issignal ? THISGUI->i_signalcolor :
++                        THISGUI->i_foregroundcolor, issignal,
+                         0, 0, 0, 0);
+         canvas_fixlinesfor(x, objsrc);
+     }
+--- a/pure-data/src/g_graph.c
++++ b/pure-data/src/g_graph.c
+@@ -704,6 +704,16 @@
+                           "coords",
+                           tagbuf,
+                           t.tr_lx1, t.tr_ly1, t.tr_lx2, t.tr_ly2);
++                    /* see canvas_fixlinesfor() */
++                if (outlet_getsymbol(t.tr_outlet) == &s_signal)
++                {
++                    sprintf(tagbuf, "l%p-dash", oc);
++                    pdgui_vmess(0, "crs iiii",
++                          glist_getcanvas(x),
++                          "coords",
++                          tagbuf,
++                          t.tr_lx1, t.tr_ly1, t.tr_lx2, t.tr_ly2);
++                }
+             }
+             canvas_drawredrect(x, 0);
+             if (x->gl_goprect)
+--- a/pure-data/tcl/pdtk_canvas.tcl
++++ b/pure-data/tcl/pdtk_canvas.tcl
+@@ -27,6 +27,10 @@
+ 
+ array set ::pdtk_canvas::geometry_needs_init {}
+ 
++# base color of each patch cord, keyed by its Pd tag.  Used when the
++# "cords_to_foreground" preference changes the color of all cords.
++array set ::pdtk_canvas::cord_basecolor {}
++
+ # One thing that is tricky to understand is the difference between a Tk
+ # 'canvas' and a 'canvas' in terms of Pd's implementation.  They are similar,
+ # but not the same thing.  In Pd code, a 'canvas' is basically a patch, while
+@@ -533,13 +537,24 @@
+ 
+ proc ::pdtk_canvas::cords_to_foreground {mytoplevel {state 1}} {
+     if {$::pdtk_canvas::enable_cords_to_foreground} {
+-        set col black
+-        if { $state == 0 } {
+-            set col lightgrey
+-        }
+         foreach id [$mytoplevel find withtag {cord && !selected}] {
+             # don't apply backgrouding on selected (blue) lines
+             if { [lindex [$mytoplevel itemconfigure $id -fill] 4 ] ne "blue" } {
++                set tags [$mytoplevel gettags $id]
++                if { $state == 0 } {
++                    set col lightgrey
++                } elseif { [lsearch -exact $tags signal_dash] >= 0 } {
++                    set col black
++                } else {
++                    set col black
++                    foreach tag $tags {
++                        if { [info exists \
++                            ::pdtk_canvas::cord_basecolor($tag)] } {
++                            set col $::pdtk_canvas::cord_basecolor($tag)
++                            break
++                        }
++                    }
++                }
+                 $mytoplevel itemconfigure $id -fill $col
+             }
+         }
+@@ -572,13 +587,33 @@
+ #  the "raise cords" command in g_text.c will work.  In gtk we'll do this
+ #  a better way.
+ 
+-proc pdtk_canvas_create_patchcord {canvas tag grouptag dashed width color args} {
++proc pdtk_canvas_create_patchcord {canvas tag grouptag dashed width color \
++    issignal args} {
+ 
+ #  old version using eval:
+ #    eval [concat $canvas create line $args \
+ #        -width $width -fill $color -capstyle projecting -tags \{$tag cord\}]
+-    $canvas create line {*}$args \
+-        -width $width -fill $color -capstyle projecting -tags [list $tag cord]
++    set ::pdtk_canvas::cord_basecolor($tag) $color
++    set coretag "${tag}-core"
++    if {$issignal} {
++            # A signal cord is a solid colored line with a black dashed
++            # overlay.  Both lines get the Pd tag so that coords, delete,
++            # move and "raise cord" operate on the complete cord.  Only the
++            # solid core gets the -core tag, so selecting the cord does not
++            # recolor the black dashes.
++        set dashlen [expr {$width * 2}]
++        $canvas create line {*}$args \
++            -width $width -fill $color -capstyle projecting \
++            -tags [list $tag cord $coretag]
++        $canvas create line {*}$args \
++            -width $width -fill "#000000" -capstyle butt \
++            -dash [list $dashlen $dashlen] -dashoffset $dashlen \
++            -tags [list $tag cord "${tag}-dash" signal_dash]
++    } else {
++        $canvas create line {*}$args \
++            -width $width -fill $color -capstyle projecting \
++            -tags [list $tag cord $coretag]
++    }
+ 
+ }
+ 
