@@ -4,6 +4,10 @@
 
 #include <functional>
 
+#include <chrono>
+#include <cstdlib>
+#include <thread>
+
 #include <QQueue>
 #include <QMutex>
 #include <QSemaphore>
@@ -201,6 +205,31 @@ static QQueue<std::function<void(void)>>  g_queue;
 static QSemaphore g_sem;
 static QMutex g_mutex;
 
+// Optional frame rate cap for headless/test runs where the swap chain does not
+// block on vblank, for example Xvfb with llvmpipe or the Null backend. Without
+// a cap the render loop below runs as fast as the CPU allows.
+//
+// Only radium_xvfb.sh sets RADIUM_XVFB_MAX_FPS, so normal runs are never
+// affected. 0 means unlimited.
+static int get_max_fps(void)
+{
+	static const int max_fps = []()
+		{
+			const char *value = std::getenv("RADIUM_XVFB_MAX_FPS");
+			if (value == nullptr || value[0] == '\0')
+				return 0;
+
+			char *end = nullptr;
+			const long parsed = std::strtol(value, &end, 10);
+			if (end == value || parsed <= 0)
+				return 0;
+
+			return int(parsed > 1000 ? 1000 : parsed);
+		}();
+
+	return max_fps;
+}
+
 void radium::RhiWindow::QRHI_handle_thread_events(void)
 {
 	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
@@ -208,7 +237,10 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 	QRHI_request_update_from_thread();
 
 #if THREADED_GFX
-		
+
+	const int max_fps = get_max_fps();
+	const double target_frame_ms = max_fps > 0 ? 1000.0 / max_fps : 0.0;
+
 	while(true)
 	{
 		//printf("0.  About to checheck queue, calling QSemaphore::acquire()\n");
@@ -238,9 +270,24 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 		}
 
 		if (_stop_rendering)
+		{
 			QThread::msleep(5);
+		}
 		else
+		{
+			const auto frame_start = target_frame_ms > 0.0 ? std::chrono::steady_clock::now() : 0;
+
 			QRHI_render();
+
+			if (target_frame_ms > 0.0)
+			{
+				const double elapsed_ms =
+					std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - frame_start).count();
+				
+				if (elapsed_ms < target_frame_ms)
+					std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(target_frame_ms - elapsed_ms));
+			}
+		}
 	}
 
 #endif // THREADED_GFX

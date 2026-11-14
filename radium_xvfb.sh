@@ -20,6 +20,7 @@
 #                                   connects to by default. When unset, a random
 #                                   port in 10000-60000 is chosen.
 #   RADIUM_XVFB_BACKEND=opengl|null  GPU backend to configure (default: opengl)
+#   RADIUM_MAX_FPS=...              Xvfb frame rate cap (default: 60, 0 = unlimited)
 #   RADIUM_XVFB_FALLBACK=1          Run on the current $DISPLAY instead of Xvfb
 #   RADIUM_XVFB_DISPLAY_FILE=...    Write the display name to this file
 #   RADIUM_XVFB_KEEP_HOME=1         Keep the temporary HOME for inspection
@@ -104,6 +105,12 @@ last_successfully_started_rhi_backend = $backend
 use_jack_if_jack_server_is_running = false
 EOF
 
+if [ "$fallback" = 0 ]; then
+  # Software rendering (llvmpipe) makes multisampling very expensive, and the
+  # tests do not need it.
+  echo "multisample_qrhi = 1" >>"$testhome/.radium/config"
+fi
+
 if [ -n "${RADIUM_CONTROL_PORT_FILE:-}" ]; then
   portfile="$RADIUM_CONTROL_PORT_FILE"
   mkdir -p "$(dirname "$portfile")"
@@ -124,6 +131,14 @@ unset QT_QPA_PLATFORMTHEME QT_PLUGIN_PATH WAYLAND_DISPLAY
 
 if [ "$fallback" = 0 ]; then
   export LIBGL_ALWAYS_SOFTWARE=1
+
+  # Radium caps its render loop at RADIUM_MAX_FPS when this is set. Xvfb with
+  # llvmpipe has no real vsync, so without a cap the render thread runs at full
+  # speed and burns CPU.
+  export RADIUM_XVFB=1
+  if [ -z "${RADIUM_MAX_FPS:-}" ]; then
+    export RADIUM_MAX_FPS=60
+  fi
 fi
 
 printf 'radium_xvfb: HOME=%s\n' "$testhome" >&2
