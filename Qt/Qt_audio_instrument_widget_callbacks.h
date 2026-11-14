@@ -1690,6 +1690,18 @@ public:
     
   QElapsedTimer time_of_last_minheight_inc;
   int number_of_minheight_incs = 0;
+
+  // Used to stop the auto-fit when the parent clamps the widget, and to keep
+  // the DOWN adjustment from restarting the UP/DOWN cycle indefinitely.
+  int _last_fit_height = -1;
+  int _num_fit_attempts_without_height_increase = 0;
+  bool _did_down_since_show = false;
+
+  void reset_height_adjustment(void){
+    _last_fit_height = -1;
+    _num_fit_attempts_without_height_increase = 0;
+    _did_down_since_show = false;
+  }
   
   void call_regularly_for_painters(void){
     
@@ -1705,28 +1717,66 @@ public:
   }
 
   void adjust_height_to_fit_content(void){
-    int curr_minimum_height = minimumHeight();
-    
-    bool is_visible = scrollArea->verticalScrollBar()->isVisible();
-    
-    if (is_visible) {
+    // Only the normal small instrument widget is auto-sized. Half/Full mode
+    // and the mixer set the height explicitly.
+    if (_size_type != SIZETYPE_NORMAL || instrumentInMixer()) {
+      reset_height_adjustment();
+      return;
+    }
+
+    QScrollBar *scrollbar = scrollArea->verticalScrollBar();
+    const bool needs_more_height = scrollbar->isVisible() && scrollbar->maximum() > 0;
+    const int curr_minimum_height = minimumHeight();
+
+    if (needs_more_height) {
+      const int curr_height = height();
+      if (curr_height <= 0)
+        return;
+
+      // If a larger minimum height does not make the widget taller, the
+      // parent is clamping it. Stop instead of increasing minimumHeight
+      // forever.
+      if (curr_height <= _last_fit_height)
+        _num_fit_attempts_without_height_increase++;
+      else
+        _num_fit_attempts_without_height_increase = 0;
+      _last_fit_height = curr_height;
+
+      if (_num_fit_attempts_without_height_increase >= 5)
+        return;
 
       // Use the actual height as the starting point. If minimumHeight() is
       // below the visible height, increasing it by only 5 each tick would
       // spend a long time catching up without any visible size change.
-      const int new_minimum_height = std::max(curr_minimum_height, height()) + 5;
+      int new_minimum_height = std::max(curr_minimum_height, curr_height) + 5;
+
+      const int max_height = window()->height();
+      if (max_height > 0 && new_minimum_height > max_height)
+        new_minimum_height = max_height;
+
+      if (new_minimum_height <= curr_minimum_height)
+        return;
 
       printf("  **UP** MINIMIZING UP to %d\n", new_minimum_height);
       setMinimumHeight(new_minimum_height);
       time_of_last_minheight_inc.restart();
       number_of_minheight_incs++;
       
-    } else if (_size_type != SIZETYPE_HALF && curr_minimum_height > 5){
+    } else {
+      _last_fit_height = -1;
+      _num_fit_attempts_without_height_increase = 0;
 
-      if (time_of_last_minheight_inc.elapsed() > 1000 && number_of_minheight_incs < 3) { // Wait at least 1 second before trying to lower it again. If not, it won't stabilize. (might not stabilize now either though, but it won't be that visible now)
-        printf("  **DOWN** MINIMIZING DOWN to %d\n", curr_minimum_height-5);
-        setMinimumHeight(curr_minimum_height-5);
-        number_of_minheight_incs = 0;
+      // Try to lower the minimum height once after it has been stable. If
+      // that makes the scroll bar reappear, the UP code restores the height;
+      // don't try to lower it again until the widget is shown again.
+      if (!_did_down_since_show && curr_minimum_height > 5) {
+
+        if (time_of_last_minheight_inc.elapsed() > 1000 && number_of_minheight_incs < 3) {
+          printf("  **DOWN** MINIMIZING DOWN to %d\n", curr_minimum_height-5);
+          setMinimumHeight(curr_minimum_height-5);
+          number_of_minheight_incs = 0;
+          _did_down_since_show = true;
+        }
       }
     }
   }
@@ -2397,6 +2447,8 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, true);
+
+    reset_height_adjustment();
     
     // Restore the saved size type. The saved patch state is authoritative
     // since _size_type_before_hidden can be clobbered by a hide event that
