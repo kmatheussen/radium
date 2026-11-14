@@ -33,6 +33,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
+#include <algorithm>
+
+#include <QTimer>
+
 #include "Qt_MyQScrollBar.hpp"
 
 #include "LLM_fx_tune.hpp"
@@ -1700,21 +1704,20 @@ public:
       _comp_widget->calledRegularlyByParent();
   }
 
-  void calledRegularlyByParent(void){
-    
-    //printf("hello %p\n", this);
-
-    if (_size_type == SIZETYPE_HALF && !instrumentInMixer())
-      set_half_height();
-    
+  void adjust_height_to_fit_content(void){
     int curr_minimum_height = minimumHeight();
     
     bool is_visible = scrollArea->verticalScrollBar()->isVisible();
     
     if (is_visible) {
 
-      printf("  **UP** MINIMIZING UP to %d\n", curr_minimum_height+5);
-      setMinimumHeight(curr_minimum_height+5);
+      // Use the actual height as the starting point. If minimumHeight() is
+      // below the visible height, increasing it by only 5 each tick would
+      // spend a long time catching up without any visible size change.
+      const int new_minimum_height = std::max(curr_minimum_height, height()) + 5;
+
+      printf("  **UP** MINIMIZING UP to %d\n", new_minimum_height);
+      setMinimumHeight(new_minimum_height);
       time_of_last_minheight_inc.restart();
       number_of_minheight_incs++;
       
@@ -1726,6 +1729,16 @@ public:
         number_of_minheight_incs = 0;
       }
     }
+  }
+
+  void calledRegularlyByParent(void){
+    
+    //printf("hello %p\n", this);
+
+    if (_size_type == SIZETYPE_HALF && !instrumentInMixer())
+      set_half_height();
+    
+    adjust_height_to_fit_content();
   }
 
   void callSystemSliderpainterUpdateCallbacks(void){
@@ -2409,6 +2422,13 @@ public:
       if (!instrumentInMixer())
         S7CALL2(void_void,"FROM_C-minimize-lowertab");
     }
+
+    // Start the height auto-fit immediately instead of waiting for the next
+    // Instruments_widget timer tick. Defer it so the layout has been updated.
+    QTimer::singleShot(0, this, [this]{
+      if (isVisible())
+        adjust_height_to_fit_content();
+    });
 
     //      show_large();
   }
