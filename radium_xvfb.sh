@@ -10,6 +10,10 @@
 # HOME seeded from bin/config, and removes both when Radium exits. Killing the
 # helper stops Radium and its X server.
 #
+# Most automated tests should use ./radium_test.sh, the stateful wrapper around
+# this script: it keeps the port/display/log between commands and waits for the
+# GUI. Use radium_xvfb.sh directly only when debugging the helper itself.
+#
 # This is a development/test helper. It deliberately lives in the repository
 # root, outside bin/, so install.sh does not include it in binary distributions.
 #
