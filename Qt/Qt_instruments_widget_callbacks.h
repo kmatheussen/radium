@@ -31,9 +31,6 @@ public:
     // horror
     void timerEvent(QTimerEvent * e) override {
 
-      if (g_is_starting_up)
-        return;
-
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
       //printf("instrwi: %p\n",instruments_widget);
@@ -46,7 +43,7 @@ public:
     
     Timer(Instruments_widget *instruments_widget){
       this->instruments_widget = instruments_widget;
-      setInterval(50); // 50 = 3 * 16.666 (each third frame on a 60hz screen)
+      setInterval(15); // 15 = 0.9 * 16.666 (roughly every frame on a 60hz screen)
     }
   };
 
