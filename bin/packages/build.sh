@@ -385,6 +385,8 @@ build_pd_externals() {
     patches=""
     exclude=""
     install_dirs=""
+    headers=""
+    platforms=""
     cppflags=""
     cflags=""
     author=""
@@ -409,6 +411,20 @@ build_pd_externals() {
         if [ -n "${PD2_EXTERNALS_SKIP:-}" ]; then
             case " $PD2_EXTERNALS_SKIP " in
                 *" $name "*) return 0 ;;
+            esac
+        fi
+
+        # Skip libraries that are only built for some platforms. The target is
+        # 'Linux', 'Darwin' or 'Windows'; compare case-insensitively.
+        if [ -n "$platforms" ]; then
+            target_os="`echo "${PD2_TARGET_OS:-$(uname -s)}" | tr '[:upper:]' '[:lower:]'`"
+            case " `echo $platforms | tr '[:upper:]' '[:lower:]'` " in
+                *" $target_os "*) ;;
+                *)
+                    echo
+                    echo "==== Skipping Pd external '$name' (not built for $target_os) ===="
+                    return 0
+                    ;;
             esac
         fi
 
@@ -494,6 +510,24 @@ build_pd_externals() {
             done
         fi
 
+        # Files shipped next to the library. Names not found in the source
+        # tree are taken from the libpd headers (e.g. m_pd.h), so externals
+        # that compile code at runtime can ship the exact Pd headers they
+        # were built against.
+        if [ -n "$headers" ]; then
+            LIBPD_HEADERS="${PD2_LIBPD_SRC:-`pwd`/libpd/pure-data/src}"
+            for header in $headers ; do
+                if [ -f "`pwd`/$srcdir/$header" ]; then
+                    cp -p "`pwd`/$srcdir/$header" "$EXTERNALS_DIR/$name/"
+                elif [ -f "$LIBPD_HEADERS/$header" ]; then
+                    cp -p "$LIBPD_HEADERS/$header" "$EXTERNALS_DIR/$name/"
+                else
+                    echo "headers entry not found: $header (in $srcdir or $LIBPD_HEADERS)" >&2
+                    exit 1
+                fi
+            done
+        fi
+
         # Credits for the "List of included Pd externals in Pd2" listing.
         pd_externals_credits+="$name|$author|$copyright|$license
 "
@@ -521,6 +555,8 @@ build_pd_externals() {
                 patches=""
                 exclude=""
                 install_dirs=""
+                headers=""
+                platforms=""
                 cppflags=""
                 cflags=""
                 author=""
@@ -545,6 +581,8 @@ build_pd_externals() {
                     patches)          patches="$value" ;;
                     exclude)          exclude="$value" ;;
                     install_dirs)     install_dirs="$value" ;;
+                    headers)          headers="$value" ;;
+                    platforms)        platforms="$value" ;;
                     cppflags)         cppflags="$value" ;;
                     cflags)           cflags="$value" ;;
                     author)           author="$value" ;;

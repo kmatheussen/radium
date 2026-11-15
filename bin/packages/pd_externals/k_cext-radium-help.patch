@@ -1,0 +1,188 @@
+--- a/help-k_cext.pd
++++ b/help-k_cext.pd
+@@ -1,60 +1,45 @@
+-#N canvas 231 140 726 710 10;
+-#X floatatom 19 52 5 0 0 0 - - -;
+-#X floatatom 17 116 5 0 0 0 - - -;
+-#X floatatom 238 54 5 0 0 0 - - -;
+-#X floatatom 237 117 5 0 0 0 - - -;
+-#X floatatom 419 50 5 0 0 0 - - -;
+-#X floatatom 419 137 5 0 0 0 - - -;
+-#X floatatom 30 216 5 0 0 0 - - -;
+-#X floatatom 30 337 5 0 0 0 - - -;
++#N canvas 1079 240 796 1133 10;
++#X floatatom 19 52 5 0 0 0 - - - 0;
++#X floatatom 17 116 5 0 0 0 - - - 0;
++#X floatatom 238 54 5 0 0 0 - - - 0;
++#X floatatom 237 117 5 0 0 0 - - - 0;
++#X floatatom 419 50 5 0 0 0 - - - 0;
++#X floatatom 419 137 5 0 0 0 - - - 0;
++#X floatatom 30 216 5 0 0 0 - - - 0;
++#X floatatom 30 337 5 0 0 0 - - - 0;
+ #X text 416 29 Sends out previous value.;
+ #X text 235 33 Adds one.;
+-#X floatatom 367 199 5 0 0 0 - - -;
++#X floatatom 367 199 5 0 0 0 - - - 0;
+ #X text 26 198 (Gliding average);
+-#X floatatom 29 405 5 0 0 0 - - -;
+-#X floatatom 29 502 20 0 0 0 - - -;
++#X floatatom 29 405 5 0 0 0 - - - 0;
++#X floatatom 29 502 20 0 0 0 - - - 0;
+ #X text 32 356 Calculates the faculty.;
+-#X text 139 707 Additional \, read the macros in k_cext.h;
+-#X floatatom 373 394 5 0 0 0 - - -;
+-#X floatatom 367 501 5 0 0 0 - - -;
+-#X floatatom 515 397 5 0 0 0 - - -;
+-#X floatatom 516 501 5 0 0 0 - - -;
++#X text 126 711 Additional \, read the macros in k_cext.h;
++#X floatatom 373 394 5 0 0 0 - - - 0;
++#X floatatom 367 501 5 0 0 0 - - - 0;
++#X floatatom 515 397 5 0 0 0 - - - 0;
++#X floatatom 516 501 5 0 0 0 - - - 0;
+ #X text 361 366 Divide two numbers.;
+ #X text 361 379 Integer modulus in the second outlet.;
+-#X floatatom 53 682 10 0 0 0 - - -;
+-#X floatatom 176 587 5 0 0 0 - - -;
++#X floatatom 53 682 10 0 0 0 - - - 0;
++#X floatatom 176 587 5 0 0 0 - - - 0;
+ #X msg 62 584 bang;
+ #X text 16 31 Sends out the input.;
+-#X text 10 149 ______________________________________________________
+-;
+-#X text 12 341 ______________________________________________________
+-;
+-#X text 226 516 ______________________________________________________
+-;
+-#X text 231 688 ______________________________________________________
+-;
+-#X text 20 -9 ______________________________________________________
+-;
+-#X text 102 -28 k_cext. The c external object for PD by K.Matheussen
+-\;;
+-#X text 230 -9 ______________________________________________________
+-;
+-#X text 221 149 ______________________________________________________
+-;
+-#X text 231 341 ______________________________________________________
+-;
+-#X text 11 516 ______________________________________________________
+-;
+-#X text 8 688 ______________________________________________________
+-;
+-#X obj 323 357 vsl 8 170 0 127 0 0 empty empty empty 0 -8 0 8 -1 -1
+--1 0 1;
+-#X obj 334 165 vsl 8 185 0 127 0 0 empty empty empty 0 -8 0 8 -1 -1
+--1 0 1;
+-#X obj 183 7 vsl 8 152 0 127 0 0 empty empty empty 0 -8 0 8 -1 -1 -1
+-0 1;
+-#X obj 381 8 vsl 8 152 0 127 0 0 empty empty empty 0 -8 0 8 -1 -1 -1
+-0 1;
++#X text 10 149 ______________________________________________________;
++#X text 12 341 ______________________________________________________;
++#X text 226 516 ______________________________________________________;
++#X text 231 688 ______________________________________________________;
++#X text 20 -9 ______________________________________________________;
++#X text 102 -28 k_cext. The c external object for PD by K.Matheussen \;;
++#X text 230 -9 ______________________________________________________;
++#X text 221 149 ______________________________________________________;
++#X text 231 341 ______________________________________________________;
++#X text 11 516 ______________________________________________________;
++#X text 8 688 ______________________________________________________;
++#X obj 323 357 vsl 8 170 0 127 0 0 empty empty empty 0 -8 0 8 #000000 #000000 #000000 0 1;
++#X obj 334 165 vsl 8 185 0 127 0 0 empty empty empty 0 -8 0 8 #000000 #000000 #000000 0 1;
++#X obj 183 7 vsl 8 152 0 127 0 0 empty empty empty 0 -8 0 8 #000000 #000000 #000000 0 1;
++#X obj 381 8 vsl 8 152 0 127 0 0 empty empty empty 0 -8 0 8 #000000 #000000 #000000 0 1;
+ #X text 201 9 2;
+ #X text 398 10 3;
+ #X text 16 9 1;
+@@ -65,42 +50,46 @@
+ #X text 22 535 8;
+ #X obj 17 75 k_cext 1 1 \; O0(V(0)) \;;
+ #X obj 237 76 k_cext 1 1 \; O0(V(0) + 1) \;;
+-#X obj 422 72 k_cext 1 1 \; static t_float a=0 \; O0(a) \; a=V(0) \;
+-;
+-#X obj 30 240 k_cext 1 1 \; static FLOATARRAY(a \, 5) \; static int
+-p=0 \; a[p%5]=V(0) \; p++ \; O0( (a[0]+a[1]+a[2]+a[3]+a[4])/5 ) \;
+-;
+-#X obj 133 681 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
+--262144 -1 -1 0 256;
+-#X obj 199 683 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
+--262144 -1 -1 0 256;
+-#X obj 275 683 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
+--262144 -1 -1 0 256;
+-#X floatatom 289 588 5 0 0 0 - - -;
+-#X floatatom 359 338 5 0 0 0 - - -;
+-#X floatatom 437 337 5 0 0 0 - - -;
+-#X floatatom 530 337 5 0 0 0 - - -;
++#X obj 422 72 k_cext 1 1 \; static t_float a=0 \; O0(a) \; a=V(0) \;;
++#X obj 30 240 k_cext 1 1 \; static FLOATARRAY(a \, 5) \; static int p=0 \; a[p%5]=V(0) \; p++ \; O0( (a[0]+a[1]+a[2]+a[3]+a[4])/5 ) \;;
++#X obj 133 681 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X obj 199 683 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X obj 275 683 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X floatatom 289 588 5 0 0 0 - - - 0;
++#X floatatom 359 338 5 0 0 0 - - - 0;
++#X floatatom 437 337 5 0 0 0 - - - 0;
++#X floatatom 530 337 5 0 0 0 - - - 0;
+ #X text 371 174 Some modulo operations;
+-#X obj 460 530 vsl 8 170 0 127 0 0 empty empty empty 0 -8 0 8 -1 -1
+--1 0 1;
+-#X text 478 535 9 Start mozilla;
++#X obj 460 530 vsl 8 170 0 127 0 0 empty empty empty 0 -8 0 8 #000000 #000000 #000000 0 1;
++#X text 478 535 9 Start firefox;
+ #X msg 479 566 bang;
+-#X text 43 534 Sends out four random numbers between the value of inlet
+-1 and inlet 2 Default values for the inlets are set by argument 3 and
+-4 (5 and 10).;
++#X text 43 534 Sends out four random numbers between the value of inlet 1 and inlet 2 Default values for the inlets are set by argument 3 and 4 (5 and 10).;
+ #X text 28 183 Sends out the average of the 5 last values.;
+ #X text 33 380 and the SC macro.;
+ #X text 33 368 Also demonstrates the use of the FOR;
+-#X obj 369 223 k_cext 1 3 \; int v=I(0) \; IF !(v%3) THEN DO \; . O0(v)
+-\; ELIF !(v%2) THEN DO \; . O1(v) \; ELSE \; . O2(v) \;;
+-#X obj 29 431 k_cext 1 1 \; int out=1 \, i \; FOR i=2 SC i<=I(0) SC
+-i++ THEN DO \; . out*=i \; O0(out) \;;
+-#X obj 62 608 k_cext 3 4 0 5 10 \; int i \; RANGE(i \, 0 \, 4) DO \;
+-. O(i \, (int)BETWEEN(I(1) \, I(2))) \;;
+-#X obj 377 426 k_cext 2 2 \; IF I(1)!=0 THEN DO \; . O1(I(0) % I(1))
+-\; O0(V(0) / V(1)) \;;
++#X obj 369 223 k_cext 1 3 \; int v=I(0) \; IF !(v%3) THEN DO \; . O0(v) \; ELIF !(v%2) THEN DO \; . O1(v) \; ELSE \; . O2(v) \;;
++#X obj 29 431 k_cext 1 1 \; int out=1 \, i \; FOR i=2 SC i<=I(0) SC i++ THEN DO \; . out*=i \; O0(out) \;;
++#X obj 62 608 k_cext 3 4 0 5 10 \; int i \; RANGE(i \, 0 \, 4) DO \; . O(i \, (int)BETWEEN(I(1) \, I(2))) \;;
++#X obj 377 426 k_cext 2 2 \; IF I(1)!=0 THEN DO \; . O1(I(0) % I(1)) \; O0(V(0) / V(1)) \;;
+ #X msg 446 198 print;
+-#X obj 479 603 k_cext 1 0 \; system( s<mozilla&>s ) \;;
++#X obj 479 603 k_cext 1 0 \; system( s<firefox&>s ) \;;
++#X obj 28 1018 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X obj 256 1020 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X floatatom 30 818 5 0 0 0 - - - 0;
++#X floatatom 214 815 5 0 0 0 - - - 0;
++#X floatatom 27 890 5 0 0 0 - - - 0;
++#X obj 29 848 k_cext 2 1 \; O(0 \, INT_func(I(0) \, I(1))) \;;
++#X obj 28 942 k_cfunc 0 2 INT_func int a int b \; O(0 \, a) \; O(1 \, b) \; return a+b \;;
++#X obj 401 1023 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X obj 629 1025 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10 #fcfcfc #000000 #000000 0 256;
++#X floatatom 403 823 5 0 0 0 - - - 0;
++#X floatatom 587 820 5 0 0 0 - - - 0;
++#X floatatom 400 895 5 0 0 0 - - - 0;
++#X obj 402 852 k_cext 2 1 \; O(0 \, FLOAT_func(V(0) \, V(1))) \;;
++#X obj 401 947 k_cfunc 0 2 FLOAT_func float a float b \; O(0 \, a) \; O(1 \, b) \; return a+b \;;
++#X text 17 754 10 Demonstrating the use of two functions to add integer numbers. The first one does an integer operation \, the second one does a floating point operation.;
++#X text 9 723 ______________________________________________________;
++#X text 233 723 ______________________________________________________;
+ #X connect 0 0 49 0;
+ #X connect 2 0 50 0;
+ #X connect 4 0 51 0;
+@@ -128,3 +117,13 @@
+ #X connect 71 0 17 0;
+ #X connect 71 1 19 0;
+ #X connect 72 0 68 0;
++#X connect 76 0 79 0;
++#X connect 77 0 79 1;
++#X connect 79 0 78 0;
++#X connect 80 0 74 0;
++#X connect 80 1 75 0;
++#X connect 83 0 86 0;
++#X connect 84 0 86 1;
++#X connect 86 0 85 0;
++#X connect 87 0 81 0;
++#X connect 87 1 82 0;
