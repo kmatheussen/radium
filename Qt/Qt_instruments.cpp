@@ -1141,6 +1141,10 @@ bool MIXERSTRIP_is_visible(void){
   return g_mixerstrip_is_visible;
 }
 
+bool mixerStripIsVisible(void){
+  return MIXERSTRIP_is_visible();
+}
+
 void MIXERSTRIP_show(void){
   if (sequencerInFullMode() && !sequencerInWindow()){
     setSequencerInFullMode(false);    
@@ -1174,6 +1178,47 @@ int64_t MIXERSTRIP_get_curr_mixerstrip_guinum(void){
   return mixerstrip_guinum;
 }
 
+// The strip container is a child of the main horizontal splitter, and its
+// layout uses QLayout::SetMaximumSize so that it collapses to the width of the
+// strip. That constraint is only applied when the layout is activated,
+// though. If an activation is missed, the splitter keeps the old strip width
+// and we end up with an empty, background-colored pane that does not
+// disappear when the main window is resized (only dragging the splitter
+// handle fully to the left collapses it).
+//
+// Hide the container when there is no strip (QSplitter always gives hidden
+// children zero width), make sure the size constraint has been applied, and
+// re-run the splitter layout.
+static void update_mixer_strip_parent(bool show_strip){
+  if (g_mixerstripparent==NULL || g_mixerstriplayout==NULL)
+    return;
+
+  if (show_strip==false) {
+    // Normally the strip has already been removed, but make sure a stale
+    // layout item cannot keep the container wide.
+    while (g_mixerstriplayout->count() > 0) {
+      QLayoutItem *item = g_mixerstriplayout->takeAt(0);
+      QWidget *widget = item->widget();
+      if (widget != NULL)
+        widget->hide();
+      delete item;
+    }
+  }
+
+  // Apply the layout's SetMaximumSize constraint right away instead of
+  // relying on a posted layout request that might be dropped or coalesced.
+  g_mixerstriplayout->activate();
+
+  if (show_strip && g_mixerstriplayout->count() > 0)
+    g_mixerstripparent->show();
+  else
+    g_mixerstripparent->hide();
+
+  EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
+  if (editor != NULL && editor->xsplitter != NULL)
+    editor->xsplitter->refresh();
+}
+
 int64_t MIXERSTRIP_create_instrument_widget(instrument_t instrument_id, int width, int height){
   return S7CALL2(int_instrument_int_int, "FROM_C-create-instrument-widget-mixer-strip", instrument_id, width, height);
 }
@@ -1194,12 +1239,20 @@ void MIXERSTRIP_call_regularly(void){
   R_ASSERT(old_guinum==-1 || old_mixerstrip_widget!=NULL);
 
   if (g_mixerstrip_is_visible==false){
+    bool must_update = false;
+
     if (old_mixerstrip_widget!=NULL){
       g_mixerstriplayout->removeWidget(old_mixerstrip_widget);
       gui_close(old_guinum);
       mixerstrip_guinum = -1;
       last_patch = NULL;
+      must_update = true;
     }
+
+    if (g_mixerstripparent != NULL && g_mixerstriplayout != NULL &&
+        (must_update || !g_mixerstripparent->isHidden() || g_mixerstriplayout->count() > 0))
+      update_mixer_strip_parent(false);
+
     return;
   }
 
@@ -1252,7 +1305,8 @@ void MIXERSTRIP_call_regularly(void){
         
         if(old_guinum != -1)
           gui_close(old_guinum);
-      
+
+        update_mixer_strip_parent(true);
       }
 
     }
