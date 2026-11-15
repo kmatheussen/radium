@@ -3177,6 +3177,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 ||#
 
 
+(define (current-instrument-gui-is-visible)
+  (define parentgui -2) ;; current window
+  (let ((id (ra:get-current-instrument-under-mouse)))
+    (and (ra:is-legal-instrument id)
+         (ra:instrument-gui-is-visible id parentgui))))
+
 (define (show/hide-instrument-gui)
   (define parentgui -2) ;; current window
   (let ((id (ra:get-current-instrument-under-mouse)))

@@ -40,6 +40,7 @@
     ra:add-message
     add-message-window-message
     show/hide-instrument-gui
+    current-instrument-gui-is-visible
     system
     create-change-editor-font-requester
     create-change-system-font-requester

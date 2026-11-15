@@ -16,6 +16,9 @@
 #   shot [file]              Save a screenshot (default <state>/screenshot.png)
 #   xdotool <args...>        Run xdotool against the private display
 #   windows                  List window titles on the private display
+#   tree [N]                 Show the first N lines of the window tree
+#   xwininfo [args...]       Run xwininfo against the private display
+#   sleep <seconds>          Sleep (keeps waits inside one invocation)
 #   log [N]                  Show the last N log lines (default 200)
 #   log -f                   Follow the log
 #   clean                    Stop and remove the state directory
@@ -72,6 +75,9 @@ Commands:
   shot [file]              Save a screenshot (default <state>/screenshot.png)
   xdotool <args...>        Run xdotool against the private display
   windows                  List window titles on the private display
+  tree [N]                 Show the first N lines of the window tree
+  xwininfo [args...]       Run xwininfo against the private display
+  sleep <seconds>          Sleep (keeps waits inside one invocation)
   log [N]                  Show the last N log lines (default 200)
   log -f                   Follow the log
   clean                    Stop and remove the state directory
@@ -398,6 +404,44 @@ do_windows() {
   done < <(DISPLAY="$display" xdotool search --name '.*' 2>/dev/null || true)
 }
 
+do_tree() {
+  local display
+  display="$(require_display)"
+  command -v xwininfo >/dev/null 2>&1 || die "xwininfo was not found"
+
+  local lines=40
+  if [ $# -ge 1 ]; then
+    case "$1" in
+      ''|*[!0-9]*) die "tree expects a line count, not \"$1\"" ;;
+      *) lines="$1" ;;
+    esac
+    shift
+  fi
+  [ $# -eq 0 ] || die "tree takes at most one line count"
+
+  DISPLAY="$display" xwininfo -root -tree | sed -n "1,${lines}p"
+}
+
+do_xwininfo() {
+  local display
+  display="$(require_display)"
+  command -v xwininfo >/dev/null 2>&1 || die "xwininfo was not found"
+  if [ $# -eq 0 ]; then
+    set -- -root -tree
+  fi
+  DISPLAY="$display" xwininfo "$@"
+}
+
+do_sleep() {
+  [ $# -eq 1 ] || die "sleep needs one number of seconds"
+  case "$1" in
+    ''|*[!0-9.]*|*.*.*|.*|*.)
+      die "sleep expects a number, not \"$1\""
+      ;;
+  esac
+  sleep "$1"
+}
+
 do_log() {
   [ -f "$logfile" ] || die "no log at $logfile"
 
@@ -471,6 +515,15 @@ case "$command_name" in
     ;;
   windows)
     do_windows
+    ;;
+  tree)
+    do_tree "$@"
+    ;;
+  xwininfo)
+    do_xwininfo "$@"
+    ;;
+  sleep)
+    do_sleep "$@"
     ;;
   log)
     do_log "$@"
