@@ -1656,6 +1656,11 @@ struct LLMStreamAccumulator
 	// JSON. A non-zero value on an otherwise empty response points at a
 	// non-SSE or truncated reply rather than at an empty completion.
 	int unparsed_lines = 0;
+	// Bytes received from the server (including SSE framing). An empty HTTP
+	// 200 with raw_bytes == 0 means the stream closed without sending
+	// anything; a non-zero value with no content points at a filtered or
+	// unparseable body. Logged, so these failures can be told apart.
+	qint64 raw_bytes = 0;
 	qint64 prompt_tokens = 0;
 	qint64 cache_hit_tokens = 0;
 	qint64 cache_miss_tokens = 0;
@@ -4417,10 +4422,12 @@ static inline void send_request_once(const LLMConfig &config,
 		if (cancel && *cancel)
 		  return;
 		const int status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+		const QByteArray chunk = reply->readAll();
+		acc->raw_bytes += chunk.size();
 		if (status >= 400)
-		  error_buffer->append(reply->readAll());
+		  error_buffer->append(chunk);
 		else
-		  sse_feed(acc, reply->readAll());
+		  sse_feed(acc, chunk);
 		if (progress_callback)
 		  progress_callback(acc->reasoning_content.size(), acc->content.size());
 
@@ -4536,8 +4543,12 @@ static inline void send_request_once(const LLMConfig &config,
 		}
 
 		// Flush anything not yet processed, including a trailing line without
-		// a newline (the stream is over, so no more data will arrive).
-		sse_feed(acc, reply->readAll(), true);
+		// a newline (the stream is over, so no more data will arrive). Count
+		// these bytes too, so the empty-response diagnostics see the whole
+		// response.
+		const QByteArray remaining = reply->readAll();
+		acc->raw_bytes += remaining.size();
+		sse_feed(acc, remaining, true);
 
 		reply->deleteLater();
 		nam->deleteLater();
@@ -4586,6 +4597,16 @@ static inline void send_request_once(const LLMConfig &config,
 			  : QString("EMPTY RESPONSE (HTTP %1: no content, no finish_reason, no usage)").arg(http_status);
 			if (acc->unparsed_lines > 0)
 			  why += QString(" (%1 unparseable stream line(s); the reply was not SSE JSON)").arg(acc->unparsed_lines);
+			if (acc->raw_bytes > 0)
+			  why += QString(" (%1 raw response byte(s) received)").arg(acc->raw_bytes);
+			{
+			  const QByteArray content_type = reply->rawHeader("content-type");
+			  const QByteArray request_id = reply->rawHeader("x-request-id");
+			  if (!content_type.isEmpty() || !request_id.isEmpty())
+			    why += QString(" [content-type=%1, request-id=%2]")
+			      .arg(content_type.isEmpty() ? QString("(none)") : QString::fromUtf8(content_type),
+			           request_id.isEmpty() ? QString("(none)") : QString::fromUtf8(request_id));
+			}
 			llm_log_finish(acc, why, request_timer->elapsed());
 			llm_log_summary(config.model, http_status, acc->finish_reason, "error",
 			                acc->prompt_tokens, acc->cache_hit_tokens, acc->cache_miss_tokens, acc->completion_tokens,
@@ -4596,24 +4617,29 @@ static inline void send_request_once(const LLMConfig &config,
 			// request, so both attempts stay auditable.
 			//
 			// A retry only makes sense when the failure can be transient. If
-			// the previous attempt sent the *identical* request and was also
-			// empty, the prompt is the problem (an unanswerable or
-			// ungated
-			// request), and repeating it costs the user several seconds per
-			// attempt for nothing: fail immediately with the same message.
+			// the retry is also empty, the prompt/decoder is the problem; stop
+			// instead of burning another 4 s (~/.radium/llm.log
+			// 2026-11-14T16:27:26 failed twice with the identical body).
 			const bool repeated_failure = retried_identical_request && retried_fingerprint == request_fingerprint;
 			if (empty_response && repeated_failure)
 			{
-				printf("LLM: Empty response again for the identical request (%s). Not retrying.\n",
+				printf("LLM: Empty response again for the retry (%s). Not retrying.\n",
 				       request_fingerprint.toUtf8().constData());
-				llm_log_note(QString("empty response repeated for the identical request (%1); not retrying").arg(request_fingerprint));
+				llm_log_note(QString("empty response again for the retry (%1); not retrying").arg(request_fingerprint));
 			}
 			else if (retries_left > 0 && acc->stream_error.isEmpty())
 			{
+				// A byte-identical retry can reproduce a deterministic JSON-mode
+				// dead end. In JSON mode the retry carries a short reminder, so it
+				// is a different request; the extra sentence is invisible to the
+				// user and the failure log keeps both fingerprints.
+				const QString retry_prompt = json_mode
+				  ? prompt + QString("\n\n(Your previous reply was empty. Reply with the JSON object now.)")
+				  : prompt;
 				printf("LLM: Empty response (HTTP %s). Retrying... (%d attempts left)\n",
 				       http_status.toUtf8().constData(), retries_left);
 				delete acc;
-				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode, /*retried_identical_request=*/empty_response);
+				send_request_once(config, current_code, retry_prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response, json_mode, /*retried_identical_request=*/empty_response);
 				return;
 			}
 

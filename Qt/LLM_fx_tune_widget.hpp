@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QEvent>
 #include <QColor>
+#include <QFontDatabase>
 #include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -27,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QScrollBar>
+#include <QShortcut>
 #include <QTextCharFormat>
 #include <QTextCursor>
 #include <QTextDocument>
@@ -72,7 +74,8 @@ public:
 	                                      const QVector<radium::llm::FxModulation> &modulations,
 	                                      const QVector<radium::llm::FxPlugin> &add_plugins,
 	                                      const QVector<radium::llm::FxPlugin> &remove_plugins)> apply_reply,
-	                   std::function<bool(const QString &description, const QString &name)> create_faust_effect)
+	                   std::function<bool(const QString &description, const QString &name)> create_faust_effect,
+	                   std::function<bool(const QString &name)> switch_to_instrument)
 		: QWidget(parent)
 		, _session(radium::llm::FxTuneSessionHost{
 			std::move(read_catalog),
@@ -81,6 +84,7 @@ public:
 			std::move(read_inserted_plugins),
 			std::move(apply_reply),
 			std::move(create_faust_effect),
+			std::move(switch_to_instrument),
 			[this](const QString &text){ set_status(text); },
 			[this](const QString &message){ show_error(message); },
 			[this](bool busy){ set_busy(busy); },
@@ -121,7 +125,43 @@ public:
 		_transcript->installEventFilter(this);
 		frame_layout->addWidget(_transcript);
 
-		QHBoxLayout *controls_layout = new QHBoxLayout;
+		// Terminal-style answer row directly below the transcript. Flat
+		// monospace buttons make it read as part of the terminal instead of
+		// as a form next to the prompt. The row is only shown while a
+		// confirmation question is pending.
+		QHBoxLayout *confirmation_layout = new QHBoxLayout;
+		confirmation_layout->setContentsMargins(0, 0, 0, 0);
+		confirmation_layout->setSpacing(2);
+
+		const QFont answer_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+		_confirm_yes_button = new QPushButton("[X] Yes", frame);
+		_confirm_yes_button->setFont(answer_font);
+		_confirm_yes_button->setFlat(true);
+		_confirm_yes_button->setAutoDefault(false);
+		_confirm_yes_button->setFocusPolicy(Qt::StrongFocus);
+		_confirm_yes_button->setToolTip("Confirm the question above. Use Left/Right to switch, Return to select.");
+		_confirm_yes_button->installEventFilter(this);
+		confirmation_layout->addWidget(_confirm_yes_button);
+
+		_confirm_no_button = new QPushButton("[ ] No", frame);
+		_confirm_no_button->setFont(answer_font);
+		_confirm_no_button->setFlat(true);
+		_confirm_no_button->setAutoDefault(false);
+		_confirm_no_button->setFocusPolicy(Qt::StrongFocus);
+		_confirm_no_button->setToolTip("Decline the question above. Use Left/Right to switch, Return to select.");
+		_confirm_no_button->installEventFilter(this);
+		confirmation_layout->addWidget(_confirm_no_button);
+
+		confirmation_layout->addStretch();
+		frame_layout->addLayout(confirmation_layout);
+		_confirm_yes_button->hide();
+		_confirm_no_button->hide();
+
+		// The normal prompt row. It is hidden while a confirmation is pending,
+		// so the keyboard question row replaces it instead of sitting next to
+		// it.
+		_controls_widget = new QWidget(frame);
+		QHBoxLayout *controls_layout = new QHBoxLayout(_controls_widget);
 		controls_layout->setContentsMargins(0, 0, 0, 0);
 		controls_layout->setSpacing(2);
 
@@ -176,32 +216,51 @@ public:
 		_cancel_button->setEnabled(false);
 		controls_layout->addWidget(_cancel_button);
 
-		// Shown only while a confirmation question is pending, so a question
-		// is answered in the terminal instead of in a modal dialog.
-		_confirm_yes_button = new QPushButton("Yes", frame);
-		_confirm_yes_button->setToolTip("Confirm the question above");
-		controls_layout->addWidget(_confirm_yes_button);
-		_confirm_no_button = new QPushButton("No", frame);
-		_confirm_no_button->setToolTip("Decline the question above");
-		controls_layout->addWidget(_confirm_no_button);
-		_confirm_yes_button->hide();
-		_confirm_no_button->hide();
-
 		controls_layout->addWidget(_menu_button);
 
-		frame_layout->addLayout(controls_layout);
+		frame_layout->addWidget(_controls_widget);
 
 		QObject::connect(_tune_button, &QPushButton::clicked, [this](){ submit_prompt(); });
 		QObject::connect(_cancel_button, &QPushButton::clicked, [this](){ _session.cancel(); });
 		QObject::connect(_prompt_edit, &QLineEdit::returnPressed, [this](){ submit_prompt(); });
 		QObject::connect(_confirm_yes_button, &QPushButton::clicked, [this](){ answer_confirmation(true); });
 		QObject::connect(_confirm_no_button, &QPushButton::clicked, [this](){ answer_confirmation(false); });
+
+		// The confirmation is keyboard-only. Window shortcuts make Left,
+		// Right, Return and Escape work no matter which control in the window
+		// has focus; they are enabled only while a question is pending.
+		_left_shortcut = new QShortcut(QKeySequence(Qt::Key_Left), this);
+		_right_shortcut = new QShortcut(QKeySequence(Qt::Key_Right), this);
+		_return_shortcut = new QShortcut(QKeySequence(Qt::Key_Return), this);
+		_enter_shortcut = new QShortcut(QKeySequence(Qt::Key_Enter), this);
+		_escape_shortcut = new QShortcut(QKeySequence(Qt::Key_Escape), this);
+		QShortcut *confirmation_shortcuts[] = {_left_shortcut, _right_shortcut, _return_shortcut, _enter_shortcut, _escape_shortcut};
+		for (QShortcut *shortcut : confirmation_shortcuts)
+		{
+			shortcut->setContext(Qt::WindowShortcut);
+			shortcut->setEnabled(false);
+		}
+		QObject::connect(_left_shortcut, &QShortcut::activated, [this](){ if (_confirmation_pending) set_confirmation_choice(0); });
+		QObject::connect(_right_shortcut, &QShortcut::activated, [this](){ if (_confirmation_pending) set_confirmation_choice(1); });
+		QObject::connect(_return_shortcut, &QShortcut::activated, [this](){ if (_confirmation_pending) answer_confirmation(_confirmation_choice == 0); });
+		QObject::connect(_enter_shortcut, &QShortcut::activated, [this](){ if (_confirmation_pending) answer_confirmation(_confirmation_choice == 0); });
+		QObject::connect(_escape_shortcut, &QShortcut::activated, [this](){ if (_confirmation_pending) answer_confirmation(false); });
+
+		// Focus changes (fullscreen toggling, window activation, an editor
+		// focus update scheduled by Radium) can silently release the keyboard
+		// focus we obtained for the question. Re-assert it while pending.
+		_confirmation_timer = new QTimer(this);
+		_confirmation_timer->setInterval(50);
+		QObject::connect(_confirmation_timer, &QTimer::timeout, [this](){ ensure_confirmation_keyboard_focus(); });
 	}
 
 	~LLM_fx_tune_widget()
 	{
 		if (measurement_active_callback)
 		  measurement_active_callback(false);
+		if (_confirmation_timer != NULL)
+			_confirmation_timer->stop();
+		set_confirmation_keyboard_focus(false);
 		_session.shutdown();
 	}
 
@@ -218,6 +277,16 @@ protected:
 		QWidget::showEvent(event);
 		if (measurement_active_callback)
 		  measurement_active_callback(true);
+
+		// The question may have arrived while this widget (or its instrument
+		// tab) was hidden. Take the keyboard only once it can be seen.
+		if (_confirmation_pending) {
+			ensure_confirmation_keyboard_focus();
+			_confirmation_timer->start();
+		} else {
+			// Opening the LLM terminal should be enough to start typing.
+			focus_prompt_if_visible();
+		}
 	}
 
 	void hideEvent(QHideEvent *event) override
@@ -225,6 +294,9 @@ protected:
 		QWidget::hideEvent(event);
 		if (measurement_active_callback)
 		  measurement_active_callback(false);
+		if (_confirmation_timer != NULL)
+			_confirmation_timer->stop();
+		set_confirmation_keyboard_focus(false);
 	}
 
 public:
@@ -235,15 +307,19 @@ public:
 	{
 		if (measurement_active_callback)
 		  measurement_active_callback(false);
+		if (_confirmation_timer != NULL)
+			_confirmation_timer->stop();
+		set_confirmation_keyboard_focus(false);
 		_confirmation_pending = false;
 		_confirmation_callback = nullptr;
 		_session.shutdown();
 	}
 
 	// Asks a yes/no question in the terminal instead of opening a modal
-	// dialog. The callback runs after the user clicks Yes or No. While the
-	// question is pending, the prompt and Tune button are disabled, so the
-	// only answers are the two buttons. Returns false if a question is
+	// dialog. The callback runs after the user chooses Yes or No. While the
+	// question is pending, the prompt row is replaced by the two keyboard
+	// buttons and Radium's keyboard focus is held by this widget, so the
+	// editor cannot consume the arrow keys. Returns false if a question is
 	// already pending.
 	bool ask_confirmation(const QString &question, std::function<void(bool)> callback)
 	{
@@ -253,8 +329,25 @@ public:
 		append_terminal_text(question, _question_format);
 		_confirmation_callback = std::move(callback);
 		_confirmation_pending = true;
+		_confirmation_choice = 0;
 		update_controls();
 		return true;
+	}
+
+	// Appends a status line to the transcript. Used by the host for messages
+	// that happen after the user answered a confirmation (for example when
+	// the Faust effect generation starts), so they stay in the conversation
+	// instead of appearing in a separate message window.
+	void add_terminal_status(const QString &text)
+	{
+		set_status(text);
+	}
+
+	// Called by the host once a new instrument has actually been created, so
+	// later turns know about it.
+	void note_instrument_created(const QString &name)
+	{
+		_session.note_created_instrument(name);
 	}
 
 	bool is_busy(void) const
@@ -283,6 +376,25 @@ protected:
 				}
 			}
 
+			if (_confirmation_pending && (watched == _confirm_yes_button || watched == _confirm_no_button))
+			{
+				if (key_event->key() == Qt::Key_Left || key_event->key() == Qt::Key_Right)
+				{
+					set_confirmation_choice(key_event->key() == Qt::Key_Left ? 0 : 1);
+					return true;
+				}
+				if (key_event->key() == Qt::Key_Return || key_event->key() == Qt::Key_Enter)
+				{
+					answer_confirmation(_confirmation_choice == 0);
+					return true;
+				}
+				if (key_event->key() == Qt::Key_Escape)
+				{
+					answer_confirmation(false);
+					return true;
+				}
+			}
+
 			// Clicking the transcript is useful for selecting/copying output,
 			// but typing there does nothing. Escape returns to the input line.
 			if (watched == _transcript && key_event->key() == Qt::Key_Escape)
@@ -307,8 +419,29 @@ private:
 	void submit_prompt(void)
 	{
 		const QString prompt = _prompt_edit->text().trimmed();
-		if (prompt.isEmpty() || _session.is_busy() || _confirmation_pending)
+		if (prompt.isEmpty() || _session.is_busy())
 			return;
+
+		if (_confirmation_pending)
+		{
+			// A typed "Yes"/"No" answers the question. It must not be sent to
+			// the LLM: the model would only propose the effect again and the
+			// host would ask a second time.
+			const int answer = radium::llm::fx_parse_confirmation_answer(prompt);
+			if (answer >= 0)
+			{
+				append_terminal_text("> " + prompt, _prompt_format);
+				_prompt_edit->clear();
+				_prompt_history_index = -1;
+				answer_confirmation(answer == 1);
+				return;
+			}
+
+			// Typing a new request instead of answering the pending
+			// confirmation means the user does not want the effect. Drop the
+			// question so the conversation can continue.
+			answer_confirmation(false);
+		}
 
 		append_terminal_text("> " + prompt, _prompt_format);
 		remember_prompt(prompt);
@@ -415,17 +548,104 @@ private:
 	{
 		_busy = busy;
 		update_controls();
+
+		// Disabling the prompt while a request runs makes it lose keyboard
+		// focus. Give it back when the reply has arrived, so the user can
+		// continue typing immediately (the confirmation selector keeps focus
+		// when a question is pending).
+		if (!busy)
+			focus_prompt_if_visible();
 	}
 
 	void update_controls(void)
 	{
-		const bool blocked = _busy || _confirmation_pending;
-		_tune_button->setEnabled(!blocked);
-		_prompt_edit->setEnabled(!blocked);
-		_menu_button->setEnabled(!blocked);
+		const bool pending = _confirmation_pending && !_busy;
+
+		// While the question is pending, the prompt row is replaced by the
+		// keyboard Yes/No row.
+		_controls_widget->setVisible(!pending);
+		_confirm_yes_button->setVisible(pending);
+		_confirm_no_button->setVisible(pending);
+
+		_left_shortcut->setEnabled(pending);
+		_right_shortcut->setEnabled(pending);
+		_return_shortcut->setEnabled(pending);
+		_enter_shortcut->setEnabled(pending);
+		_escape_shortcut->setEnabled(pending);
+
+		_tune_button->setEnabled(!_busy);
+		_prompt_edit->setEnabled(!_busy);
+		_menu_button->setEnabled(!_busy);
 		_cancel_button->setEnabled(_busy);
-		_confirm_yes_button->setVisible(_confirmation_pending);
-		_confirm_no_button->setVisible(_confirmation_pending);
+
+		if (pending) {
+			ensure_confirmation_keyboard_focus();
+			_confirmation_timer->start();
+		} else {
+			_confirmation_timer->stop();
+			set_confirmation_keyboard_focus(false);
+		}
+	}
+
+	// Gives the prompt Qt focus and Radium's keyboard focus. setFocus alone is
+	// not enough when some other code (creating a Faust effect, for example)
+	// released Radium's keyboard focus while the prompt already had Qt focus:
+	// then no focusIn event arrives and the cursor blinks without receiving
+	// key events.
+	void focus_prompt_if_visible(void)
+	{
+		if (_prompt_edit == NULL || !isVisible() || _confirmation_pending || _busy)
+			return;
+
+		_controls_widget->setVisible(true);
+		_prompt_edit->setFocus(Qt::OtherFocusReason);
+		obtain_keyboard_focus();
+	}
+
+	// The prompt row's focus sniffers release Radium's keyboard focus when
+	// they are hidden. Without holding it again, Radium's native key filter
+	// sends the arrow keys to the editor and the confirmation buttons never
+	// see them. Fullscreen toggling and Radium's own editor focus updates can
+	// release it again, hence the repeating timer in update_controls().
+	void ensure_confirmation_keyboard_focus(void)
+	{
+		if (!_confirmation_pending || !isVisible())
+			return;
+
+		_confirmation_keyboard_focus_obtained = true;
+		obtain_keyboard_focus();
+		update_confirmation_choice();
+	}
+
+	void set_confirmation_keyboard_focus(bool active)
+	{
+		if (active == _confirmation_keyboard_focus_obtained)
+			return;
+
+		_confirmation_keyboard_focus_obtained = active;
+		if (active)
+			obtain_keyboard_focus();
+		else
+			release_keyboard_focus();
+	}
+
+	void set_confirmation_choice(int choice)
+	{
+		_confirmation_choice = choice == 0 ? 0 : 1;
+		update_confirmation_choice();
+	}
+
+	void update_confirmation_choice(void)
+	{
+		if (_confirm_yes_button == NULL || _confirm_no_button == NULL)
+			return;
+
+		_confirm_yes_button->setText(_confirmation_choice == 0 ? "[X] Yes" : "[ ] Yes");
+		_confirm_no_button->setText(_confirmation_choice == 1 ? "[X] No" : "[ ] No");
+
+		QPushButton *selected = _confirmation_choice == 0 ? _confirm_yes_button : _confirm_no_button;
+		if (!selected->hasFocus())
+			selected->setFocus();
 	}
 
 	void answer_confirmation(bool yes)
@@ -441,8 +661,16 @@ private:
 			append_terminal_text("Not creating the effect.", _status_format);
 
 		update_controls();
+
+		// Run the callback first: creating the Faust Dev 2 instrument can
+		// release Radium's keyboard focus. Re-assert the prompt focus and
+		// keyboard ownership afterwards, otherwise the cursor blinks but
+		// typing goes to the editor.
 		if (callback)
 			callback(yes);
+
+		update_controls();
+		focus_prompt_if_visible();
 	}
 
 	// The transcript shows 9 text rows; the prompt entry row below counts as
@@ -452,6 +680,13 @@ private:
 	radium::llm::FxTuneSession _session;
 
 	MyQButton *_menu_button = NULL;
+	QWidget *_controls_widget = NULL;
+	QShortcut *_left_shortcut = NULL;
+	QShortcut *_right_shortcut = NULL;
+	QShortcut *_return_shortcut = NULL;
+	QShortcut *_enter_shortcut = NULL;
+	QShortcut *_escape_shortcut = NULL;
+	QTimer *_confirmation_timer = NULL;
 	QPlainTextEdit *_transcript = NULL;
 	FocusSnifferQLineEdit *_prompt_edit = NULL;
 	QPushButton *_tune_button = NULL;
@@ -468,5 +703,7 @@ private:
 	int _prompt_history_index = -1;
 	bool _busy = false;
 	bool _confirmation_pending = false;
+	int _confirmation_choice = 0;
+	bool _confirmation_keyboard_focus_obtained = false;
 	std::function<void(bool)> _confirmation_callback;
 };

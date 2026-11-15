@@ -133,7 +133,7 @@ static void add_catalog_plugin(QVector<radium::llm::FxPlugin> &plugins,
   if (seen.contains(key))
     return;
   seen.insert(key);
-  plugins.append(radium::llm::FxPlugin{type_name, name, container_name});
+  plugins.append(radium::llm::FxPlugin{type_name, name, container_name, QString()});
 }
 
 struct InsertedEffectPlugin{
@@ -169,6 +169,9 @@ static void find_inserted_effect_plugins_recursive(struct Patch *patch,
     inserted.fx.container_name = dest_plugin->type->container == NULL
                                ? QString()
                                : QString::fromUtf8(dest_plugin->type->container->name);
+    // The patch name ("Autotune") is what distinguishes two instances of the
+    // same plugin type ("Faust Dev 2") in the prompt and in remove_plugins.
+    inserted.fx.instrument_name = dest->name == NULL ? QString() : QString::fromUtf8(dest->name);
     inserted.instrument_id = dest->id;
     ret.append(inserted);
 
@@ -184,20 +187,16 @@ static QVector<InsertedEffectPlugin> find_inserted_effect_plugins(struct Patch *
   return ret;
 }
 
+// The inserted effects, in signal-chain order, one entry per instance. They
+// are deliberately not deduplicated by plugin type: two Faust Dev 2 effects
+// ("Autotune", "Distortion") are different effects at different positions
+// (~/.radium/llm.log 2026-11-14T19:19:40).
 static QVector<radium::llm::FxPlugin> get_inserted_effect_plugin_catalog(struct Patch *patch)
 {
   QVector<radium::llm::FxPlugin> ret;
 
-  for (const InsertedEffectPlugin &inserted : find_inserted_effect_plugins(patch)){
-    bool already_added = false;
-    for (const radium::llm::FxPlugin &existing : ret)
-      if (radium::llm::fx_plugin_matches(existing, inserted.fx)){
-        already_added = true;
-        break;
-      }
-    if (!already_added)
-      ret.append(inserted.fx);
-  }
+  for (const InsertedEffectPlugin &inserted : find_inserted_effect_plugins(patch))
+    ret.append(inserted.fx);
 
   return ret;
 }
@@ -256,6 +255,11 @@ public:
   MyQCheckBox *_llm_checkbox;
 
   int64_t _mixerstrip_guinum = -1;
+
+  // Most recent effect instrument created by the LLM in this widget. Used as
+  // the target for "switch to that instrument" when the reply does not repeat
+  // the instrument name.
+  instrument_t _last_created_effect_id = {-1};
 
   SizeType _size_type;
   SizeType _size_type_before_hidden;
@@ -466,7 +470,15 @@ public:
         if (plugin == NULL)
           return states;
 
+        const bool is_instrument = plugin->type->is_instrument;
         for (const radium::llm::FxParam &param : radium::llm::fx_catalog()){
+          // Note duplicator voices only do something for a patch that plays
+          // notes. A bus (or an effect used as a patch) gets no note events,
+          // so leave them out of the prompt and of the accepted changes
+          // instead of offering controls that cannot change the sound.
+          if (!is_instrument && radium::llm::fx_voice_number(param.name, NULL) > 0)
+            continue;
+
           radium::llm::FxParamState state;
           state.param = param;
           state.current_native = PLUGIN_get_effect_from_name(plugin, param.name.toUtf8().constData(), VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
@@ -515,18 +527,67 @@ public:
         context.type_name = type->type_name == NULL ? QString() : QString::fromUtf8(type->type_name);
         context.plugin_name = type->name == NULL ? QString() : QString::fromUtf8(type->name);
         context.plugin_version = type->version;
+        context.is_instrument = type->is_instrument;
+        context.instrument_name = patch->name == NULL ? QString() : QString::fromUtf8(patch->name);
+
+        // The exact names the user may ask to switch to. The terminal of a
+        // newly switched-to instrument has an empty history, so without this
+        // list (and the previous name) "go back to the previous instrument"
+        // and "the main bus" cannot be resolved
+        // (~/.radium/llm.log 2026-11-14T16:27:08, 16:27:15).
+        context.previous_instrument_name = radium::llm::fx_previous_instrument_name();
+        {
+          const int max_listed = 32;
+          int num_listed = 0;
+          for (int i = 0 ; i < getNumAudioInstruments() ; i++){
+            struct Patch *candidate = PATCH_get_from_id(getAudioInstrumentId(i));
+            if (candidate == NULL || candidate->patchdata == NULL || candidate->name == NULL)
+              continue;
+
+            SoundPlugin *candidate_plugin = (SoundPlugin*)candidate->patchdata;
+            if (candidate_plugin == NULL || candidate_plugin->type == NULL)
+              continue;
+
+            // Modulators are internal controller instruments, not something the
+            // user switches to by name.
+            if (candidate_plugin->type->type_name != NULL && !strcmp(candidate_plugin->type->type_name, "Modulator"))
+              continue;
+
+            if (num_listed >= max_listed){
+              context.hidden_audio_instruments++;
+              continue;
+            }
+
+            radium::llm::FxAudioInstrument entry;
+            entry.name = QString::fromUtf8(candidate->name);
+            entry.plugin_name = candidate_plugin->type->name == NULL ? QString() : QString::fromUtf8(candidate_plugin->type->name);
+            entry.type_name = candidate_plugin->type->type_name == NULL ? QString() : QString::fromUtf8(candidate_plugin->type->type_name);
+            entry.is_current = (candidate == patch);
+            context.audio_instruments.append(entry);
+            num_listed++;
+          }
+        }
 
         // One short line about the plugin (vendor + category, say), when the
         // plugin type can provide one. Falls back to the plugin's info text,
         // which is mostly metadata ("Version", "Accepts MIDI", ...) the LLM
         // does not need.
         {
+          auto useful_description = [](const QString &text) -> QString {
+            const QString simplified = text.simplified();
+            // Faust Dev 2's summary is an HTML blurb (~160 chars on every
+            // turn); it says nothing about the generated effect.
+            if (simplified.startsWith("HTML:", Qt::CaseInsensitive))
+              return QString();
+            return simplified.left(160);
+          };
+
           char summary[192] = {0};
           PLUGIN_get_plugin_summary(plugin, summary, sizeof(summary));
           if (summary[0] != 0)
-            context.description = QString::fromUtf8(summary).simplified().left(160);
-          else if (type->info != NULL)
-            context.description = QString::fromUtf8(type->info).simplified().left(160);
+            context.description = useful_description(QString::fromUtf8(summary));
+          if (context.description.isEmpty() && type->info != NULL)
+            context.description = useful_description(QString::fromUtf8(type->info));
         }
 
         if (!undisplayable_control_numbers.isEmpty())
@@ -555,11 +616,13 @@ public:
             : MEASUREMENTS_get_status(sound_producer, plugin, (int)MIXER_get_sample_rate(), &analysis);
 
           // Nothing yet? The target may have been selected only a moment ago
-          // (or the instrument only just started playing): if it is audible, a
-          // block arrives within ~85 ms, so wait briefly instead of sending a
-          // prompt without measurements.
+          // (or the instrument only just started playing): the first partial
+          // block is published after CAPTURE_FRAMES/8 frames (~375 ms at
+          // 48 kHz), so wait longer than that instead of sending a prompt
+          // without measurements. A 200 ms wait always timed out right after
+          // a target switch (~/.radium/llm.log 2026-11-14T16:26:36).
           if (status != MEASUREMENTS_STATUS_OK && sound_producer != NULL
-              && MEASUREMENTS_wait_for_block(sound_producer, plugin, 200))
+              && MEASUREMENTS_wait_for_block(sound_producer, plugin, 500))
             status = MEASUREMENTS_get_status(sound_producer, plugin, (int)MIXER_get_sample_rate(), &analysis);
 
           const bool have_measurement = status == MEASUREMENTS_STATUS_OK && analysis.valid;
@@ -568,7 +631,7 @@ public:
             switch(status){
             case MEASUREMENTS_STATUS_NO_PRODUCER:     measurement_missing_reason = "no SoundProducer for this instrument"; break;
             case MEASUREMENTS_STATUS_NOT_TARGET:      measurement_missing_reason = "another instrument is selected for the measurements"; break;
-            case MEASUREMENTS_STATUS_NEVER_CAPTURED:  measurement_missing_reason = QString("the audio thread never processed this instrument since it was selected (%1 capture calls, %2 blocks)")
+            case MEASUREMENTS_STATUS_NEVER_CAPTURED:  measurement_missing_reason = QString("no complete measurement block is available yet since it was selected (%1 capture calls, %2 blocks)")
                                                                                      .arg(MEASUREMENTS_get_num_capture_calls())
                                                                                      .arg(MEASUREMENTS_get_num_captured_blocks()); break;
             case MEASUREMENTS_STATUS_SILENT:          measurement_missing_reason = QString("the instrument's output was silent (%1 capture calls, %2 blocks)")
@@ -868,6 +931,13 @@ public:
           return name == mute_name || name == bypass_name || name == solo_name;
         };
 
+        // The mixer strip's output fader is drawn in the mixer, so changing it
+        // must repaint the strip. Unlike the buttons above it is a normal
+        // sound-shaping change (it must not suppress the bypass auto-enable).
+        auto is_mixer_strip_value = [](const QString &name){
+          return name == "System Volume";
+        };
+
         // Make sure changes are audible: enable the bands that are being
         // changed, and switch the bypass back on if it is off - but only when
         // the reply makes sound-shaping changes and does not change the
@@ -950,7 +1020,7 @@ public:
           if (!catalog_names.contains(change.name.toLower()))
             continue; // Summary-only pseudo entries (bus send connections).
 
-          if (is_mixer_button(change.name))
+          if (is_mixer_button(change.name) || is_mixer_strip_value(change.name))
             changed_mixer_button = true;
 
           const float native_value = gain_db_names.contains(change.name.toLower())
@@ -1114,7 +1184,13 @@ public:
             return false;
 
           insert_after = new_patch;
+          _last_created_effect_id = new_id;
         }
+
+        // The mixer strip embedded in this instrument widget shows the
+        // instrument's output path, so it now includes the inserted plugin
+        // and its controls. Show it if the user has not already enabled it.
+        show_mixer_strip_for_inserted_plugin();
 
         return true;
       };
@@ -1285,15 +1361,26 @@ public:
           if (insert_effect_patch_after(source_patch, new_patch) == NULL)
             return false;
 
+          // The new effect is now in this instrument's output path, so show
+          // the embedded mixer strip (unless it is already visible).
+          show_mixer_strip_for_inserted_plugin();
+
+          _last_created_effect_id = new_id;
+          if (_fx_tune_widget != NULL)
+            _fx_tune_widget->note_instrument_created(instrument_name);
+
 #if defined(WITH_FAUST_DEV) && defined(WITH_FAUST_DEV2)
           if (!FAUSTWIDGET_generate_effect(new_id, description)){
-            GFX_addMessage("Could not start the Faust Dev 2 generation.");
+            if (_fx_tune_widget != NULL)
+              _fx_tune_widget->add_terminal_status("Could not start the Faust Dev 2 generation.");
             return false;
           }
 
-          GFX_addMessage("Creating a Faust Dev 2 effect for \"%s\".", description.toUtf8().constData());
+          if (_fx_tune_widget != NULL)
+            _fx_tune_widget->add_terminal_status(QString("Creating a Faust Dev 2 effect for \"%1\".").arg(description));
 #else
-          GFX_addMessage("Faust Dev 2 is not available in this build.");
+          if (_fx_tune_widget != NULL)
+            _fx_tune_widget->add_terminal_status("Faust Dev 2 is not available in this build.");
           return false;
 #endif
 
@@ -1305,19 +1392,92 @@ public:
         if (!_fx_tune_widget->isVisible() && _llm_checkbox != NULL)
           _llm_checkbox->setChecked(true);
 
-        const QString question = QString("No matching effect plugin is available.\n"
-                                         "Should I create a Faust Dev 2 effect named \"%1\" for \"%2\"?").arg(instrument_name, description);
+        const QString question = radium::llm::fx_faust_confirmation_question(instrument_name);
 
         if (!_fx_tune_widget->ask_confirmation(question, [this, start_creation](bool yes){
-              if (yes && !start_creation())
-                GFX_addMessage("Could not create the Faust Dev 2 effect.");
+              if (yes && !start_creation() && _fx_tune_widget != NULL)
+                _fx_tune_widget->add_terminal_status("Could not create the Faust Dev 2 effect.");
             }))
           return false;
 
         return true;
       };
 
-      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_instrument_context, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect);
+      // Switches to an existing audio instrument (and brings its instrument
+      // widget to the front). Used for "switch to that instrument", for
+      // example after the LLM created a Faust effect in a non-current tab.
+      auto switch_to_instrument = [this](const QString &name) -> bool
+      {
+        const QString wanted = name.trimmed();
+        if (wanted.isEmpty())
+          return false;
+
+        const QString wanted_key = radium::llm::fx_normalize_plugin_key(wanted);
+        struct Patch *current_patch = _patch.data();
+        struct Patch *found = NULL;
+
+        for (int i = 0 ; i < getNumAudioInstruments() ; i++){
+          struct Patch *patch = PATCH_get_from_id(getAudioInstrumentId(i));
+          if (patch == NULL || patch->name == NULL)
+            continue;
+
+          if (radium::llm::fx_normalize_plugin_key(QString::fromUtf8(patch->name)) == wanted_key){
+            found = patch;
+            break;
+          }
+        }
+
+        // "go back to the previous instrument" / "last": the widget of the
+        // current instrument has its own (fresh) LLM history, so the name of
+        // the instrument the user came from is kept in a process-wide record
+        // filled in below.
+        const bool wants_previous = wanted_key == "previous" || wanted_key == "previousinstrument"
+          || wanted_key == "back" || wanted_key == "goback" || wanted_key == "last"
+          || wanted_key == "lastinstrument" || wanted_key == "theonebefore";
+        if (found == NULL && wants_previous){
+          const QString previous = radium::llm::fx_previous_instrument_name();
+          if (!previous.isEmpty()){
+            const QString previous_key = radium::llm::fx_normalize_plugin_key(previous);
+            for (int i = 0 ; i < getNumAudioInstruments() ; i++){
+              struct Patch *patch = PATCH_get_from_id(getAudioInstrumentId(i));
+              if (patch == NULL || patch->name == NULL)
+                continue;
+              if (radium::llm::fx_normalize_plugin_key(QString::fromUtf8(patch->name)) == previous_key){
+                found = patch;
+                break;
+              }
+            }
+          }
+        }
+
+        if (found == NULL && isLegalInstrument(_last_created_effect_id)){
+          const bool generic = wanted_key == "that" || wanted_key == "thatinstrument"
+            || wanted_key == "thateffect" || wanted_key == "thatone" || wanted_key == "it"
+            || wanted_key == "theinstrument" || wanted_key == "theeffect"
+            || wanted_key == "newinstrument" || wanted_key == "neweffect"
+            || wanted_key == "createdinstrument" || wanted_key == "createdeffect"
+            || wanted_key == "faustinstrument" || wanted_key == "fausteffect"
+            || wanted_key == "instrument" || wanted_key == "effect";
+          if (generic)
+            found = PATCH_get_from_id(_last_created_effect_id);
+        }
+
+        if (found == NULL)
+          return false;
+
+        if (found == current_patch)
+          return true;
+
+        // Remember where we came from, so the new instrument's terminal can
+        // answer "go back" (and the model can name the instrument).
+        if (current_patch != NULL && current_patch->name != NULL)
+          radium::llm::fx_previous_instrument_name() = QString::fromUtf8(current_patch->name);
+
+        setCurrentInstrument(found->id, true, false);
+        return true;
+      };
+
+      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_instrument_context, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect, switch_to_instrument);
 
       // Sound measurements are captured only while this instrument's tuning
       // terminal is on screen (and, because the terminal belongs to one patch,
@@ -1340,6 +1500,13 @@ public:
                  active ? "shown, capturing" : "hidden, capture stopped", (void*)patch, (void*)plugin);
       };
       gridLayout_3->addWidget(_fx_tune_widget, 1, 0);
+
+      // Always give extra height to the scroll area, not the LLM terminal.
+      // Otherwise a height adjustment can be partly consumed by the terminal
+      // row and leave the scroll bar visible.
+      _fx_tune_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
+      gridLayout_3->setRowStretch(0, 1);
+      gridLayout_3->setRowStretch(1, 0);
 
       // Checkbox in the instrument header, to the right of the "Configure
       // Auto-suspend" button, which shows/hides the LLM effect tuning
@@ -1767,6 +1934,15 @@ public:
     number_of_minheight_incs++;
   }
 
+  // Polls background LLM work for an instrument page whose plugin widget is
+  // not currently visible. A newly created Faust Dev 2 effect lives in a
+  // non-current instrument tab, so its compile result (and automatic fix)
+  // would otherwise wait until the user opens that tab.
+  void process_background_llm(void){
+    if (_plugin_widget != NULL && !_plugin_widget->isVisible())
+      _plugin_widget->process_background_llm();
+  }
+
   void calledRegularlyByParent(void){
     
     //printf("hello %p\n", this);
@@ -2149,6 +2325,16 @@ private:
       if (gui_isOpen(guinum))
         gui_close(guinum);
     }
+  }
+
+  // Shows the mixer strip embedded in this instrument widget, so the path
+  // controls for a newly inserted effect plugin are immediately available.
+  void show_mixer_strip_for_inserted_plugin(void){
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin == NULL || plugin->show_mixer_strip_gui || show_mixer_strip == NULL)
+      return;
+
+    show_mixer_strip->setChecked(true);
   }
 
   void update_mixer_strip(bool should_be_visible){

@@ -423,7 +423,12 @@ static void test_prompts(void)
 	      "system prompt says a grungy/amped request needs a distortion plugin, not EQ");
 	check(system_prompt.contains("create_faust"), "system prompt explains Faust Dev 2 creation requests");
 	check(system_prompt.contains("create_faust_name"), "system prompt asks for a Faust instrument name");
-	check(system_prompt.contains("confirm in the LLM terminal"), "system prompt says the creation is confirmed in the LLM terminal");
+	check(system_prompt.contains("switch_to"), "system prompt explains switching to an existing instrument");
+	check(system_prompt.contains("switch to that instrument"), "system prompt recognizes the switch-to-that-instrument request");
+	check(system_prompt.contains("The LLM terminal shows a Yes/No confirmation question"), "system prompt says the creation is confirmed in the LLM terminal");
+	check(system_prompt.contains("Do not ask whether to create it"), "system prompt leaves the confirmation question to the LLM terminal");
+	check(!system_prompt.contains("I can ask the host"), "system prompt does not teach the 'I can ask the host' phrasing");
+	check(!system_prompt.contains("The host will ask"), "system prompt does not say the host asks");
 	check(system_prompt.contains("\"ask\""), "system prompt offers a clarifying question");
 	check(system_prompt.contains("does not count toward that limit"), "the companion On/Off switch does not count toward the change limit");
 	check(system_prompt.contains("undid the change"), "system prompt says the current values are the truth after an undo");
@@ -627,6 +632,111 @@ static void test_voice_condensing(void)
 	QString template_name;
 	fx_voice_number("System Pan Voice 4", &template_name);
 	check(template_name == "System Pan Voice N", "template name built");
+}
+
+static void test_system_volume(void)
+{
+	printf("system volume (loudness requests):\n");
+
+	const QVector<FxParamState> states = make_states();
+
+	const FxParam *volume = find_param(states, "System Volume");
+	check(volume != NULL, "the mixer strip output fader is in the catalog");
+	check(volume != NULL && volume->unit == "dB", "System Volume is in dB");
+	check(volume != NULL && !volume->is_gain_db, "System Volume is already stored in dB (no gain<->dB conversion)");
+	check(volume != NULL && volume->min_native <= -35.0f && volume->max_native >= 6.0f, "System Volume can be raised and lowered");
+	check(volume != NULL && volume->description.contains("louder"), "the description says what it is for");
+
+	{
+		const FxParseResult result = parse_fx_response(
+		  R"({"changes":[{"name":"System Volume","value":6}],"explanation":"Raised the instrument's output level by 6 dB."})",
+		  states);
+		check(result.ok, "a System Volume change parses");
+		const FxChange *change = find_change(result.changes, "System Volume");
+		check(change != NULL && std::fabs(change->value - 6.0f) < 0.01, "System Volume keeps its dB value");
+		check(change != NULL && fx_format_value(*volume, change->value) == "+6.00 dB", "System Volume is summarized in dB");
+	}
+
+	{
+		const QString message = build_fx_user_message(states, "increase the volume of the autotune instrument");
+		check(message.contains("- System Volume = "), "the prompt lists the output fader");
+	}
+
+	{
+		// A bus never plays notes, so its note duplicator voice controls cannot
+		// change anything and must not be offered. This is the failure from
+		// ~/.radium/llm.log 2026-11-14T15:27:29, where "increase the volume of
+		// the autotune instrument" was answered with "System Volume Voice 1".
+		FxInstrumentContext bus;
+		bus.type_name = "Bus";
+		bus.plugin_name = "Bus";
+		bus.is_instrument = false;
+		const QString message = build_fx_user_message(states, bus, "increase the volume of the autotune instrument");
+		check(message.contains("- System Volume = "), "a bus still has the output fader");
+		check(!message.contains("System Volume Voice"), "a bus is not offered note duplicator voice volumes");
+		check(!message.contains("Note duplicator voices 2-7"), "the voice condensation is left out for a bus");
+		check(message.contains("never plays notes"), "the prompt says why the voice controls are missing");
+	}
+
+	{
+		// The rules must send loudness requests to the fader, and must not
+		// treat an inserted effect plugin as the current instrument.
+		const QString prompt = build_fx_system_prompt();
+		check(prompt.contains("'System Volume' in dB"), "the rules map loudness to System Volume");
+		check(prompt.contains("Never use 'System Volume Voice N' for this"), "the rules forbid the voice volume for loudness");
+		check(prompt.contains("the autotune instrument"), "the rules cover a request that names an inserted effect");
+	}
+}
+
+static void test_instrument_identity(void)
+{
+	printf("instrument identity and switching:\n");
+
+	const QVector<FxParamState> states = make_states();
+
+	FxInstrumentContext instrument = make_instrument_context();
+	instrument.instrument_name = "Organ";
+	instrument.previous_instrument_name = "Bus";
+	instrument.audio_instruments = {
+		FxAudioInstrument{"Bus", "Bus", "Bus", false},
+		FxAudioInstrument{"Organ", "Organ", "Ladspa", true},
+		FxAudioInstrument{"Distortion", "Faust Dev 2", "Faust Dev 2", false},
+	};
+
+	// The failure this fixes: after switching instruments, the prompt said
+	// only "Faust Dev 2 [Faust Dev 2]", so "go back to previous instrument"
+	// and "Main bus" could not be resolved (~/.radium/llm.log
+	// 2026-11-14T16:27:08 and 16:27:15).
+	const QString message = build_fx_user_message(states, instrument, "go back to the previous instrument");
+	check(message.contains("Current instrument: \"Organ\""), "the current instrument is named by its patch name");
+	check(message.contains("Audio instruments in this song"), "the switchable audio instruments are listed");
+	check(message.contains("- Bus [Bus]"), "another instrument is listed by its exact name");
+	check(message.contains("- Organ [Ladspa] (current)"), "the current instrument is marked");
+	check(message.contains("Previously current instrument: \"Bus\""), "the previous instrument is named");
+
+	// The applied summary must say "Distortion", not the plugin type
+	// "Faust Dev 2" (the log said "Faust Dev 2: drive 2 -> 5" at 16:26:55).
+	FxInstrumentChange change;
+	change.type_name = "Faust Dev 2";
+	change.plugin_name = "Faust Dev 2";
+	change.instrument_name = "Distortion";
+	change.name = "drive";
+	change.value_is_native = true;
+	change.old_value_native = 2;
+	change.value_native = 5;
+	check(fx_summarize_instrument_changes(QVector<FxInstrumentChange>{change}).contains("Distortion: drive 2 -> 5"),
+	      "the applied summary names the instrument, not its plugin type");
+
+	FxInstrumentChange fallback = change;
+	fallback.instrument_name.clear();
+	check(fx_summarize_instrument_changes(QVector<FxInstrumentChange>{fallback}).contains("Faust Dev 2: drive 2 -> 5"),
+	      "the plugin name is the summary fallback");
+
+	{
+		const QString prompt = build_fx_system_prompt();
+		check(prompt.contains("Audio instruments in this song"), "the switching rule points at the instrument list");
+		check(prompt.contains("Previously current instrument"), "the switching rule covers 'go back'");
+	}
 }
 
 static void test_corrections(void)
@@ -2342,6 +2452,32 @@ static void test_plugins(void)
 	}
 
 	{
+		// Two instances of one plugin type: the Faust Dev 2 case from
+		// ~/.radium/llm.log 2026-11-14T19:19:40, where Autotune and Distortion
+		// were collapsed into a single "Faust Dev 2 [Faust Dev 2]" line.
+		const QVector<FxPlugin> inserted{
+			FxPlugin{QString("Faust Dev 2"), QString("Faust Dev 2"), QString(), QString("Distortion")},
+			FxPlugin{QString("Faust Dev 2"), QString("Faust Dev 2"), QString(), QString("Autotune")},
+		};
+
+		const QString message = build_fx_user_message(states, inserted, "where did the autotune effect go?");
+		check(message.contains("- Distortion [Faust Dev 2]"), "an inserted instance is listed by its patch name");
+		check(message.contains("- Autotune [Faust Dev 2]"), "the second instance of the same plugin is not hidden");
+		check(message.indexOf("- Distortion [Faust Dev 2]") < message.indexOf("- Autotune [Faust Dev 2]"), "inserted effects are listed in signal order");
+		check(message.contains("New effects are inserted directly after this instrument"), "the list explains the insert order");
+
+		const FxParseResult one = parse_fx_response(
+		  R"({"remove_plugins":[{"name":"Distortion","type":"Faust Dev 2"}]})", states, QVector<FxPlugin>(), inserted);
+		check(one.ok && one.removed_plugins.size() == 1, "one instance can be removed by its patch name");
+		check(one.removed_plugins.size() == 1 && one.removed_plugins[0].instrument_name == "Distortion", "the removed instance is the named one");
+		check(fx_summarize_removed_plugins(one.removed_plugins) == "Removed Distortion (Faust Dev 2)", "the removal summary uses the patch name");
+
+		const FxParseResult all = parse_fx_response(
+		  R"({"remove_plugins":[{"name":"Faust Dev 2","type":"Faust Dev 2"}]})", states, QVector<FxPlugin>(), inserted);
+		check(all.ok && all.removed_plugins.size() == 2, "the plugin name removes every instance");
+	}
+
+	{
 		// Spacing/hyphen differences are forgiven.
 		const FxParseResult normalized = parse_fx_response(
 		  R"({"changes":[],"add_plugins":[{"name":"Auto-Wah","type":"LADSPA"}]})", states, plugins);
@@ -2385,11 +2521,31 @@ static void test_plugins(void)
 
 		const FxParseResult invalid_name = parse_fx_response(R"({"create_faust":"an autotune effect","create_faust_name":5})", states);
 		check(!invalid_name.ok, "non-string create_faust_name rejected");
+
+		const FxParseResult switch_result = parse_fx_response(
+		  R"({"switch_to":"Distortion","explanation":"Switching to it."})", states);
+		check(switch_result.ok, "switch_to ok");
+		check(switch_result.switch_to == "Distortion", "switch_to name parsed");
+		check(switch_result.changes.isEmpty() && switch_result.plugins.isEmpty(), "switch_to needs no other actions");
+
+		const FxParseResult empty_switch = parse_fx_response(R"({"switch_to":""})", states);
+		check(empty_switch.ok && empty_switch.switch_to.isEmpty(), "empty switch_to parsed");
+
+		const FxParseResult invalid_switch = parse_fx_response(R"({"switch_to":5})", states);
+		check(!invalid_switch.ok, "non-string switch_to rejected");
 	}
 
 	check(fx_make_faust_instrument_name("an autotune effect") == "Autotune", "instrument name derived from a simple description");
 	check(fx_make_faust_instrument_name("a smooth autotune effect with medium retune speed") == "Smooth autotune", "instrument name derived from a detailed description");
 	check(fx_make_faust_instrument_name("") == "Faust Effect", "empty description gets a fallback instrument name");
+
+	check(fx_faust_confirmation_question("Autotune") == "Do you want me to create a Faust autotune instrument?", "the confirmation question uses the requested effect name");
+	check(fx_faust_confirmation_question("") == "Do you want me to create a Faust effect instrument?", "the confirmation question has a fallback");
+
+	check(fx_parse_confirmation_answer("Yes") == 1, "a typed Yes answers the pending confirmation");
+	check(fx_parse_confirmation_answer(" no! ") == 0, "a typed No answers the pending confirmation");
+	check(fx_parse_confirmation_answer("yes, but make it smoother") == -1, "a longer request is not mistaken for a Yes");
+	check(fx_parse_confirmation_answer("Autotune") == -1, "an unrelated prompt is not mistaken for an answer");
 
 	{
 		// Removal is validated against the plugins currently inserted after
@@ -2597,6 +2753,8 @@ int main(int argc, char **argv)
 	test_prompts();
 	test_prefixed_control_names();
 	test_voice_condensing();
+	test_system_volume();
+	test_instrument_identity();
 	test_corrections();
 	test_applied_summary();
 	test_correction_round_trip();

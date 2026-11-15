@@ -36,6 +36,13 @@ public:
 
       RETURN_IF_DATA_IS_INACCESSIBLE();
 
+      // A Faust Dev 2 effect is created in a new instrument tab. Its LLM
+      // session must keep processing compile results (and start automatic
+      // error fixes) even when that tab, or the whole instrument panel, is
+      // not visible. process_background_llm() skips pages that are already
+      // handled by the visible-tab path below.
+      instruments_widget->process_background_llm();
+
       //printf("instrwi: %p\n",instruments_widget);
       
       if (instruments_widget->isVisible()==false)
@@ -159,6 +166,21 @@ public:
     Audio_instrument_widget *audio_widget = dynamic_cast<Audio_instrument_widget*>(g_instruments_widget->tabs->currentWidget());
     if (audio_widget != NULL){
       audio_widget->call_regularly_for_painters();
+    }
+  }
+
+  // Polls every instrument page for background Faust LLM work. The current
+  // page is handled by call_regularly_for_painters(); this is for a newly
+  // created effect in a non-current tab that must still process its compile
+  // result and start its automatic error fix.
+  void process_background_llm(void){
+    if (tabs == NULL)
+      return;
+
+    for (int i = 0 ; i < tabs->count() ; i++){
+      Audio_instrument_widget *audio_widget = dynamic_cast<Audio_instrument_widget*>(tabs->widget(i));
+      if (audio_widget != NULL)
+        audio_widget->process_background_llm();
     }
   }
 

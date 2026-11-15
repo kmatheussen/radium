@@ -1255,6 +1255,15 @@ public:
     }
   }
   
+  // Processes generation/compile state while this widget is not visible (for
+  // example a newly created Faust Dev 2 effect in a non-current instrument
+  // tab). Without this, a failed compile is only noticed when the user opens
+  // the tab, so the automatic compile-error fix starts much too late.
+  void process_background_llm(void){
+    if (_llm_session != NULL && !_llm_session->is_idle())
+      calledRegularlyByParent();
+  }
+
   void calledRegularlyByParent(void){
 
     RETURN_IF_DATA_IS_INACCESSIBLE();

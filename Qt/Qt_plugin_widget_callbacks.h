@@ -525,6 +525,15 @@ public:
     }
   }
   
+  // Polls background LLM work (a Faust Dev 2 generation/compile result) for
+  // a plugin widget that is not visible.
+  void process_background_llm(void){
+#ifdef WITH_FAUST_DEV
+    if (_faust_plugin_widget != NULL)
+      _faust_plugin_widget->process_background_llm();
+#endif
+  }
+
   // only called when visible
   void calledRegularlyByParent(void){
     _is_initing = true;

@@ -219,8 +219,10 @@ void MEASUREMENTS_RT_capture(struct SoundProducer *sound_producer, struct SoundP
     g_write_right[g_write_pos] = right != NULL ? right[i] : left[i];
     g_write_pos++;
 
-    // Publish when the window is full, and once early on so the first prompt
-    // of a session does not have to wait a whole second of audio.
+    // Publish when the window is full, and once early on (after ~375 ms at
+    // 48 kHz) so the first prompt of a session does not have to wait a whole
+    // block. The prompt builder's wait must be at least this long
+    // (Qt_audio_instrument_widget_callbacks.h: 500 ms).
     const bool first_partial = g_captured_blocks.load(std::memory_order_relaxed) == 0
                             && g_write_pos >= CAPTURE_FRAMES / 8;
     if (g_write_pos == CAPTURE_FRAMES || first_partial){
