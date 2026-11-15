@@ -148,6 +148,10 @@ color_high_editor
 0
 STRING_TYPE
 #ff455350
+color_instrument_llm_background
+0
+STRING_TYPE
+#ff304768
 color_keyboard_focus_border
 0
 STRING_TYPE

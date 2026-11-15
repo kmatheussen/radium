@@ -168,6 +168,7 @@ static const ColorConfig g_colorconfig[] = {
   {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont", false},
   {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file", false},
   {CURRENT_SOUNDFILE_COLOR_NUM, "current_soundfile",  "Current sound file", false},
+  {INSTRUMENT_LLM_BACKGROUND_COLOR_NUM, "instrument_llm_background", "Instrument LLM background color", false},
       
   {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1", false},
   {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2", false},
@@ -743,6 +744,14 @@ QColor get_config_qcolor(QString colorname){
   }
 }
 
+static bool is_llm_widget(QWidget *widget){
+  for(QWidget *w = widget ; w != NULL ; w = w->parentWidget())
+    if (w->objectName() == "llm_fx_tune_widget")
+      return true;
+
+  return false;
+}
+
 static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pal){
 
   /*
@@ -797,6 +806,18 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     pal.setColor(QPalette::Active, QPalette::Base, c);
     pal.setColor(QPalette::Inactive, QPalette::Base, c);
     pal.setColor(QPalette::Disabled, QPalette::Base, c.lighter(80));
+
+    if (is_llm_widget(widget)){
+      const QColor llm_background = get_qcolor(INSTRUMENT_LLM_BACKGROUND_COLOR_NUM);
+
+      pal.setColor(QPalette::Active, QPalette::Window, llm_background);
+      pal.setColor(QPalette::Inactive, QPalette::Window, llm_background);
+      pal.setColor(QPalette::Disabled, QPalette::Window, llm_background.lighter(95));
+
+      pal.setColor(QPalette::Active, QPalette::Base, llm_background);
+      pal.setColor(QPalette::Inactive, QPalette::Base, llm_background);
+      pal.setColor(QPalette::Disabled, QPalette::Base, llm_background.lighter(80));
+    }
 
     if (dynamic_cast<QMenu*>(widget)!=NULL)
       pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(get_qcolor(MENU_CURRENT_ENTRY_COLOR_NUM)));
@@ -1301,6 +1322,9 @@ static int get_legacy_color_pass(enum ColorNums colornum)
 
 	if (colornum == MENU_SEARCH_COLOR_NUM)
 		return 2; // Added later, comes after MENU_CURRENT_ENTRY_COLOR_NUM.
+
+	if (colornum == INSTRUMENT_LLM_BACKGROUND_COLOR_NUM)
+		return 3; // Added later, must not shift the legacy enum order.
 
 	return 0;
 }

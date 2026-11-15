@@ -1526,14 +1526,38 @@ public:
         S7CALL2(void_void, "FROM_C-show-llm-fx-tune-popup-menu");
       };
       QObject::connect(_llm_checkbox, &QCheckBox::toggled, [this](bool visible){
-        if (_fx_tune_widget != NULL)
-          _fx_tune_widget->setVisible(visible);
+        if (_fx_tune_widget == NULL)
+          return;
 
-        // When hiding the LLM prompt, shrink the instrument widget to its
-        // minimum height without changing its size type. Dropping the minimum
-        // height is needed because the LLM terminal may have raised it.
+        // The terminal is a fixed-height row below the scroll area, so
+        // showing it raises the height needed by the instrument widget by
+        // exactly the terminal height, and hiding it lowers it by the same
+        // amount. Measure it before changing its visibility.
+        const bool terminal_was_visible = _fx_tune_widget->isVisible();
+        const int old_height = height();
+        const int terminal_height = terminal_was_visible
+                                      ? (_fx_tune_widget->height() > 0 ? _fx_tune_widget->height()
+                                                                      : _fx_tune_widget->sizeHint().height())
+                                      : _fx_tune_widget->sizeHint().height();
+
+        // Grow the minimum height before showing the terminal. Otherwise the
+        // parent is resized after the terminal has already been painted, which
+        // can clip (and briefly hide) the prompt row while the layout catches
+        // up.
+        if (visible && !terminal_was_visible && isVisible()
+            && _size_type == SIZETYPE_NORMAL && !instrumentInMixer()) {
+          setMinimumHeight(std::max(minimumHeight(), old_height) + terminal_height);
+        }
+
+        _fx_tune_widget->setVisible(visible);
+
+        // When hiding the LLM prompt, shrink the instrument widget without
+        // changing its size type. Subtract the terminal height from the
+        // current height right away. Dropping the minimum height to a small
+        // value and letting the periodic auto-fit restore it makes the widget
+        // first become too low and then grow a little on a later timer tick.
         if (!visible) {
-          setMinimumHeight(10);
+          setMinimumHeight(std::max(10, old_height - (terminal_was_visible ? terminal_height : 0)));
           // The automatic minimum-height adjustment may have counted the
           // terminal when deciding how large the instrument widget must be.
           // Let it start over, so the minimum height can fall back to what the

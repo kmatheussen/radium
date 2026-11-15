@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/radium_proc.h"
 
 #include "FocusSniffers.h"
+#include "Qt_colors_proc.h"
 #include "Qt_MyQButton.h"
 #include "Qt_MyQCheckBox.h"
 
@@ -90,24 +91,30 @@ public:
 			[this](bool busy){ set_busy(busy); },
 		})
 	{
+		setObjectName("llm_fx_tune_widget");
+		setAutoFillBackground(true);
+
 		_prompt_history = radium::llm::load_prompt_history(LLM_FX_PROMPT_HISTORY_SETTINGS_KEY);
 
 		_prompt_format.setFontWeight(QFont::Bold);
 		_question_format.setFontWeight(QFont::Bold);
 		_error_format.setForeground(QColor(200, 60, 60));
 
+		// No margins and no frame: the terminal uses the full width of the
+		// instrument widget.
 		QVBoxLayout *main_layout = new QVBoxLayout(this);
-		main_layout->setContentsMargins(2, 1, 2, 1);
+		main_layout->setContentsMargins(0, 0, 0, 0);
 		main_layout->setSpacing(0);
 
 		QFrame *frame = new QFrame(this);
-		frame->setFrameShape(QFrame::Panel);
-		frame->setFrameShadow(QFrame::Sunken);
-		frame->setLineWidth(1);
+		frame->setFrameShape(QFrame::NoFrame);
+		frame->setFrameShadow(QFrame::Plain);
+		frame->setLineWidth(0);
+		frame->setAutoFillBackground(true);
 		main_layout->addWidget(frame);
 
 		QVBoxLayout *frame_layout = new QVBoxLayout(frame);
-		frame_layout->setContentsMargins(2, 1, 2, 1);
+		frame_layout->setContentsMargins(0, 0, 0, 0);
 		frame_layout->setSpacing(0);
 
 		_transcript = new QPlainTextEdit(frame);
@@ -169,6 +176,13 @@ public:
 		_menu_button->setText(QString::fromUtf8("\xe2\x98\xb0")); // ☰
 		_menu_button->setToolTip("Menu");
 		_menu_button->setPopupMode(QToolButton::InstantPopup);
+		// MyQButton draws its box one pixel inside the widget by default, which
+		// would make the menu button look smaller than the Tune/Cancel buttons
+		// next to it. Let it fill the whole widget instead.
+		_menu_button->x1_border = 0;
+		_menu_button->x2_border = 0;
+		_menu_button->y1_border = 0;
+		_menu_button->y2_border = 0;
 		{
 			QMenu *menu = new QMenu(_menu_button);
 			menu->addAction("Clear conversation", this, [this]()
@@ -184,23 +198,27 @@ public:
 			_menu_button->setMenu(menu);
 		}
 
-		QLabel *prompt_marker = new QLabel(">", frame);
-		prompt_marker->setToolTip("Prompt");
+		_prompt_marker = new QLabel(">", frame);
+		_prompt_marker->setToolTip("Prompt");
 		{
-			QFont marker_font = prompt_marker->font();
+			QFont marker_font = _prompt_marker->font();
 			marker_font.setBold(true);
-			prompt_marker->setFont(marker_font);
+			_prompt_marker->setFont(marker_font);
 
 			// Blend the prompt marker with the transcript/input background.
-			prompt_marker->setAutoFillBackground(true);
-			QPalette marker_palette = prompt_marker->palette();
+			_prompt_marker->setAutoFillBackground(true);
+			QPalette marker_palette = _prompt_marker->palette();
 			marker_palette.setColor(QPalette::Window, marker_palette.color(QPalette::Base));
-			prompt_marker->setPalette(marker_palette);
+			_prompt_marker->setPalette(marker_palette);
 		}
-		controls_layout->addWidget(prompt_marker);
+		controls_layout->addWidget(_prompt_marker);
 
 		_prompt_edit = new FocusSnifferQLineEdit(frame);
 		_prompt_edit->setFrame(false);
+		// Rounded corners, like the buttons next to it. palette(base) keeps the
+		// background the same color as the rest of the input, so it follows
+		// palette/theme changes instead of using a fixed color.
+		_prompt_edit->setStyleSheet("QLineEdit { border: 0; border-radius: 4px; background-color: palette(base); }");
 		_prompt_edit->setPlaceholderText("Tune instrument controls/effects. E.g. \"boost the 2nd harmonic\" / \"make it harsher\" / \"wider\"");
 		_prompt_edit->setToolTip("Describe the sound you want, and the LLM adjusts the current instrument's own plugin controls as well as its system effects (EQ, filters, compressor, pitch, pan/width, reverb/chorus sends and the note duplicator).\n"
 		                         "For effects the instrument and system controls cannot provide (distortion, wah, phaser, delay, ...), it can insert an available effect plugin after the instrument, and remove it again on request.\n"
@@ -252,6 +270,13 @@ public:
 		_confirmation_timer = new QTimer(this);
 		_confirmation_timer->setInterval(50);
 		QObject::connect(_confirmation_timer, &QTimer::timeout, [this](){ ensure_confirmation_keyboard_focus(); });
+
+		// Applies the current palette to the terminal. updatePalette() gives
+		// widgets inside this widget the configured LLM background color, so a
+		// later global updateAll() updates it without using a stylesheet.
+		setWidgetColors(this);
+
+		update_control_row_heights();
 	}
 
 	~LLM_fx_tune_widget()
@@ -409,8 +434,12 @@ protected:
 
 	void changeEvent(QEvent *event) override
 	{
-		if (event->type() == QEvent::FontChange && _transcript != NULL)
-			_transcript->setFixedHeight(terminal_output_height());
+		if (event->type() == QEvent::FontChange)
+		{
+			if (_transcript != NULL)
+				_transcript->setFixedHeight(terminal_output_height());
+			update_control_row_heights();
+		}
 
 		QWidget::changeEvent(event);
 	}
@@ -502,6 +531,36 @@ private:
 		     + (int)(_transcript->document()->documentMargin() * 2)
 		     + _transcript->frameWidth() * 2
 		     + 2;
+	}
+
+	// Every widget in the prompt and confirmation rows must have the same
+	// top and bottom. Qt's frameless QLineEdit and the QToolButton-based menu
+	// button get a smaller height hint than a QPushButton, so the tallest hint
+	// is applied to all of them. Doing it on FontChange keeps the rows aligned
+	// when the font (and with it the button height) changes.
+	void update_control_row_heights(void)
+	{
+		QWidget *const widgets[] = {
+			_prompt_marker,
+			_prompt_edit,
+			_tune_button,
+			_cancel_button,
+			_menu_button,
+			_confirm_yes_button,
+			_confirm_no_button,
+		};
+
+		int height = 0;
+		for (QWidget *widget : widgets)
+			if (widget != NULL && widget->sizeHint().height() > height)
+				height = widget->sizeHint().height();
+
+		if (height <= 0)
+			return;
+
+		for (QWidget *widget : widgets)
+			if (widget != NULL)
+				widget->setFixedHeight(height);
 	}
 
 	// Appends one conversation entry to the terminal. The entries wrap at
@@ -681,6 +740,7 @@ private:
 
 	MyQButton *_menu_button = NULL;
 	QWidget *_controls_widget = NULL;
+	QLabel *_prompt_marker = NULL;
 	QShortcut *_left_shortcut = NULL;
 	QShortcut *_right_shortcut = NULL;
 	QShortcut *_return_shortcut = NULL;
