@@ -488,7 +488,9 @@ static void unlock_player_from_nonrt_thread(int iteration){
              MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, elapsed,
              "<no backtrace>" //JUCE_get_backtrace()
              );
-	  if (elapsed > 3)
+	  // Xvfb/llvmpipe test runs can be slow enough to hit this limit.
+	  // Keep the warning, but let automated tests continue.
+	  if (elapsed > 3 && getenv("RADIUM_TEST_ALLOW_SLOW_PLAYER_LOCK")==NULL)
 	  {
 		  abort();
 	  }

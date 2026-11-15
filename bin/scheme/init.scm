@@ -981,6 +981,8 @@ FROM_C-show-select-instrument-right-click
 
 (my-require 'main_menus.scm)
 
+(my-require 'scheme_listener.scm)
+
 (my-require 'nsm.scm)
 
 (my-require 'midi_export.scm)

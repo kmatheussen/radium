@@ -3770,6 +3770,20 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     }
 
+    // Let the Scheme key callback see Tab before Qt uses it for focus
+    // traversal. This is needed by the Scheme listener's completion feature.
+    bool event(QEvent *e) override {
+      if (e->type() == QEvent::KeyPress) {
+        QKeyEvent *key_event = static_cast<QKeyEvent*>(e);
+        if (key_event->key() == Qt::Key_Tab || key_event->key() == Qt::Key_Backtab) {
+          ScopedEventHandlerTracker event_handler_tracker;
+          if (Gui::keyPressEvent(key_event))
+            return true;
+        }
+      }
+      return MyFocusSnifferQLineEdit::event(e);
+    }
+
     OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 

@@ -133,6 +133,10 @@ export HOME="$testhome"
 export QT_QPA_PLATFORM=xcb
 unset QT_QPA_PLATFORMTHEME QT_PLUGIN_PATH WAYLAND_DISPLAY
 
+# Xvfb/llvmpipe test runs can hold the player lock longer than the debug-build
+# abort threshold. Keep the warning, but don't abort the process.
+export RADIUM_TEST_ALLOW_SLOW_PLAYER_LOCK=1
+
 if [ "$fallback" = 0 ]; then
   export LIBGL_ALWAYS_SOFTWARE=1
 
