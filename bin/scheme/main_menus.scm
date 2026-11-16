@@ -43,6 +43,9 @@
   :include?
   :command
   :args
+  ;; Optional name of a no-argument Scheme function returning whether the entry should be checked.
+  ;; Entries with this field are shown as checkboxes. See menues.conf.
+  :check-function
   :keybindings
   :sub-menu #f)
 
@@ -82,6 +85,10 @@
                            (string-strip after))))))
         (list text-and-keybinding)))
   (define command (cl-cadr parts))
+  (define check-function (let ((field (cl-caddr parts)))
+                           (and field
+                                (not (string=? field ""))
+                                field)))
   ;;(c-display "command:" command (and command (to-list (<ra> :get-keybindings-from-command command))))
   (define keybindings (if (cl-cadr parts2)
                           (list (list (cl-cadr parts2)))
@@ -102,6 +109,7 @@
                   :include? (include-menu-item? (car parts2))
                   :command command
                   :args (cl-cddr parts)
+                  :check-function check-function
                   :keybindings keybindings))
 
 #!!
@@ -272,18 +280,27 @@
                 ((item :sub-menu)
                  ;;(c-display "SUB-MENU:" (item :sub-menu))
                  (cons (list (item :text)
-                             (loop (item :sub-menu)))
+                             ;; The entries in the Recent menu are added by the popup menu
+                             ;; code (Qt_PopupMenu.cpp), which keeps the list current and
+                             ;; makes it available in the hamburger menu as well. Avoid
+                             ;; creating a dummy entry here.
+                             (if (string=? (item :text) "Recent-main-menu-99992222")
+                                 '()
+                                 (loop (item :sub-menu))))
                        (begin
                          ;;(c-display "DDDDDDDDDDDD:" items)
                          (loop (cdr items)))))
                 (else
                  ;;(c-display "CCCCCCCC")
                  (define is-first #t)
+                 (define check-function (item :check-function))
                  (append (map (lambda (shortcut)
                                 ;;(c-display "SHORTCUT:" shortcut)
                                 (define text (if is-first
                                                  (item :text)
                                                  "."))
+                                (when check-function
+                                  (set! text (<-> "[check off][checkfunc]" check-function "[/checkfunc]" text)))
                                 (set! is-first #f)
                                 (split-menu-item-python-command
                                  (item :command)
@@ -297,9 +314,9 @@
                                          :shortcut (and shortcut (get-displayable-keybinding2 shortcut))
                                          (let ((command (and (item :command)
                                                              (generate-menu-item-python-command (item :command)))))
-                                           (lambda ()
-                                             ;;(c-display "Executing: -" command)
+                                           (lambda args
                                              (when command
+                                               ;;(c-display "Executing: -" command)
                                                ;;(<ra> :add-to-program-log (<-> "menu: " command)) ;; not necessary. Already logged twice. both eval-python and popup menu are logged.
                                                (<ra> :eval-python command))))))))
                               (or (and (item :keybindings)
@@ -378,32 +395,6 @@
     (set! *main-menu-items* (get-menu-items2)))
   *main-menu-items*)
 
-;; Removes the "Recent-main-menu-99992222" submenu from a parsed popup menu options list.
-;; (Temporarily disabled while investigating why the popup takes long time to appear.)
-(define (remove-recent-from-options options)
-  (let loop ((options options)
-             (skip-depth 0)
-             (result '()))
-    (if (null? options)
-        (reverse result)
-        (let ((text (car options))
-              (callback (cadr options))
-              (rest (cddr options)))
-          (cond ((> skip-depth 0)
-                 (if (string? text)
-                     (cond ((string-starts-with? text "[submenu start]")
-                            (loop rest (1+ skip-depth) result))
-                           ((string-starts-with? text "[submenu end]")
-                            (loop rest (1- skip-depth) result))
-                           (else
-                            (loop rest skip-depth result)))
-                     (loop rest skip-depth result)))
-                ((and (string? text)
-                      (string=? text "[submenu start]Recent-main-menu-99992222"))
-                 (loop rest 1 result))
-                (else
-                 (loop rest 0 (cons callback (cons text result)))))))))
-
 (define (assemble-main-menu-search-options menus-options)
   (apply append
          (map (lambda (menu-options)
@@ -454,9 +445,8 @@
               (lambda ()
                 (when (generation-is-current?)
                   (let* ((menu (car menus))
-                         (menu-options (remove-recent-from-options
-                                        (parse-popup-menu-options
-                                         (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
+                         (menu-options (parse-popup-menu-options
+                                        (get-popup-menu-items-from-menu-items (menu :sub-menu)))))
                     (c-display "SEARCHPOPUP chunk" (menu :text) (<ra> :get-ms))
                     (build-main-menu-search-popup (cdr menus)
                                                   (cons (cons (menu :text) menu-options) chunks)
@@ -495,9 +485,8 @@
   (define menus-options
     (map (lambda (menu)
            (cons (menu :text)
-                 (remove-recent-from-options
-                  (parse-popup-menu-options
-                   (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
+                 (parse-popup-menu-options
+                  (get-popup-menu-items-from-menu-items (menu :sub-menu)))))
          (get-main-menu-items)))
   (set! *main-menu-search-options* menus-options)
   (make-main-menu-search-popup-args menus-options)
@@ -548,11 +537,11 @@
               (apply ra:add-menu-menu2
                      (cons (menu :text)
                            (get-popup-menu-args-from-options menu-options)))
-              ;; Cache the options for the search popup, without the Recent menu.
+              ;; Cache the options for the search popup.
               (set! menus-options
                     (append menus-options
                             (list (cons (menu :text)
-                                        (remove-recent-from-options menu-options)))))
+                                        menu-options))))
               (<ra> :go-previous-menu-level))
             (get-main-menu-items))
   (set! *main-menu-search-options* menus-options)

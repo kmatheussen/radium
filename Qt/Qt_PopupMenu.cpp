@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <memory>
 #include <functional>
+#include <stdio.h>
 
 #include <QStack>
 #include <QAction>
@@ -63,10 +64,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPainter>
 #include <QPointF>
 #include <QPaintEvent>
+#include <QDateTime>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/disk_load_proc.h"
 #include "../common/FuzzySearch.h"
 #include "../audio/Envelope.hpp"
 
@@ -438,6 +441,46 @@ static void schedule_flush_pending_menu_callbacks(void)
       _callbacker->run_checked(checked);
     }
   };
+
+  // Empty callbacker used by RecentAction. It is never run.
+  static std::shared_ptr<Callbacker> &get_no_callbacker(void){
+    static std::shared_ptr<Callbacker> callbacker;
+    return callbacker;
+  }
+
+  // A "Recent" menu entry. Unlike ClickableAction, these actions are not cached, since
+  // the Recent menu rebuilds its entries when it is shown. They use the normal menu entry
+  // widget, so they get the same background, current-entry marker and hover colors as
+  // all other entries.
+  class RecentAction : public MyQAction {
+    Q_OBJECT
+
+  public:
+
+    QString _filename;
+
+    RecentAction(const QString &filename, const QString &shortcut, int shortcut_width, bool is_first, bool is_last, QObject *parent)
+      : MyQAction(filename, shortcut, shortcut_width, get_no_callbacker(), false, false, false, is_first, is_last, parent)
+      , _filename(filename)
+    {
+      connect(this, SIGNAL(triggered()), this, SLOT(triggered()));
+    }
+
+    bool my_clicked(void) override{
+      triggered();
+      return true;
+    }
+
+  public slots:
+
+    void triggered(){
+      const QString filename = _filename;
+
+      GFX_call_when_menus_are_closed([filename]{
+        LoadSong_CurrPos(getWindowFromNum(-1), make_filepath(STRING_create(filename.toUtf8().constData())));
+      });
+    }
+  };
   
   class CheckableAction : public MyQAction {
     Q_OBJECT
@@ -447,17 +490,43 @@ static void schedule_flush_pending_menu_callbacks(void)
     // Set for radio buttons (the group the entry belongs to), NULL for checkboxes.
     QActionGroup *_radio_group;
 
+    // Permanent actions belong to the main menu bar; they are not deleted when the menu closes.
+    bool _is_permanent;
+
+    // Name of a no-argument Scheme function returning the check state, or empty.
+    // Called in MyQMenu::aboutToShow() so that dynamically computed checkmarks
+    // (such as window visibility) are correct every time the menu is shown.
+    QString _check_state_func;
+
     ~CheckableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, QActionGroup *radio_group, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, QActionGroup *radio_group, bool is_first, bool is_last, bool is_permanent, const QString &check_state_func, std::shared_ptr<Callbacker> &callbacker)
       : MyQAction(text_b, shortcut, shortcut_width, callbacker, true, is_on, radio_group != NULL, is_first, is_last, callbacker->qmenu)
       , _radio_group(radio_group)
+      , _is_permanent(is_permanent)
+      , _check_state_func(check_state_func)
     {
       setCheckable(true);
       setChecked(is_on);
       connect(this, SIGNAL(toggled(bool)), this, SLOT(toggled(bool)));
+    }
+
+    // Updates the check state without invoking the callback.
+    void set_checked_silently(bool checked){
+      {
+        QSignalBlocker blocker(this);
+        setChecked(checked);
+      }
+
+      if (_checkbox != NULL) {
+        QSignalBlocker blocker(_checkbox);
+        _checkbox->setChecked(checked);
+      }
+
+      if (_widget != NULL)
+        _widget->update();
     }
 
     bool my_clicked(void) override{
@@ -531,7 +600,18 @@ static void schedule_flush_pending_menu_callbacks(void)
 
   public slots:
     void toggled(bool checked){
-      _callbacker->run_and_delete_checked(checked, _callbacker);
+      if (_is_permanent) {
+        // Permanent main-menu actions are not destroyed when the menu closes, so the
+        // callback can not wait for QMenu::destroyed. Run it when the menus have closed,
+        // like ClickableAction does for non-checkable permanent entries.
+        std::shared_ptr<Callbacker> callbacker = _callbacker;
+        GFX_call_when_menus_are_closed([callbacker, checked]
+        {
+          callbacker->run_checked(checked);
+        });
+      } else {
+        _callbacker->run_and_delete_checked(checked, _callbacker);
+      }
     }
   };
 
@@ -755,6 +835,96 @@ static void schedule_flush_pending_menu_callbacks(void)
   };
 
   static std::shared_ptr<PopupSearchState> g_popup_search_state;
+
+  // Updates the popup search index for the recent menu after its entries have been
+  // replaced. Only does anything when the menu is part of a search popup (the hamburger
+  // menu).
+  static void update_recent_menu_search_entries(QMenu *menu, PopupSearchState *state)
+  {
+    if (state == NULL || !state->all_menus.contains(menu))
+      return;
+
+    PopupSearchMenu &search_menu = state->menus[menu];
+
+    search_menu.entries.clear();
+    search_menu.separators.clear();
+    search_menu.submenus.clear();
+
+    for (QAction *action : menu->actions()) {
+      if (action->isSeparator())
+        search_menu.separators.append(action);
+      else
+        search_menu.entries.append(PopupSearchEntry{action, radium::fuzzy_search_fold(action->text())});
+    }
+  }
+
+  struct RecentSong {
+    QString filename;
+    QString date;
+  };
+
+  // Fills a "Recent" sub menu with the recently opened songs. The entries use the normal
+  // menu entry widget, so they get the same background and current-entry marker as other
+  // entries. shortcut_width is the parent menu's shortcut width.
+  static void populate_recent_menu(QMenu *menu, int shortcut_width)
+  {
+    menu->clear();
+
+    QVector<RecentSong> songs;
+    int date_width = 0;
+
+    for (int i = 0; i < 30; i++) {
+      char key[64];
+      snprintf(key, sizeof(key), "recent_song_%d", i);
+
+      const char *filename = SETTINGS_read_string(key, "");
+      if (filename == NULL || filename[0] == '\0')
+        break;
+
+      char time_key[64];
+      snprintf(time_key, sizeof(time_key), "recent_song_time_%d", i);
+      const int64_t timestamp = SETTINGS_read_int(time_key, 0);
+
+      const QString date = timestamp > 0
+        ? QDateTime::fromSecsSinceEpoch(timestamp).toString("yyyy-MM-dd")
+        : QString();
+
+      if (!date.isEmpty())
+        date_width = R_MAX(date_width, GFX_get_text_width(root->song->tracker_windows, date.toUtf8().constData()));
+
+      songs.append(RecentSong{QString::fromUtf8(filename), date});
+    }
+
+    const int num_songs = songs.size();
+
+    if (num_songs == 0) {
+      auto *action = new RecentAction("(no recent files)", "", shortcut_width, true, true, menu);
+      if (action->_success == false) {
+        R_ASSERT_NON_RELEASE(false);
+        delete action;
+        return;
+      }
+      action->_menu = menu;
+      menu->addAction(action);
+      action->setEnabled(false);
+      return;
+    }
+
+    const int date_shortcut_width = R_MAX(shortcut_width, date_width);
+
+    for (int i = 0; i < num_songs; i++) {
+      auto *action = new RecentAction(songs[i].filename, songs[i].date, date_shortcut_width, i==0, i==num_songs-1, menu);
+
+      if (action->_success == false) {
+        R_ASSERT_NON_RELEASE(false);
+        delete action;
+        continue;
+      }
+
+      action->_menu = menu;
+      menu->addAction(action);
+    }
+  }
 
   // Used when a fuzzy search for all main menu entries is requested from an open main menu.
   static QString g_pending_popup_search_query;
@@ -1029,6 +1199,11 @@ static void schedule_auto_open_search_result_path(void);
     bool _has_g_menu_is_open = false;
 
     bool _is_part_of_main_menu = false;
+
+    // True for the "Recent" sub menu. The persistent main menu bar version is repopulated
+    // in aboutToShow(), while popup versions (such as the hamburger menu) get a fresh menu
+    // tree each time they are opened and are populated when created (see create_qmenu).
+    bool _is_recent_menu = false;
 
     // Set when the popup menu contains an "[on-left-key]"/"[on-right-key]" entry (see
     // popupmenu.scm and create_qmenu). Only set on the root menu of a popup, never on sub menus.
@@ -1608,6 +1783,21 @@ static void schedule_auto_open_search_result_path(void);
     void 	aboutToShow(){
       setopen();
 
+      // The main menu bar's Recent sub menu persists between showings. Refresh it every
+      // time it is shown so that songs opened during the session are included. (Popup
+      // menus, such as the hamburger menu, are populated when their menu tree is created.)
+      if (_is_recent_menu && _is_part_of_main_menu)
+        populate_recent_menu(this, _shortcut_width);
+
+      // Update dynamically computed checkmarks, such as window visibility, so that
+      // they are correct every time the menu is shown. Entries without a check
+      // state function keep the state they were created with.
+      for (QAction *action : actions()) {
+        auto *checkable = dynamic_cast<CheckableAction*>(action);
+        if (checkable != NULL && !checkable->_check_state_func.isEmpty())
+          checkable->set_checked_silently(S7CALL2(bool_void, checkable->_check_state_func.toUtf8().constData()));
+      }
+
       // A sub menu object can be shown several times, so reset for each showing.
       _mouse_has_moved = false;
 
@@ -2144,6 +2334,8 @@ static QMenu *create_qmenu(
 
   std::shared_ptr<PopupSearchState> search_state = is_permanent ? nullptr : std::make_shared<PopupSearchState>();
 
+  QVector<MyQMenu*> recent_menus;
+
   if (search_state != NULL)
     g_popup_search_state = search_state;
 
@@ -2236,6 +2428,7 @@ static QMenu *create_qmenu(
       bool base64 = false;
       bool is_checkable = false;
       bool is_checked = false;
+      QString check_state_func;
 
       QString icon_filename;
       QString shortcut;
@@ -2265,6 +2458,18 @@ static QMenu *create_qmenu(
         text = text.right(text.size() - 11);
         is_checkable = true;
         is_checked = false;
+        goto parse_next;
+      }
+
+      if (text.startsWith("[checkfunc]")){
+        text = text.right(text.size() - 11);
+        int pos = text.indexOf("[/checkfunc]");
+        if (pos <= 0){
+          R_ASSERT(false);
+        } else {
+          check_state_func = text.left(pos);
+          text = text.right(text.size() - pos - 12);
+        }
         goto parse_next;
       }
 
@@ -2303,8 +2508,15 @@ static QMenu *create_qmenu(
         n_submenues = -1;
         parents.push(curr_menu);
         double t = TIME_get_ms();
-        auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15), get_largest_shortcut_width(v, i+1));
+        QString title = text.right(text.size() - 15);
+        const bool is_recent_menu = (title == "Recent-main-menu-99992222");
+        if (is_recent_menu)
+          title = "Recent";
+        auto *new_menu = new MyQMenu(curr_menu, title, get_largest_shortcut_width(v, i+1));
         new_menu->_is_part_of_main_menu = is_permanent;
+        new_menu->_is_recent_menu = is_recent_menu;
+        if (is_recent_menu)
+          recent_menus.append(new_menu);
         //new_menu->setStyleSheet("QMenu::item#subMenu{ font : bold ; font-size: 13pt; color: #ff8080;}");
         //new_menu->setStyleSheet("padding-left: 140px");
 
@@ -2415,7 +2627,7 @@ static QMenu *create_qmenu(
           
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons, is_first, is_last, callbacker);
+          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons, is_first, is_last, is_permanent, check_state_func, callbacker);
           
           if (hepp->_success==false){
             radio_buttons=NULL;
@@ -2501,6 +2713,14 @@ static QMenu *create_qmenu(
   }
 
  finished_parsing:
+
+  // Populate the "Recent" sub menus before counting search entries and before the menu
+  // is shown. Popup menus (such as the hamburger menu) are recreated every time they
+  // are opened, so the list is always current.
+  for (MyQMenu *recent_menu : recent_menus) {
+    populate_recent_menu(recent_menu, recent_menu->_shortcut_width);
+    update_recent_menu_search_entries(recent_menu, search_state.get());
+  }
 
   double t = TIME_get_ms();
 
@@ -2686,6 +2906,10 @@ void GFX_RightclickMenuEntry(int entryid){
       R_ASSERT_NON_RELEASE(false);
       return;
     }
+
+    // Recent entries have no keybinding to configure.
+    if (dynamic_cast<RecentAction*>(action) != NULL)
+      return;
 
     auto *callbacker = action->_callbacker.get();
     if (callbacker != NULL){

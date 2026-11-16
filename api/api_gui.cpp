@@ -53,6 +53,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFontDialog>
 #include <QTabWidget>
 #include <QTextBrowser>
+#include <QTextCharFormat>
 #include <QTextDocumentFragment>
 #include <QSplitter>
 #include <QHideEvent>
@@ -3770,6 +3771,20 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     }
 
+    // Let the Scheme key callback see Tab before Qt uses it for focus
+    // traversal. This is needed by the Scheme listener's completion feature.
+    bool event(QEvent *e) override {
+      if (e->type() == QEvent::KeyPress) {
+        QKeyEvent *key_event = static_cast<QKeyEvent*>(e);
+        if (key_event->key() == Qt::Key_Tab || key_event->key() == Qt::Key_Backtab) {
+          ScopedEventHandlerTracker event_handler_tracker;
+          if (Gui::keyPressEvent(key_event))
+            return true;
+        }
+      }
+      return MyFocusSnifferQLineEdit::event(e);
+    }
+
     OVERRIDERS(MyFocusSnifferQLineEdit);
   };
 
@@ -7401,6 +7416,15 @@ const_char* gui_getFont(int64_t guinum){
   if (gui==NULL)
     return "";
 
+  if(QTextEdit *text_edit = dynamic_cast<QTextEdit*>(gui->_widget.data()))
+    return talloc_strdup(text_edit->document()->defaultFont().toString().toUtf8().constData());
+
+  if(QLineEdit *line_edit = dynamic_cast<QLineEdit*>(gui->_widget.data()))
+    return talloc_strdup(line_edit->font().toString().toUtf8().constData());
+
+  if(QLabel *label = dynamic_cast<QLabel*>(gui->_widget.data()))
+    return talloc_strdup(label->font().toString().toUtf8().constData());
+
   QPainter *painter = gui->get_painter();
 
   if (painter != NULL)
@@ -7429,6 +7453,34 @@ void gui_setFont(int64_t guinum, const_char* char_fontdescr){
   else{    
     font.fromString(fontdescr);
     gui->_cached_fonts[fontdescr] = font;
+  }
+
+  // QTextEdit/QTextBrowser does not use a painter font. Handle these widgets
+  // before calling get_painter(), since creating a painter for them makes Qt
+  // try to use their paintEngine and print paintEngine warnings.
+  if(QTextEdit *text_edit = dynamic_cast<QTextEdit*>(gui->_widget.data())){
+    text_edit->setFont(font);
+    text_edit->document()->setDefaultFont(font);
+
+    QTextCursor cursor(text_edit->document());
+    cursor.select(QTextCursor::Document);
+
+    QTextCharFormat char_format;
+    char_format.setFont(font);
+    cursor.mergeCharFormat(char_format);
+    return;
+  }
+
+  // QLineEdit and QLabel are real Qt widgets and must get the font on the
+  // widget itself. Creating a painter for them can leave them blank.
+  if(QLineEdit *line_edit = dynamic_cast<QLineEdit*>(gui->_widget.data())){
+    line_edit->setFont(font);
+    return;
+  }
+
+  if(QLabel *label = dynamic_cast<QLabel*>(gui->_widget.data())){
+    label->setFont(font);
+    return;
   }
 
   QPainter *painter = gui->get_painter();
@@ -7468,6 +7520,20 @@ void gui_setStyleSheet(int64_t guinum, const_char* stylesheet){
     return;
 
   gui->_widget->setStyleSheet(stylesheet);
+}
+
+void gui_setTextColor(int64_t guinum, const_char* color){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return;
+
+  QColor qcolor = getQColor(color);
+
+  QPalette palette = gui->_widget->palette();
+  palette.setColor(QPalette::Text, qcolor);
+  palette.setColor(QPalette::WindowText, qcolor);
+  palette.setColor(QPalette::ButtonText, qcolor);
+  gui->_widget->setPalette(palette);
 }
 
 void gui_setLayoutSpacing(int64_t guinum, int spacing, int left, int top, int right, int bottom){

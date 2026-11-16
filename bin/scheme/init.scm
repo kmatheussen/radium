@@ -40,6 +40,7 @@
     ra:add-message
     add-message-window-message
     show/hide-instrument-gui
+    current-instrument-gui-is-visible
     system
     create-change-editor-font-requester
     create-change-system-font-requester
@@ -980,6 +981,8 @@ FROM_C-show-select-instrument-right-click
 (my-require 'timing.scm) ;; Note that the program assumes that g_scheme_has_inited1 is true after timing.scm has been loaded.
 
 (my-require 'main_menus.scm)
+
+(my-require 'scheme_listener.scm)
 
 (my-require 'nsm.scm)
 

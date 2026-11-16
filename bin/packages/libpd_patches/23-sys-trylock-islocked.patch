@@ -1,0 +1,16 @@
+--- a/pure-data/src/s_inter.c
++++ b/pure-data/src/s_inter.c
+@@ -2104,7 +2104,13 @@
+     if (!(ret = pthread_mutex_trylock(&INTER->i_mutex)))
+     {
+         if (!(ret = pthread_rwlock_tryrdlock(&sys_rwlock)))
++        {
++            /* Radium: sys_lock() sets pd_islocked; the try-lock path must do
++            the same, otherwise pd_globallock() (called when an unknown class
++               is created) reports "consistency check failed: pd_globallock". */
++            pd_this->pd_islocked = 1;
+             return (0);
++        }
+         else
+         {
+             pthread_mutex_unlock(&INTER->i_mutex);

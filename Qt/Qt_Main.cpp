@@ -4343,6 +4343,12 @@ int radium_main(const char *arg){
           g_mixerstripparent->setLayout(g_mixerstriplayout);
 
           addWidget(g_mixerstripparent);
+
+          // There is no strip yet. An empty container should not take up any
+          // space, and a hidden splitter child is guaranteed to get zero
+          // width. update_mixer_strip_parent() shows it again when a strip is
+          // added.
+          g_mixerstripparent->hide();
         }
       };
       
@@ -4446,7 +4452,6 @@ int radium_main(const char *arg){
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
     
-  init_recent_menu();
   //getchar();
 
 
