@@ -1,5 +1,20 @@
 (provide 'scheme_listener.scm)
 
+(define *scheme-listener-help-text*
+  (string-append
+   "Radium Scheme Listener\n"
+   "----------------------\n"
+   "\n"
+   "Return: evaluate the current expression.\n"
+   "Tab: complete a symbol. Use *text for substring search, e.g. *port.\n"
+   "Ctrl + / Ctrl -: change the font size.\n"
+   "Up/Down: browse the command history.\n"
+   "Mouse: move into this window to focus the prompt; move out to release it.\n"
+   "Multi-line: incomplete expressions continue with the \"...>\" prompt.\n"
+   "\n"
+   "Expressions are evaluated in the global environment.\n"
+   "\n"))
+
 ;; A Scheme listener window implemented directly in Radium. The input line and
 ;; the output are ordinary Radium GUI widgets, so no external terminal, HTTP
 ;; request, or Python installation is involved.
@@ -117,8 +132,11 @@
 
 
 (define (open-scheme-listener)
-  (let* ((output-gui (<gui> :text-edit "" #t))
-         (prompt-label (<gui> :text "radium> " "green"))
+  (let* ((prompt-color "green")
+         (base-font-descr (<ra> :get-editor-font))
+         (listener-font-size 12)
+         (output-gui (<gui> :text-edit "" #t))
+         (prompt-label (<gui> :text "radium> "))
          (input-gui (<gui> :line ""))
          (input-layout (<gui> :horizontal-layout prompt-label input-gui))
          (gui (<gui> :vertical-layout output-gui input-layout))
@@ -128,10 +146,90 @@
          (history-index -1)
          (history-draft "")
          (mouse-inside? #f)
-         (in-completion-popup? #f))
+         (in-completion-popup? #f)
+         (control-pressed? #f))
 
     (define (append-output text)
       (<gui> :append-value output-gui (<ra> :get-html-from-text text)))
+
+    (define prompt-color-hex
+      (let ((argb (<ra> :gui_set-alpha-for-color prompt-color 1.0)))
+        (<-> "#" (substring argb 3 (string-length argb)))))
+
+    (define (set-prompt-label-text text)
+      (<gui> :set-text prompt-label
+             (<-> "<span style=\"color:" prompt-color-hex ";\">"
+                  (<ra> :get-html-from-text text)
+                  "</span>")))
+
+    (define (append-html-output html)
+      (<gui> :append-value output-gui html))
+
+    (define (append-prompt-line prompt text)
+      (append-html-output
+       (<-> "<span style=\"color:" prompt-color-hex ";\">"
+            (<ra> :get-html-from-text prompt)
+            "</span>"
+            (<ra> :get-html-from-text (<-> text "\n")))))
+
+    (define (font-size-from-descr font-descr)
+      (let* ((parts (string-split font-descr #\,))
+             (size (and (> (length parts) 1)
+                        (string->number (cadr parts)))))
+        (if (and size (> size 0))
+            size
+            12)))
+
+    (define (font-descr-with-size font-descr size)
+      (let ((parts (string-split font-descr #\,)))
+        (if (> (length parts) 1)
+            (string-join (append (list (car parts)
+                                       (number->string size))
+                                 (cddr parts))
+                         ",")
+            font-descr)))
+
+    (define (set-listener-font font-descr)
+      (<gui> :set-font output-gui font-descr)
+      (<gui> :set-font prompt-label font-descr)
+      (<gui> :set-font input-gui font-descr))
+
+    (define (set-listener-colors)
+      (<gui> :set-text-color prompt-label prompt-color-hex))
+
+    (define (apply-listener-font-size)
+      (set-listener-font (font-descr-with-size base-font-descr
+                                               listener-font-size)))
+
+    (define (zoom-listener-font delta)
+      (let ((new-size (max 4 (min 100 (+ listener-font-size delta)))))
+        (when (not (= new-size listener-font-size))
+          (set! listener-font-size new-size)
+          (apply-listener-font-size))))
+
+    (define (control-key? key)
+      (or (string=? key "Control")
+          (string=? key "Ctrl")))
+
+    (define (handle-zoom-key presstype key)
+      (cond ((control-key? key)
+             (set! control-pressed? (= presstype 0))
+             #f)
+            ((and (= presstype 0)
+                  control-pressed?
+                  (or (string=? key "+")
+                      (string=? key "=")
+                      (string=? key "KP_Add")))
+             (zoom-listener-font 1)
+             #t)
+            ((and (= presstype 0)
+                  control-pressed?
+                  (or (string=? key "-")
+                      (string=? key "KP_Subtract")))
+             (zoom-listener-font -1)
+             #t)
+            (else
+             #f)))
 
     (define (set-input-text text)
       (<gui> :set-value input-gui text))
@@ -210,9 +308,7 @@
              (set-input-text history-draft))))
 
     (define (update-prompt)
-      (<gui> :set-text prompt-label
-             (if in-continuation "...> " "radium> ")
-             "green"))
+      (set-prompt-label-text (if in-continuation "...> " "radium> ")))
 
     (define (focus-input)
       ;; Setting focus with obtainKeyboardFocus also increments Radium's
@@ -224,6 +320,7 @@
       (<ra> :release-keyboard-focus))
 
     (define (clear-input-focus)
+      (set! control-pressed? #f)
       ;; The line edit's FocusSnifferQLineEdit clears Qt focus when it sees
       ;; Escape. Posting Escape is the only exposed way to move keyboard focus
       ;; away from the line without focusing another widget in this window.
@@ -239,12 +336,42 @@
              (< x (<gui> :width gui))
              (< y (<gui> :height gui)))))
 
+    (define (watch-mouse-for-startup-focus)
+      ;; The listener always takes keyboard focus when it opens. If the mouse
+      ;; pointer then moves while outside the window, release the focus again.
+      ;; Enter/leave events handle focus once the pointer has been inside the
+      ;; window.
+      (let ((last-x (<gui> :get-mouse-x gui))
+            (last-y (<gui> :get-mouse-y gui)))
+        (<ra> :schedule 100
+              (lambda ()
+                (if (not (<gui> :is-open gui))
+                    #f
+                    (let ((x (<gui> :get-mouse-x gui))
+                          (y (<gui> :get-mouse-y gui)))
+                      (if (and (= x last-x)
+                               (= y last-y))
+                          100
+                          (begin
+                            (set! last-x x)
+                            (set! last-y y)
+                            (cond ((and (mouse-over-listener?)
+                                        (<gui> :is-active-window gui))
+                                   (set! mouse-inside? #t)
+                                   (when (not in-completion-popup?)
+                                     (focus-input))
+                                   #f)
+                                  (else
+                                   (set! mouse-inside? #f)
+                                   (clear-input-focus)
+                                   #f))))))))))
+
     (define (finish-input)
       (<gui> :set-value input-gui "")
       (update-prompt))
 
     (define (handle-complete-input prompt text full-input forms)
-      (append-output (<-> prompt text "\n"))
+      (append-prompt-line prompt text)
       (set! pending-input "")
       (set! in-continuation #f)
       (add-history full-input)
@@ -278,12 +405,12 @@
             (handle-complete-input prompt text full-input (cadr parse-result))
             (if (scheme-listener-incomplete-input? (cadr parse-result))
                 (begin
-                  (append-output (<-> prompt text "\n"))
+                  (append-prompt-line prompt text)
                   (set! pending-input full-input)
                   (set! in-continuation #t)
                   (finish-input))
                 (begin
-                  (append-output (<-> prompt text "\n"))
+                  (append-prompt-line prompt text)
                   (add-history full-input)
                   (append-output (<-> "error: "
                                       (scheme-listener-error->string (cadr parse-result))
@@ -300,6 +427,12 @@
     (<gui> :set-size gui 700 450)
     (<gui> :set-layout-spacing gui 4 4 4 4 4)
 
+    (set! listener-font-size (font-size-from-descr base-font-descr))
+    (set-listener-colors)
+    (apply-listener-font-size)
+    (update-prompt)
+    (append-output *scheme-listener-help-text*)
+
     (define (submit-input)
       (catch #t
         (lambda ()
@@ -312,25 +445,39 @@
 
     (<gui> :add-key-callback input-gui
            (lambda (presstype key)
-             (if (= presstype 0) ;; Key press.
-                 (cond ((or (string=? key "Tab")
-                            (string=? key "\t"))
-                        (complete-input)
-                        #t)
-                       ((string=? key "Up")
-                        (history-up)
-                        #t)
-                       ((string=? key "Down")
-                        (history-down)
-                        #t)
-                       ((or (string=? key "Return")
-                            (string=? key "Enter")
-                            (string=? key "\r")
-                            (string=? key "\n"))
-                        (submit-input)
-                        #t)
-                       (else
-                        #f))
+             (if (handle-zoom-key presstype key)
+                 #t
+                 (if (= presstype 0) ;; Key press.
+                     (cond ((or (string=? key "Tab")
+                                (string=? key "\t"))
+                            (complete-input)
+                            #t)
+                           ((string=? key "Up")
+                            (history-up)
+                            #t)
+                           ((string=? key "Down")
+                            (history-down)
+                            #t)
+                           ((or (string=? key "Return")
+                                (string=? key "Enter")
+                                (string=? key "\r")
+                                (string=? key "\n"))
+                            (submit-input)
+                            #t)
+                           (else
+                            #f))
+                     #f))))
+
+    (<gui> :add-key-callback output-gui
+           (lambda (presstype key)
+             (handle-zoom-key presstype key)))
+
+    (<gui> :add-mouse-wheel-callback output-gui
+           (lambda (up x y)
+             (if control-pressed?
+                 (begin
+                   (zoom-listener-font (if up 1 -1))
+                   #t)
                  #f)))
 
     (<gui> :add-mouse-callback gui
@@ -342,19 +489,20 @@
                    ((= state *is-leaving*)
                     (set! mouse-inside? #f)
                     (clear-input-focus))
+                   ((= state *is-pressing*)
+                    (set! control-pressed? #f))
                    (else
                     #f))
              #f))
 
     (<gui> :show gui)
-    (set! mouse-inside? (mouse-over-listener?))
-    ;; Wait until Qt has assigned focus to the new window, then make the
-    ;; line edit focus follow the mouse pointer.
+    ;; Always take keyboard focus when the listener opens, even if the mouse
+    ;; pointer happens to be outside the window. If the pointer then moves
+    ;; while outside, watch-mouse-for-startup-focus releases the focus again.
     (<ra> :schedule 0
           (lambda ()
             (set! mouse-inside? (mouse-over-listener?))
-            (if mouse-inside?
-                (focus-input)
-                (clear-input-focus))
+            (focus-input)
+            (watch-mouse-for-startup-focus)
             #f))
     gui))
