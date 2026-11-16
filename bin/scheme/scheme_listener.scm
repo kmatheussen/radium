@@ -90,8 +90,16 @@
               (1+ i)
               (loop (1- i)))))))
 
+(define (scheme-listener-substring-search? prefix)
+  (and (> (string-length prefix) 1)
+       (char=? (string-ref prefix 0) #\*)))
+
 (define (scheme-listener-completions prefix)
-  (let ((symbols (symbol-table)))
+  (let ((substring-search? (scheme-listener-substring-search? prefix))
+        (search-string (if (scheme-listener-substring-search? prefix)
+                           (substring prefix 1 (string-length prefix))
+                           prefix))
+        (symbols (symbol-table)))
     (let loop ((i 0)
                (result '()))
       (if (>= i (length symbols))
@@ -100,7 +108,9 @@
                  (name (and (symbol? sym)
                             (symbol->string sym))))
             (if (and name
-                     (string-starts-with? name prefix)
+                     (if substring-search?
+                         (string-contains? name search-string)
+                         (string-starts-with? name search-string))
                      (defined? sym (rootlet)))
                 (loop (1+ i) (cons name result))
                 (loop (1+ i) result)))))))
@@ -116,7 +126,9 @@
          (in-continuation #f)
          (history '())
          (history-index -1)
-         (history-draft ""))
+         (history-draft "")
+         (mouse-inside? #f)
+         (in-completion-popup? #f))
 
     (define (append-output text)
       (<gui> :append-value output-gui (<ra> :get-html-from-text text)))
@@ -125,13 +137,16 @@
       (<gui> :set-value input-gui text))
 
     (define (show-completion-popup . args)
+      (set! in-completion-popup? #t)
       (<ra> :add-popup-menu-closed-callback
             (lambda ()
+              (set! in-completion-popup? #f)
               ;; Focus asynchronously so the Escape/Return key that closed
               ;; the popup is not also delivered to the line edit.
               (<ra> :schedule 0
                     (lambda ()
-                      (when (<gui> :is-open gui)
+                      (when (and mouse-inside?
+                                 (<gui> :is-open gui))
                         (focus-input))
                       #f))
               #f))
@@ -151,7 +166,8 @@
                                     " ")))
               (else
                (define common (scheme-listener-common-prefix-of-list candidates))
-               (when (> (string-length common) (string-length prefix))
+               (when (and (not (scheme-listener-substring-search? prefix))
+                          (> (string-length common) (string-length prefix)))
                  (set-input-text (<-> (substring text 0 start) common)))
                (define before-token (substring text 0 start))
                (apply show-completion-popup
@@ -206,6 +222,22 @@
       ;; back after the listener has been used.
       (<ra> :obtain-keyboard-focus input-gui)
       (<ra> :release-keyboard-focus))
+
+    (define (clear-input-focus)
+      ;; The line edit's FocusSnifferQLineEdit clears Qt focus when it sees
+      ;; Escape. Posting Escape is the only exposed way to move keyboard focus
+      ;; away from the line without focusing another widget in this window.
+      (when (<gui> :has-keyboard-focus input-gui)
+        (<ra> :gui_post-key-event input-gui 16777216 0 #t) ;; Qt::Key_Escape
+        (<ra> :gui_post-key-event input-gui 16777216 0 #f)))
+
+    (define (mouse-over-listener?)
+      (let ((x (<gui> :get-mouse-x gui))
+            (y (<gui> :get-mouse-y gui)))
+        (and (>= x 0)
+             (>= y 0)
+             (< x (<gui> :width gui))
+             (< y (<gui> :height gui)))))
 
     (define (finish-input)
       (<gui> :set-value input-gui "")
@@ -301,6 +333,28 @@
                         #f))
                  #f)))
 
+    (<gui> :add-mouse-callback gui
+           (lambda (button state x y)
+             (cond ((= state *is-entering*)
+                    (set! mouse-inside? #t)
+                    (when (not in-completion-popup?)
+                      (focus-input)))
+                   ((= state *is-leaving*)
+                    (set! mouse-inside? #f)
+                    (clear-input-focus))
+                   (else
+                    #f))
+             #f))
+
     (<gui> :show gui)
-    (focus-input)
+    (set! mouse-inside? (mouse-over-listener?))
+    ;; Wait until Qt has assigned focus to the new window, then make the
+    ;; line edit focus follow the mouse pointer.
+    (<ra> :schedule 0
+          (lambda ()
+            (set! mouse-inside? (mouse-over-listener?))
+            (if mouse-inside?
+                (focus-input)
+                (clear-input-focus))
+            #f))
     gui))

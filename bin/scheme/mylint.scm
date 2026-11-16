@@ -2040,6 +2040,8 @@
   (mylint-file "/home/kjetil/radium/bin/scheme/mouse-primitives.scm")
   )
 
+(mylint-file "/home/kjetil/radium/bin/scheme/scheme_listener.scm")
+
 (mylint-file "/home/kjetil/radium/bin/scheme/.scm")
 
 (pp
