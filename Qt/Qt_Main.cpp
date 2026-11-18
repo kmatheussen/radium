@@ -530,7 +530,7 @@ void __sanitizer_free_hook(const volatile void *ptr){
     handle_RT_malloc_free_error(false, "Current thread is runner thread", true);
   
   if (g_t_current_thread_is_RT==R_IS_RT)
-    handle_RT_malloc_free_error(true, "Current thread is RT");
+    handle_RT_malloc_free_error(false, "Current thread is RT");
 
 #if DEBUG_MEMORY_ALLOC_MORE
   handle_RT_malloc_free(false, (void*)ptr, 0);
