@@ -318,10 +318,6 @@ extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_header_height(void); // name of block, etc.
 extern LANGSPEC const char* SEQBLOCK_get_color(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 
-// seqblock stretch points
-extern LANGSPEC int SEQBLOCK_get_num_stretchpoints(int seqblocknum, int seqtracknum);
-extern LANGSPEC float SEQBLOCK_get_stretchpoint_x(int seqblocknum, int seqtracknum, int index);
-
 #if __cplusplus
 float SEQBLOCK_get_x1(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 float SEQBLOCK_get_x2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);

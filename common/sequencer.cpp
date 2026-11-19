@@ -56,7 +56,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_automation_proc.h"
 #include "seqblock_automation_proc.h"
 #include "seqblock_stretchspeed_proc.h"
-#include "seqblock_stretchpoints_proc.h"
 #include "sequencer_timing_proc.h"
 #include "patch_proc.h"
 #include "Semaphores.hpp"
@@ -1160,9 +1159,7 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
   }
   
   HASH_put_int(state, ":start-time", seqblock->t.time);
-  // Force the real end time when there are stretch points, since the point positions
-  // are relative to it.
-  HASH_put_int(state, ":end-time", (seqblock_has_stretch(seqtrack, seqblock) || SEQBLOCK_STRETCHPOINTS_has(seqblock) || always_get_real_end_time) ? seqblock->t.time2 : -1); // time2 = -1 if there is no stretch. If not, we may set stretch by mistake if loading the song with a different sample rate.
+  HASH_put_int(state, ":end-time", (seqblock_has_stretch(seqtrack, seqblock) || always_get_real_end_time) ? seqblock->t.time2 : -1); // time2 = -1 if there is no stretch. If not, we may set stretch by mistake if loading the song with a different sample rate.
 
   HASH_put_int(state, ":interior-start", seqblock->t.interior_start);
   HASH_put_int(state, ":interior-end", seqblock->t.interior_end);
@@ -1211,24 +1208,6 @@ hash_t *SEQBLOCK_get_state(const struct SeqTrack *seqtrack, const struct SeqBloc
     DYNVEC_push_back(&automations, SEQBLOCK_AUTOMATION_get_state(seqblock->automations[i]));
 
   HASH_put_dyn(state, ":automations", DYN_create_array(automations));
-
-  int num_stretchpoints = SEQBLOCK_STRETCHPOINTS_get_num(seqblock);
-  if (num_stretchpoints >= 3){
-    // Note: The first and the last stretch point are always the start and the end of the
-    // seqblock, so they are not stored.
-    dynvec_t stretchpoints = {};
-    for(int i=1;i<num_stretchpoints-1;i++){
-      int64_t seqtime;
-      int64_t sample_pos;
-      if (SEQBLOCK_STRETCHPOINTS_get(seqblock, i, &seqtime, &sample_pos)){
-        hash_t *point = HASH_create(2);
-        HASH_put_int(point, ":seqtime", seqtime);
-        HASH_put_int(point, ":sample-pos", sample_pos);
-        DYNVEC_push_back(&stretchpoints, DYN_create_hash(point));
-      }
-    }
-    HASH_put_dyn(state, ":stretch-points", DYN_create_array(stretchpoints));
-  }
 
   return state;
 }
@@ -1442,22 +1421,6 @@ static QHash<QString, QString> g_loaded_embedded_audiofiles;
 bool g_curr_song_contains_embedded_seqtrack_samples = false;
 
 // Is static since seqblocks should only be created in this file.
-
-// Reads an integer that might have been stored as a float. Used for values that are
-// created by the scheme code.
-static int64_t get_int_or_float_value(const hash_t *hash, const char *key){
-  const dyn_t dyn = HASH_get_dyn(hash, key);
-
-  if (dyn.type==INT_TYPE)
-    return dyn.int_number;
-
-  if (dyn.type==FLOAT_TYPE)
-    return (int64_t)round(dyn.float_number);
-
-  R_ASSERT_NON_RELEASE(false);
-  return 0;
-}
-
 static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, const QSet<int64_t> &unavailable_ids, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
 
@@ -1716,50 +1679,6 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
   R_ASSERT(seqblock->t.time2 > seqblock->t.time);
 
   R_ASSERT(seqblock->t.stretch > 0);
-
-  // Stretch points are only valid for sample blocks, and only when neither stretch nor speed
-  // automation is enabled. (They can't be combined.)
-  if (seqblock->block==NULL
-      && HASH_has_key(state, ":stretch-points")
-      && !RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH])
-      && !RT_seqblock_automation_is_enabled(seqblock->automations[SAT_SPEED]))
-  {
-    dyn_t dyn;
-    if (get_value(state, ":stretch-points", ARRAY_TYPE, HASH_get_dyn, error_type, dyn)==true){
-      const dynvec_t *vec = dyn.array;
-      struct SeqBlockStretchPoint points[MAX_SEQBLOCK_STRETCHPOINTS];
-      int num_points = 0;
-
-      // The first and last points are not stored in the state. They are always the start
-      // and the end of the seqblock.
-      points[num_points].seqtime = 0;
-      points[num_points].sample_pos = interior_start;
-      num_points++;
-
-      for(int i=0;i<vec->num_elements && i<MAX_SEQBLOCK_STRETCHPOINTS-2;i++){
-        if (vec->elements[i].type != HASH_TYPE)
-          break;
-        const hash_t *point = vec->elements[i].hash;
-        if (!HASH_has_key(point, ":seqtime") || !HASH_has_key(point, ":sample-pos"))
-          break;
-        int64_t seqtime = get_int_or_float_value(point, ":seqtime");
-        int64_t sample_pos = get_int_or_float_value(point, ":sample-pos");
-        if (!equal_doubles(adjust_for_samplerate, 1.0)){
-          seqtime = round(double(seqtime) * adjust_for_samplerate);
-          sample_pos = round(double(sample_pos) * adjust_for_samplerate);
-        }
-        points[num_points].seqtime = seqtime;
-        points[num_points].sample_pos = sample_pos;
-        num_points++;
-      }
-
-      points[num_points].seqtime = time2 - time;
-      points[num_points].sample_pos = interior_end;
-      num_points++;
-
-      SEQBLOCK_STRETCHPOINTS_set(seqblock, points, num_points);
-    }
-  }
 
   if (HASH_has_key(state, ":id")) {
     int64_t id = HASH_get_int(state, ":id");
@@ -4633,11 +4552,7 @@ void SEQUENCER_block_changes_tempo_multiplier(const struct Blocks *block, double
 
         add_skew = new_time2-seqblock->t.time2;
 
-        int64_t old_duration = seqblock->t.time2 - seqblock->t.time;
-
         seqblock->t.time2 = new_time2;
-
-        SEQBLOCK_STRETCHPOINTS_duration_changed(seqblock, old_duration, new_time2 - seqblock->t.time);
 
       }
       

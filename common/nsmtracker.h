@@ -3689,30 +3689,6 @@ struct SeqBlockTimings{
 
 struct SeqblockAutomation;
 
-#define MAX_SEQBLOCK_STRETCHPOINTS 64
-
-// A stretch point anchors a position in the sequenced audio block to a position in the
-// un-stretched audio data. The time between two stretch points is played at a constant
-// speed, so dragging a stretch point changes how fast the sound in one part of the block
-// is played, without changing the pitch.
-//
-// "seqtime" is relative to seqblock->t.time.
-// "sample_pos" is in the seqblock interior domain, i.e. the same units as
-// seqblock->t.interior_start/interior_end (not raw sample frames; divide by the
-// resampler ratio to get sample frames). It is *not* affected by seqblock->t.speed.
-struct SeqBlockStretchPoint{
-  int64_t seqtime;
-  int64_t sample_pos;
-};
-
-// Double buffered so that the audio thread and the gui can read while the main thread
-// updates. Updated from the main thread (usually while holding the player lock).
-struct SeqBlockStretchPoints{
-  int curr_buffer;
-  int num_stretchpoints[2];
-  struct SeqBlockStretchPoint stretchpoints[2][MAX_SEQBLOCK_STRETCHPOINTS];
-};
-
 // If changing this one, also change 'get-selected-box-num' in sequencer.scm
 enum SeqblockBoxSelected{
   SB_NO_SELECTED,
@@ -3873,8 +3849,6 @@ struct SeqBlock{
   struct SeqblockAutomation *automations[NUM_SATS];
 
   struct StretchspeedTimeConversionTable conversion_table;
-
-  struct SeqBlockStretchPoints stretchpoints;
 
   int64_t curr_scheduled_realline_counter; // used by the scheduler. Only accessed from the main player thread.
 

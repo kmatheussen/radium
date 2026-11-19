@@ -33,7 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "../common/Array.hpp"
 #include "../common/undo_sequencer_proc.h"
 #include "../common/seqblock_automation_proc.h"
-#include "../common/seqblock_stretchpoints_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -486,7 +485,7 @@ public:
 
 
   void prepare_for_playing(const int64_t sample_start_pos, const struct SeqBlock *seqblock, bool do_fade_in, radium::FutureSignalTrackingSemaphore *gotit){
-    _do_granulate = RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || seqblock_is_stretched(seqblock) || SEQBLOCK_STRETCHPOINTS_has(seqblock);
+    _do_granulate = RT_seqblock_automation_is_enabled(seqblock->automations[SAT_STRETCH]) || seqblock_is_stretched(seqblock);
     _do_resampling = _do_constant_resampling || seqblock_is_speeded(seqblock) || RT_seqblock_automation_is_enabled(seqblock->automations[SAT_SPEED]);
 
     _granulator.reset();
@@ -527,7 +526,7 @@ public:
       prepare_for_fadein();
 
     // TODO: This number should be dynamically calculated somehow depending on how long time it takes to read from disk.
-    int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / (SEQBLOCK_STRETCHPOINTS_get_min_stretch(seqblock) * seqblock->t.speed * _resampler_ratio);
+    int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE_BEFORE_STARTING) * (double)pc->pfreq / (seqblock->t.stretch * seqblock->t.speed * _resampler_ratio);
 
     how_much_to_prepare = R_MAX(how_much_to_prepare,
                                 2 * pc->pfreq * (MAX_GRAIN_LENGTH_IN_SECONDS + MAX_GRAIN_FREQUENCY_IN_SECONDS)
@@ -811,20 +810,7 @@ struct Sample{
       return;
     }
 
-    int64_t sample_start_pos;
-
-    if (SEQBLOCK_STRETCHPOINTS_has(_seqblock.data())){
-
-      const int64_t seqtime_offset = R_MAX(0, seqtime - _seqblock->t.time);
-      const int64_t interior_pos = SEQBLOCK_STRETCHPOINTS_get_sample_pos(_seqblock.data(), seqtime_offset);
-
-      sample_start_pos = (int64_t)round((double)interior_pos / _resampler_ratio);
-
-    } else {
-
-      sample_start_pos = get_stretch_automation_sample_pos(_seqblock.data(), sample_start_pos1);
-
-    }
+    int64_t sample_start_pos = get_stretch_automation_sample_pos(_seqblock.data(), sample_start_pos1);
 
     /*
     printf("sample_start_pos1: %d. interior start: %f / %d. end: %f / %d. _resampler_ratio: %f\n", (int)sample_start_pos1,
@@ -1018,8 +1004,6 @@ struct Sample{
                 
         double stretch = _seqblock->t.stretch;
         double automation_resampler_ratio = 1.0;
-
-        const bool has_stretchpoints = SEQBLOCK_STRETCHPOINTS_has(_seqblock.data());
         
         {
           const int64_t start_time = _seqtrack->start_time;
@@ -1037,22 +1021,11 @@ struct Sample{
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_JITTER], time, grain_jitter);
             RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_GRAIN_RAMP], time, grain_ramp);
 
-            if (has_stretchpoints){
+            double automation_stretch;
+            if (RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_STRETCH], time, automation_stretch))
+              stretch *= automation_stretch;
 
-              // Each stretch point segment is played at its own speed. The stretch factors
-              // for stretch points and for the stretch automation can't be combined, so
-              // the automation is ignored (it can't be enabled for these seqblocks anyway).
-              stretch = SEQBLOCK_STRETCHPOINTS_get_stretch(_seqblock.data(), start_time - _seqblock->t.time);
-
-            } else {
-
-              double automation_stretch;
-              if (RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_STRETCH], time, automation_stretch))
-                stretch *= automation_stretch;
-
-              RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_SPEED], time, automation_resampler_ratio);
-
-            }
+            RT_maybe_get_seqblock_automation_value(_seqblock->automations[SAT_SPEED], time, automation_resampler_ratio);
           }
         }
         
@@ -1133,7 +1106,7 @@ struct Sample{
     // Request reading from disk for Current
     //
     if (is_playing && _curr_reader){ // Note: Must check 'is_playing' before '_curr_reader' to avoid tsan hit.
-      int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / (SEQBLOCK_STRETCHPOINTS_get_min_stretch(_seqblock.data())*_seqblock->t.speed);
+      int64_t how_much_to_prepare = double(HOW_MUCH_TO_PREPARE) * (double)pc->pfreq / (_seqblock->t.stretch*_seqblock->t.speed);
 
       how_much_to_prepare = R_MAX(how_much_to_prepare,
                                   2 * pc->pfreq * (MAX_GRAIN_LENGTH_IN_SECONDS + MAX_GRAIN_FREQUENCY_IN_SECONDS)

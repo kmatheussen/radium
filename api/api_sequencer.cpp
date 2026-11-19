@@ -30,7 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/sequencer_proc.h"
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/seqblock_automation_proc.h"
-#include "../common/seqblock_stretchpoints_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/sequencer_timing_proc.h"
 #include "../common/time_proc.h"
@@ -4186,61 +4185,6 @@ double getSeqblockStretchSpeed(int64_t seqblockid, bool use_gfx_if_possible){
   GET_VARS_FROM_SEQBLOCK_ID(seqblockid, use_gfx_if_possible, 1.0)
 
   return seqblock->t.stretch * seqblock->t.speed;
-}
-
-// stretch points
-
-bool seqblockHasStretchPoints(int64_t seqblockid){
-  struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
-  if (seqblock==NULL)
-    return false;
-
-  return SEQBLOCK_STRETCHPOINTS_has(seqblock);
-}
-
-int getNumSeqblockStretchPoints(int seqblocknum, int seqtracknum){
-  return SEQBLOCK_get_num_stretchpoints(seqblocknum, seqtracknum);
-}
-
-float getSeqblockStretchPointX(int seqblocknum, int seqtracknum, int index){
-  return SEQBLOCK_get_stretchpoint_x(seqblocknum, seqtracknum, index);
-}
-
-int64_t getSeqblockStretchPointTime(int seqblocknum, int seqtracknum, int index){
-  struct SeqBlock *seqblock = getGfxSeqblockFromNum(seqblocknum, seqtracknum);
-  if (seqblock==NULL)
-    return 0;
-
-  int64_t seqtime;
-  int64_t sample_pos;
-
-  if (SEQBLOCK_STRETCHPOINTS_get(seqblock, index, &seqtime, &sample_pos)==false)
-    return 0;
-
-  return seqtime; // Relative to the start of the seqblock.
-}
-
-int64_t getSeqblockStretchPointSamplePos(int seqblocknum, int seqtracknum, int index){
-  struct SeqBlock *seqblock = getGfxSeqblockFromNum(seqblocknum, seqtracknum);
-  if (seqblock==NULL)
-    return 0;
-
-  int64_t seqtime;
-  int64_t sample_pos;
-
-  if (SEQBLOCK_STRETCHPOINTS_get(seqblock, index, &seqtime, &sample_pos)==false)
-    return 0;
-
-  return sample_pos; // In the seqblock interior domain.
-}
-
-// Returns the stretch factor (1.0 = no stretch) for the segment containing 'seqtime'
-// (absolute seqtime).
-double getSeqblockStretchAtTime(int64_t seqblockid, int64_t seqtime){
-  GET_VARS_FROM_SEQBLOCK_ID(seqblockid, true, 1.0)
-
-  return SEQBLOCK_STRETCHPOINTS_get_stretch(seqblock, seqtime - seqblock->t.time);
 }
 
 double getSeqblockResampleRatio(int64_t seqblockid, bool may_use_gfx){

@@ -597,11 +597,6 @@
                                (lambda (ison)
                                  (when has-started
                                    (<ra> :set-seqblock-automation-enabled ison 6 seqblockid))))))
-    (when (<ra> :seqblock-has-stretch-points seqblockid)
-      (<gui> :set-enabled stretch-checkbox #f)
-      (<gui> :set-enabled speed-checkbox #f)
-      (<gui> :set-tool-tip stretch-checkbox "Stretch automation can not be combined with stretch points.")
-      (<gui> :set-tool-tip speed-checkbox "Speed automation can not be combined with stretch points."))
     (<gui> :add main-layout
            (<gui> :group "Stretch and speed automation"
                   (<gui> :horizontal-layout stretch-checkbox speed-checkbox))
