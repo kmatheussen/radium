@@ -78,6 +78,11 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   
   QString vertical_text;
 
+  // Set to false for checkboxes that are clickable but represent something
+  // that is currently disabled/impossible, e.g. a bus send that would create
+  // a feedback loop. Such checkboxes should not show the hover highlight.
+  bool _show_hover_highlight = true;
+
   // Have to do this. Just overriding the paintEvent makes mouse partly stop working.
   void mousePressEvent ( QMouseEvent * event ) override {
     setChecked(!isChecked());    
@@ -109,8 +114,10 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
       if(_patch->instrument==get_audio_instrument())
         GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
     }
-    _is_hovered = true;
-    update();
+    const bool was_hovered = _is_hovered;
+    _is_hovered = isEnabled() && _show_hover_highlight;
+    if (_is_hovered != was_hovered)
+      update();
   }
 
   void leaveEvent(QEvent *event) override {
@@ -158,7 +165,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
                                         bool do_gradient = false;
 
-                                        if(_is_hovered) {
+                                        if(_is_hovered && isEnabled()) {
                                           
                                           do_gradient = true;
 
@@ -257,7 +264,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
 
   bool fix_mousePressEvent(radium::MouseCycleEvent &event) override {
 
-    _is_hovered = true;
+    _is_hovered = isEnabled() && _show_hover_highlight;
     
     _last_pressed_button = event.button();
 

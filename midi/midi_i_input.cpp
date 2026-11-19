@@ -128,7 +128,7 @@ static bool msg_is_note_off(const uint32_t msg){
   int      cc0     = MIDI_msg_byte1_remove_channel(msg);
   int      volume  = MIDI_msg_byte3(msg);
 
-  if (cc0==0x80 || (cc0=0x90 && volume==0))
+  if (cc0==0x80 || (cc0==0x90 && volume==0))
     return true;
   else
     return false;
@@ -841,6 +841,7 @@ hash_t* radium::MidiLearn::create_state(void){
   HASH_put_bool(state, "is_enabled", ATOMIC_GET(is_enabled));
   HASH_put_bool(state, "is_learning", ATOMIC_GET(is_learning));
   HASH_put_bool(state, "is_incremental", ATOMIC_GET(is_incremental));
+  HASH_put_float(state, "incremental_speed", ATOMIC_DOUBLE_GET(incremental_speed));
   const symbol_t *port_name_symbol = ATOMIC_GET(port_name);
   HASH_put_chars(state, "port_name", port_name_symbol==NULL ? "" : port_name_symbol->name);
   HASH_put_int(state, "byte1", ATOMIC_GET(byte1));
@@ -856,6 +857,8 @@ void radium::MidiLearn::init_from_state(hash_t *state){
   ATOMIC_SET(is_enabled, HASH_get_bool(state, "is_enabled"));
   if (HASH_has_key(state, "is_incremental"))
     ATOMIC_SET(is_incremental, HASH_get_bool(state, "is_incremental"));
+  if (HASH_has_key(state, "incremental_speed"))
+    ATOMIC_DOUBLE_SET(incremental_speed, R_BOUNDARIES(-10.0, HASH_get_float(state, "incremental_speed"), 10.0));
 }
 
 bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
@@ -881,7 +884,7 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
     ATOMIC_SET(byte1, d1);
     ATOMIC_SET(byte2, d2);
 
-    R_ASSERT_NON_RELEASE(ATOMIC_GET(last_value)==-1);
+    R_ASSERT_NON_RELEASE(ATOMIC_DOUBLE_GET(last_value) < 0);
     
     ATOMIC_SET(this->port_name, port_name);
     ATOMIC_SET(is_learning, false);
@@ -917,11 +920,11 @@ int radium::MidiLearn::RT_get_value_for_incremental_mode(uint32_t msg){
   R_ASSERT_NON_RELEASE(msg_is_cc(msg));
   R_ASSERT_NON_RELEASE(ATOMIC_GET(is_incremental));
 
-  int old_value = ATOMIC_GET(last_value);
+  const double old_value = ATOMIC_DOUBLE_GET(last_value);
   
   if (old_value < 0) {
     const int value = MIDI_msg_byte3(msg);
-    ATOMIC_SET(last_value, value);
+    ATOMIC_DOUBLE_SET(last_value, value);
     return value;
   }
         
@@ -930,19 +933,27 @@ int radium::MidiLearn::RT_get_value_for_incremental_mode(uint32_t msg){
   if (inc_value == 0)
     return -1;
 
-  int new_value = old_value + inc_value;
-  
-  if (new_value < 0)
+  const double speed = ATOMIC_DOUBLE_GET(incremental_speed);
+  const double max_value = get_max_value(msg);
+
+  double new_value = old_value + inc_value * speed;
+
+  if (new_value < 0.0)
+    new_value = 0.0;
+  else if (new_value > max_value)
+    new_value = max_value;
+
+  ATOMIC_DOUBLE_SET(last_value, new_value);
+
+  const int old_rounded = (int)(old_value + 0.5);
+  const int new_rounded = (int)(new_value + 0.5);
+
+  // Don't send a new value if the integer value didn't change. This avoids
+  // flooding the player and automation recording when using a fractional speed.
+  if (new_rounded == old_rounded)
     return -1;
   
-  int max_value = get_max_value(msg);
-  
-  if (new_value > max_value)
-    return -1;
-  
-  ATOMIC_SET(last_value, new_value);
-  
-  return new_value;
+  return new_rounded;
 }
   
 bool radium::MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
