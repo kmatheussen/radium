@@ -14,6 +14,7 @@
 #   display                  Print the X display name
 #   scheme '<expr>'          Evaluate a Scheme expression via the control server
 #   shot [file]              Save a screenshot (default <state>/screenshot.png)
+#   xwd <args...>            Run xwd against the private display
 #   xdotool <args...>        Run xdotool against the private display
 #   windows                  List window titles on the private display
 #   tree [N]                 Show the first N lines of the window tree
@@ -77,6 +78,7 @@ Commands:
   display                  Print the X display name
   scheme '<expr>'          Evaluate a Scheme expression via the control server
   shot [file]              Save a screenshot (default <state>/screenshot.png)
+  xwd <args...>            Run xwd against the private display
   xdotool <args...>        Run xdotool against the private display
   windows                  List window titles on the private display
   tree [N]                 Show the first N lines of the window tree
@@ -544,6 +546,15 @@ do_shot() {
   printf '%s\n' "$out"
 }
 
+do_xwd() {
+  local display
+  display="$(require_display)"
+  command -v xwd >/dev/null 2>&1 || die "xwd was not found"
+  [ $# -ge 1 ] ||
+    die "xwd needs arguments, e.g. -id 0x200036 -silent -out /tmp/opencode/dialog.xwd"
+  DISPLAY="$display" xwd "$@"
+}
+
 do_xdotool() {
   local display
   display="$(require_display)"
@@ -676,6 +687,9 @@ case "$command_name" in
     ;;
   shot)
     do_shot "$@"
+    ;;
+  xwd)
+    do_xwd "$@"
     ;;
   xdotool)
     do_xdotool "$@"
