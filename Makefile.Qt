@@ -718,7 +718,7 @@ OBJ5= $(T)debug.o $(T)memory.o $(T)validatemem.o $(T)placement.o $(T)t_gc.o $(T)
 
 OBJ6= $(T)realline_calc.o $(T)gfx_subtrack.o $(T)LPB.o $(T)Signature.o $(T)Beats.o $(T)reallines_insert.o $(T)gfx_request.o
 
-OBJ7= $(T)instruments.o $(T)patch.o $(T)undo_audio_patch_addremove.o $(T)fxlines.o $(T)fxlines_legalize.o $(T)sequencer.o $(T)seqtrack_automation.o $(T)song_tempo_automation.o $(T)sequencer_timing.o $(T)seqblock_automation.o $(T)seqblock_stretchspeed.o $(T)scroll_play.o $(T)crashreporter.o $(T)crashreporter_posix.o $(T)crashreporter_windows.o $(T)error.o $(T)threading.o $(T)Semaphores.o $(T)stacktoucher.o
+OBJ7= $(T)instruments.o $(T)patch.o $(T)undo_audio_patch_addremove.o $(T)fxlines.o $(T)fxlines_legalize.o $(T)sequencer.o $(T)seqtrack_automation.o $(T)song_tempo_automation.o $(T)sequencer_timing.o $(T)seqblock_automation.o $(T)seqblock_stretchspeed.o $(T)seqblock_stretchpoints.o $(T)scroll_play.o $(T)crashreporter.o $(T)crashreporter_posix.o $(T)crashreporter_windows.o $(T)error.o $(T)threading.o $(T)Semaphores.o $(T)stacktoucher.o
 
 #Tempos and time
 OBJ8= $(T)reltempo.o $(T)temponodes.o $(T)tempos.o $(T)time.o $(T)temponodes_legalize.o $(T)swing.o
@@ -945,7 +945,7 @@ profile:
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
 check: test
-test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_fuzzysearch test_timedata test_bdw_gc
+test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_fuzzysearch test_timedata test_bdw_gc test_stretchpoints
 	@echo
 	@echo " == All tests succeeded, apparently =="
 
@@ -1016,6 +1016,12 @@ test_rt_memory_allocator:
 test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall $(WERROR) -Wno-unused-function -g -o a.out &&	./a.out
 #	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall $(WERROR) -g -o a.out && gdb ./a.out
+
+test_stretchpoints:
+	$(CCC) -O2 -DRELEASE -DNDEBUG -D__STDC_FORMAT_MACROS=1 $(TEST_ARCH_DEF) $(STD_CPP) -Wall -Wno-unused-function -I. -Icommon -IQt -o test/test_stretchpoints_bin test/test_stretchpoints.cpp common/seqblock_stretchpoints.cpp
+	./test/test_stretchpoints_bin
+	@echo "=== success: test_stretchpoints ==="
+	@rm -f test/test_stretchpoints_bin
 
 test_radium_vector:
 	cd test && $(CCC) -Wall $(WERROR) test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall $(STD_CPP) -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_DEFS) -I../Qt -Wno-unused-function -O3 -o test_radium_vector
@@ -1426,6 +1432,9 @@ $(T)seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $
 
 $(T)seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.cpp $(CD)SeqAutomation.hpp $(QT_PCH)
 	$(CCC2) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(WNO_MAYBE_UNINITIALIZED)
+
+$(T)seqblock_stretchpoints.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchpoints.cpp $(CD)seqblock_stretchpoints_proc.h $(QT_PCH)
+	$(CCC2) $(CD)seqblock_stretchpoints.cpp $(QTOPT) $(QT_PCH_INCLUDE)
 
 $(T)time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp common/time_proc.h $(QT_PCH)
 	$(CCC2) $(CD)time.cpp $(QTOPT) $(QT_PCH_INCLUDE)

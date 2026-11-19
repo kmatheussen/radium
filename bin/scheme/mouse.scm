@@ -1357,7 +1357,13 @@
                        (define seqblockid (seqblock-info :id))
                        (define holds-block (<ra> :seqblock-holds-block seqblocknum seqtracknum))
                        (define holds-sample (not holds-block))
-                       (cond ((inside-box? (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y)
+                       (define stretchpoint-num (and holds-sample
+                                                     (get-stretchpoint-num-at-x X seqblocknum seqtracknum)))
+                       (cond (stretchpoint-num
+                              (set-editor-statusbar (get-stretchpoint-string seqblockid seqblocknum seqtracknum stretchpoint-num))
+                              (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
+
+                             ((inside-box? (<ra> :get-box seqblock-left-fade seqblocknum seqtracknum) X Y)
                               (set-fade-status-bar #t seqblocknum seqtracknum)
                               (ra:set-horizontal-resize-mouse-pointer (<gui> :get-sequencer-gui)))
                              
@@ -6870,6 +6876,23 @@
       (set! (new-seqblock :speed) curr-speed)
       ;;(c-display "old-speed:" old-speed ". new_speed:" (new-seqblock :speed) ". old-duration:" old-duration ". new-duration:" new-duration)
       )
+
+    ;; The stretch points belong to the seqblock, so they are stretched along with it when
+    ;; the seqblock is resized using the stretch or speed handles.
+    (let ((points (seqblock-state-stretch-points new-seqblock)))
+      (when (not (null? points))
+        (define old-duration (- (seqblock :end-time)
+                                (seqblock :start-time)))
+        (define new-duration (- (new-seqblock :end-time)
+                                (new-seqblock :start-time)))
+        (when (and (> old-duration 0)
+                   (> new-duration 0)
+                   (not (= old-duration new-duration)))
+          (define factor (/ new-duration old-duration))
+          (set! (new-seqblock :stretch-points)
+                (map (lambda (point)
+                       (copy-hash point :seqtime (to-integer (* (point :seqtime) factor))))
+                     points)))))
     
     (define new-seqblocks-state (copy seqblocks))
     (set! (new-seqblocks-state seqblocknum) new-seqblock)
@@ -9557,3 +9580,169 @@
 
 
 (define *mouse.scm-loaded* #t)
+
+
+;; Stretch point dragging
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; The first and the last stretch point are always the start and the end of the seqblock,
+;; so only the points in between can be dragged. Dragging point N moves point N and all
+;; points after it, so only the part of the block before point N changes speed.
+
+;; The 'Value' format is number of frames since start of song.
+;; Note: 'points' and 'original-pos' are the values from before the drag started, so it
+;; doesn't matter how many times this function is called.
+(define (move-seqblock-stretchpoint Value seqtracknum seqblocknum seqblock seqblocks points pointnum original-pos min-value start-time duration)
+  (define new-pos (to-integer (max min-value (floor Value))))
+  (define delta (- new-pos original-pos))
+
+  (when (not (= delta 0))
+    (define num-points (length points))
+
+    ;; Move the dragged point, and all points after it, the same amount. The last point is
+    ;; the end of the seqblock, so the seqblock changes length (and therefore also its
+    ;; global stretch value) when a stretch point is dragged.
+    (define new-points
+      (append (take points pointnum)
+              (map (lambda (point)
+                     (copy-hash point :seqtime (to-integer (+ (point :seqtime) delta))))
+                   (sublist points pointnum num-points))))
+
+    (define new-seqblock (copy-hash seqblock
+                                    :end-time (to-integer (+ start-time duration delta))
+                                    :stretch-points (sublist new-points 1 (1- num-points))))
+
+    (define new-seqblocks-state (copy seqblocks))
+    (set! (new-seqblocks-state seqblocknum) new-seqblock)
+
+    (<ra> :create-gfx-seqblocks-from-state new-seqblocks-state seqtracknum)
+    (<ra> :set-curr-seqblock-under-mouse (seqblock :id))
+    #t)
+
+  new-pos)
+
+;; Stretch value of the part of the seqblock in front of the dragged point.
+(define (get-seqblock-stretchpoint-stretch-string curr-pos points pointnum)
+  (define p1 (list-ref points (1- pointnum)))
+  (define p2 (list-ref points pointnum))
+  (define seqtime-length (- curr-pos (p1 :seqtime)))
+  (define sample-length (- (p2 :sample-pos) (p1 :sample-pos)))
+  (<-> "Stretch point: "
+       (two-decimal-string (if (<= sample-length 0)
+                               1.0
+                               (/ seqtime-length sample-length)))
+       "X"))
+
+(define-class (<set-seqblock-stretchpoint> :seqtracknum
+                                           :seqblocknum
+                                           :pointnum)
+
+  (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
+  (define seqblock (seqblocks seqblocknum))
+
+  (define start-time (seqblock :start-time))
+  (define duration (- (<ra> :get-seqblock-end-time seqblocknum seqtracknum) start-time))
+
+  ;; Note: 'pointnum' is the index in this list, which includes the implicit first and
+  ;; last points.
+  (define points (append (list (hash-table :seqtime 0
+                                           :sample-pos (seqblock :interior-start)))
+                         (seqblock-state-stretch-points seqblock)
+                         (list (hash-table :seqtime duration
+                                           :sample-pos (seqblock :interior-end)))))
+
+  (define width (- (<ra> :get-seqblock-x2 seqblocknum seqtracknum)
+                   (<ra> :get-seqblock-x1 seqblocknum seqtracknum)))
+  (define frames-per-pixel (if (> width 0)
+                               (/ duration width)
+                               duration))
+  ;; Don't allow the segment in front of the dragged point to become too short.
+  (define min-duration (to-integer (max 64 (round (* 4 frames-per-pixel)))))
+
+  (define prev-point (list-ref points (1- pointnum)))
+  (define original-pos ((list-ref points pointnum) :seqtime))
+
+  (define curr-pos original-pos)
+
+  (define has-moved #f)
+
+  :seqtracknum ()
+  seqtracknum
+
+  :seqblocknum ()
+  seqblocknum
+
+  :start-time ()
+  start-time
+
+  :curr-pos ()
+  curr-pos
+
+  :min-value ()
+  (+ (prev-point :seqtime)
+     min-duration)
+
+  :max-value ()
+  #f
+
+  :publicize ()
+  (set-editor-statusbar (get-seqblock-stretchpoint-stretch-string curr-pos points pointnum))
+
+  :move (Value Y)
+  (let ((new-pos (to-integer (max (this->min-value) (floor Value)))))
+    ;; Only make an undo entry, and only move anything, if the point is actually moved.
+    (when (not (= new-pos original-pos))
+      (when (not has-moved)
+        (<ra> :undo-sequencer)
+        (set! has-moved #t))
+      (move-seqblock-stretchpoint new-pos seqtracknum seqblocknum seqblock seqblocks points pointnum original-pos (this->min-value) start-time duration)
+      (set! curr-pos new-pos))
+    #t)
+
+  :release ()
+  (when has-moved
+    (try-finally :try (lambda ()
+                        (<ra> :apply-gfx-seqblocks seqtracknum))
+                 :failure (lambda ()
+                            (<ra> :cancel-gfx-seqblocks seqtracknum))))
+  )
+
+(define *stretchpoint-drag* #f)
+
+;; Note: A mouse cycle added to the front (instead of an add-node-mouse-handler), since the
+;; node mouse handlers give the press to the seqblock move handlers. Cycles added to the
+;; front are considered before all of them.
+(add-mouse-cycle-front
+ (make-mouse-cycle
+  :press-func (lambda (Button X Y)
+                (set! *stretchpoint-drag* #f)
+                (and (= Button *left-button*)
+                     (not *current-seqautomation/distance*)
+                     (begin
+                       (set-curr-seqblock-info! X Y)
+                       (let ((seqblock-info *current-seqblock-info*))
+                         (and seqblock-info
+                              (let* ((seqtracknum (seqblock-info :seqtracknum))
+                                     (seqblocknum (seqblock-info :seqblocknum))
+                                     (pointnum (get-stretchpoint-num-at-x X seqblocknum seqtracknum)))
+                                (and pointnum
+                                     (begin
+                                       (set! *stretchpoint-drag* (<new> :set-seqblock-stretchpoint seqtracknum seqblocknum pointnum))
+                                       (set-current-seqblock! seqtracknum (seqblock-info :id))
+                                       #t))))))))
+
+  :drag-func (lambda (Button X Y)
+               (and *stretchpoint-drag*
+                    (begin
+                      ;; The value is the position of the dragged point, in frames relative
+                      ;; to the start of the seqblock.
+                      (*stretchpoint-drag* :move (to-integer (- (get-sequencer-time X)
+                                                                 (*stretchpoint-drag* :start-time)))
+                                           Y)
+                      (*stretchpoint-drag* :publicize)
+                      #t)))
+
+  :release-func (lambda (Button X Y)
+                  (when *stretchpoint-drag*
+                    (*stretchpoint-drag* :release)
+                    (set! *stretchpoint-drag* #f)))))

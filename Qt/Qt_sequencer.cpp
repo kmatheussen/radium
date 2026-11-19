@@ -51,6 +51,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/seqtrack_automation_proc.h"
 #include "../common/song_tempo_automation_proc.h"
 #include "../common/seqblock_automation_proc.h"
+#include "../common/seqblock_stretchpoints_proc.h"
 #include "../common/sequencer_timing_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/player_proc.h"
@@ -1334,6 +1335,33 @@ public:
       
   }
   
+  // Returns the position in the sample (in sample frames) for a position in the seqblock.
+  // 'uniform_pos' is the position one would get if the seqblock was stretched uniformly,
+  // i.e. the same value that get_stretch_automation_sample_pos expects.
+  static int64_t get_sample_pos_for_uniform_pos(const struct SeqBlock *seqblock, const SoundPlugin *plugin, int64_t uniform_pos){
+    if (SEQBLOCK_STRETCHPOINTS_has(seqblock)==false)
+      return get_stretch_automation_sample_pos(seqblock, uniform_pos);
+
+    const double resample_ratio = plugin==NULL ? 1.0 : SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
+
+    const double stretchspeed = seqblock->t.stretch * seqblock->t.speed;
+
+    if (stretchspeed <= 0.0)
+      return seqblock->t.interior_start;
+
+    // uniform_pos is in sample frames. Convert it back to a position in the seqblock's
+    // interior domain, and from there to a position on the seqblock timeline.
+    // Note: seqblock->t.stretch * seqblock->t.speed is the seqtime duration of the
+    // seqblock divided by its interior duration, so it has to be multiplied with, not
+    // divided into, the interior position.
+    const double interior_pos = (double)uniform_pos * resample_ratio;
+    const int64_t seqtime_offset = (int64_t)round((interior_pos - (double)seqblock->t.interior_start) * stretchspeed);
+
+    const int64_t sample_pos = SEQBLOCK_STRETCHPOINTS_get_sample_pos(seqblock, seqtime_offset);
+
+    return (int64_t)round((double)sample_pos / resample_ratio);
+  }
+
   void drawWaveform(QPainter &p, const QRegion &update_region, const SoundPlugin *plugin, const radium::Peakss &peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
 
     if (false==workingQRegionIntersects(update_region, QRectF(x1, w_y1, x2-x1, w_y2-w_y1))){
@@ -1384,7 +1412,7 @@ public:
     if (time2 <= time1)
       return;    
 
-    int64_t p_time2 = get_stretch_automation_sample_pos(seqblock, type==Seqblock_Type::RECORDING ? time2 : R_MIN(seqblock->t.num_samples, time2));
+    int64_t p_time2 = get_sample_pos_for_uniform_pos(seqblock, plugin, type==Seqblock_Type::RECORDING ? time2 : R_MIN(seqblock->t.num_samples, time2));
 
     const double pixels_per_peak = R_MAX(2.7, (double)root->song->tracker_windows->systemfontheight / 6.5);
     double width = x2-x1;
@@ -1406,7 +1434,7 @@ public:
 
       QVarLengthArray<QPointF> points(num_points*2);
 
-      int64_t p_last_used_end_time = get_stretch_automation_sample_pos(seqblock, time1);
+      int64_t p_last_used_end_time = get_sample_pos_for_uniform_pos(seqblock, plugin, time1);
 
       const float m = 0.3f; // half minimum waveform height (to avoid blank gfx for silent audio)
           
@@ -1424,7 +1452,7 @@ public:
           int64_t end_time1 = scale_int64(i,
                                           0, num_points,
                                           time1, time2);
-          int64_t p_end_time2 = get_stretch_automation_sample_pos(seqblock, end_time1);
+          int64_t p_end_time2 = get_sample_pos_for_uniform_pos(seqblock, plugin, end_time1);
           int64_t p_end_time = R_BOUNDARIES(p_start_time,
                                             p_end_time2,
                                             p_time2);
@@ -2122,11 +2150,66 @@ public:
     }
   }
 
+  void paint_stretchpoints(QPainter &p, const QRectF &rect, const struct SeqBlock *seqblock, Seqblock_Type type) const {
+    const int num_points = SEQBLOCK_STRETCHPOINTS_get_num(seqblock);
+
+    if (num_points < 3)
+      return;
+
+    const int64_t duration = seqblock->t.time2 - seqblock->t.time;
+
+    if (duration <= 0)
+      return;
+
+    QColor color = get_qcolor(SEQUENCER_BLOCK_STRETCH_BOX_COLOR_NUM);
+    color.setAlpha(type==Seqblock_Type::REGULAR ? 220 : 120);
+
+    QPen pen(color);
+    pen.setWidthF(R_MAX(1.0, (double)root->song->tracker_windows->systemfontheight / 11.0));
+    p.setPen(pen);
+
+    const double handle_width = R_MAX(3.0, (double)root->song->tracker_windows->systemfontheight / 3.0);
+
+    // Don't paint the first and the last points, since they are always the start and the
+    // end of the seqblock.
+    for(int i=1;i<num_points-1;i++){
+      int64_t seqtime;
+      int64_t sample_pos;
+
+      if (SEQBLOCK_STRETCHPOINTS_get(seqblock, i, &seqtime, &sample_pos)==false)
+        continue;
+
+      const double x = rect.left() + rect.width() * ((double)seqtime / (double)duration);
+
+      if (x < rect.left() || x > rect.right())
+        continue;
+
+      p.drawLine(QLineF(x, rect.top(), x, rect.bottom()));
+
+      // A little triangle at the top, to make the point easier to grab.
+      QPointF points[3] = {
+        QPointF(x,              rect.top()),
+        QPointF(x-handle_width, rect.top()+handle_width*1.5),
+        QPointF(x+handle_width, rect.top()+handle_width*1.5)
+      };
+
+      QBrush old_brush = p.brush();
+      p.setBrush(QBrush(color));
+      p.setPen(Qt::NoPen);
+      p.drawPolygon(points, 3);
+      p.setBrush(old_brush);
+      p.setPen(pen);
+    }
+  }
+
   void paintSeqBlockElements(QPainter &p, const QRegion &update_region, const QRectF &rect, const QRectF &rect_without_header, const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, Seqblock_Type type) const {
     if (seqblock->block==NULL)
       paintSampleGraphics(p, update_region, rect, seqtrack, seqblock, type);
     else
       paintBlockGraphics(p, rect, seqblock, type);
+
+    if (seqblock->block==NULL)
+      paint_stretchpoints(p, rect_without_header, seqblock, type);
     
     paintSelected(p, rect, seqblock, type);
     
@@ -5777,6 +5860,38 @@ float SEQBLOCK_get_x2(int seqblocknum, int seqtracknum){
   */
 
   return mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x2(seqtracknum, seqblocknum);
+}
+
+int SEQBLOCK_get_num_stretchpoints(int seqblocknum, int seqtracknum){
+  struct SeqBlock *seqblock = getGfxSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return 0;
+
+  return SEQBLOCK_STRETCHPOINTS_get_num(seqblock);
+}
+
+float SEQBLOCK_get_stretchpoint_x(int seqblocknum, int seqtracknum, int index){
+  struct SeqBlock *seqblock = getGfxSeqblockFromNum(seqblocknum, seqtracknum);
+  if (seqblock==NULL)
+    return 0.0;
+
+  int64_t seqtime;
+  int64_t sample_pos;
+
+  if (SEQBLOCK_STRETCHPOINTS_get(seqblock, index, &seqtime, &sample_pos)==false)
+    return 0.0;
+
+  const int64_t duration = seqblock->t.time2 - seqblock->t.time;
+
+  if (duration <= 0)
+    return 0.0;
+
+  const Seqblocks_widget w = g_sequencer_widget->get_seqblocks_widget(seqtracknum, true);
+
+  const double x1 = mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x1(seqtracknum, seqblocknum);
+  const double x2 = mapToEditorX(g_sequencer_widget, 0) + w.get_seqblock_x2(seqtracknum, seqblocknum);
+
+  return x1 + (x2-x1) * ((double)seqtime / (double)duration);
 }
 
 /*

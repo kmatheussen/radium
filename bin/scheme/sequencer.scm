@@ -756,6 +756,14 @@
   (let ((stretch (<ra> :get-seqblock-stretch seqblockid #t)))
     (not (= stretch 1.0))))
 
+;; Stretch factor of the part of the seqblock in front of stretch point number 'pointnum'.
+(define (get-stretchpoint-string seqblockid seqblocknum seqtracknum pointnum)
+  (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+  (define point-time (<ra> :get-seqblock-stretch-point-time seqblocknum seqtracknum pointnum))
+  (<-> "Stretch point: "
+       (two-decimal-string (<ra> :get-seqblock-stretch-at-time seqblockid (+ start-time (max 0 (1- point-time)))))
+       "X"))
+
 (define (get-fade-string value seqblocknum seqtracknum)
   (<-> (if (= value 0)
            "0.00"
@@ -1441,20 +1449,49 @@
        (define i1 (seqblock :interior-start))
        (define i2 (seqblock :interior-end))
        (define s1 (- t1 (* i1 stretch)))
-       
-       (define interior-split (to-integer (/ (- pos s1) stretch)))
+
+       (define end-time (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
+       (define points (seqblock-state-stretch-points seqblock))
+       (define seqtime-split (- pos t1))
+
+       ;; Find the position in the audio data that corresponds to 'pos'.
+       (define interior-split
+         (if (null? points)
+             (to-integer (/ (- pos s1) stretch))
+             (to-integer (get-stretchpoint-sample-pos
+                          (append (list (hash-table :seqtime 0 :sample-pos i1))
+                                  points
+                                  (list (hash-table :seqtime (- end-time t1) :sample-pos i2)))
+                          seqtime-split))))
+
        (if (<= interior-split i1)
            (return #f))
        (if (>= interior-split i2)
            (return #f))
+
+       ;; Split the stretch points between the two new seqblocks.
+       (define left-points
+         (if (null? points)
+             '()
+             (seqblock-stretch-points-filter (lambda (point) (< (point :seqtime) seqtime-split)) points)))
+
+       (define right-points
+         (if (null? points)
+             '()
+             (map (lambda (point)
+                    (copy-hash point :seqtime (to-integer (- (point :seqtime) seqtime-split))))
+                  (seqblock-stretch-points-filter (lambda (point) (> (point :seqtime) seqtime-split)) points))))
+
        (define seqblock1 (copy-hash seqblock
                                     :end-time pos
-                                    :interior-end interior-split))
+                                    :interior-end interior-split
+                                    :stretch-points left-points))
        
        (define seqblock2 (copy-hash seqblock
                                     :id -1
                                     :start-time pos
-                                    :interior-start interior-split))
+                                    :interior-start interior-split
+                                    :stretch-points right-points))
        
        (define new-seqblocks-state (append (if (= 0 seqblocknum)
                                                '()
@@ -1471,6 +1508,203 @@
                     :failure (lambda ()
                                (<ra> :cancel-gfx-seqblocks seqtracknum)))
        #t))))
+
+;; Stretch points
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; A stretch point anchors a position in the audio block to a position in the audio data.
+;; The first and the last stretch points are always the start and the end of the seqblock,
+;; and are not stored. Dragging stretch point N moves stretch point N and all following
+;; stretch points, which means that only the part of the block before stretch point N
+;; changes speed. The pitch is not changed.
+
+(define (seqblock-state-stretch-points seqblock)
+  (define points (hash-table-ref seqblock :stretch-points))
+  (if points
+      (to-list points)
+      '()))
+
+(define (seqblock-state-has-stretch-points seqblock)
+  (not (null? (seqblock-state-stretch-points seqblock))))
+
+;; Returns the seqblock state points, including the implicit first and last points.
+(define (seqblock-stretch-points-filter func points)
+  (cond ((null? points)
+         '())
+        ((func (car points))
+         (cons (car points) (seqblock-stretch-points-filter func (cdr points))))
+        (else
+         (seqblock-stretch-points-filter func (cdr points)))))
+
+(define (seqblock-stretch-points-remove-nth num points)
+  (cond ((null? points)
+         '())
+        ((= num 0)
+         (cdr points))
+        (else
+         (cons (car points) (seqblock-stretch-points-remove-nth (1- num) (cdr points))))))
+
+(define (seqblock-stretch-points-has-point-close-to? seqtime points)
+  (cond ((null? points)
+         #f)
+        ((< (abs (- seqtime ((car points) :seqtime))) 16)
+         #t)
+        (else
+         (seqblock-stretch-points-has-point-close-to? seqtime (cdr points)))))
+
+;; Note: 'points' must include the implicit first and last points.
+(define (get-stretchpoint-sample-pos points seqtime)
+  (let loop ((p1 (car points))
+             (rest (cdr points)))
+    (if (null? rest)
+        (p1 :sample-pos)
+        (let ((p2 (car rest)))
+          (if (<= seqtime (p2 :seqtime))
+              (let ((seqtime-length (- (p2 :seqtime) (p1 :seqtime))))
+                (if (<= seqtime-length 0)
+                    (p1 :sample-pos)
+                    (+ (p1 :sample-pos)
+                       (round (* (- seqtime (p1 :seqtime))
+                                 (/ (- (p2 :sample-pos) (p1 :sample-pos))
+                                    seqtime-length))))))
+              (loop p2 (cdr rest)))))))
+
+(define (get-stretchpoint-num-at-x X seqblocknum seqtracknum)
+  (define num-points (<ra> :get-num-seqblock-stretch-points seqblocknum seqtracknum))
+  (let loop ((i 1))
+    (cond ((>= i (1- num-points))
+           #f)
+          ((< (abs (- X (<ra> :get-seqblock-stretch-point-x seqblocknum seqtracknum i)))
+              (max 4 (/ (<gui> :get-system-fontheight) 3)))
+           i)
+          (else
+           (loop (1+ i))))))
+
+;; Note: Used by the popup menu.
+(define (add-seqblock-stretch-point pos seqblockid)
+  (call-with-exit
+   (lambda (return)
+     (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+     (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+
+     (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+         (return #f))
+
+     (define start-time (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+     (define end-time (<ra> :get-seqblock-end-time seqblocknum seqtracknum))
+     (define duration (- end-time start-time))
+     (define interior-start (<ra> :get-seqblock-interior-start seqblocknum seqtracknum))
+     (define interior-end (<ra> :get-seqblock-interior-end seqblocknum seqtracknum))
+
+     (if (<= duration 0)
+         (return #f))
+
+     (define seqtime (to-integer (- pos start-time)))
+
+     (if (< seqtime 0)
+         (return #f))
+
+     (if (>= seqtime duration)
+         (return #f))
+
+     ;; Can't be combined with stretch or speed automation.
+     (if (<ra> :get-seqblock-automation-enabled 5 seqblockid)
+         (return #f))
+     (if (<ra> :get-seqblock-automation-enabled 6 seqblockid)
+         (return #f))
+
+     (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
+     (define seqblock (seqblocks seqblocknum))
+
+     (define old-points (seqblock-state-stretch-points seqblock))
+     (define points (if (null? old-points)
+                        (list (hash-table :seqtime 0
+                                          :sample-pos interior-start)
+                              (hash-table :seqtime duration
+                                          :sample-pos interior-end))
+                        (append (list (hash-table :seqtime 0
+                                                  :sample-pos interior-start))
+                                old-points
+                                (list (hash-table :seqtime duration
+                                                  :sample-pos interior-end)))))
+
+     ;; Don't add a point on top of another point.
+     (if (seqblock-stretch-points-has-point-close-to? seqtime points)
+         (return #f))
+
+     (define sample-pos (to-integer (get-stretchpoint-sample-pos points seqtime)))
+
+     (define new-point
+       (hash-table :seqtime seqtime
+                   :sample-pos sample-pos))
+
+     (define new-points
+       (append (seqblock-stretch-points-filter (lambda (point) (< (point :seqtime) seqtime)) points)
+               (list new-point)
+               (seqblock-stretch-points-filter (lambda (point) (> (point :seqtime) seqtime)) points)))
+
+     ;; Remove the implicit first and last points again.
+     (set! new-points (if (> (length new-points) 2)
+                          (sublist new-points 1 (1- (length new-points)))
+                          '()))
+
+     (define new-seqblock (copy-hash seqblock :stretch-points new-points))
+
+     (set! (seqblocks seqblocknum) new-seqblock)
+
+     (try-finally :try (lambda ()
+                         (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                         (<ra> :undo-sequencer)
+                         (<ra> :apply-gfx-seqblocks seqtracknum))
+                  :failure (lambda ()
+                             (<ra> :cancel-gfx-seqblocks seqtracknum)))
+     #t)))
+
+;; Note: Used by the popup menu.
+(define (delete-seqblock-stretch-point pointnum seqblockid)
+  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+  (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
+  (define seqblock (seqblocks seqblocknum))
+  (define old-points (seqblock-state-stretch-points seqblock))
+
+  (if (or (null? old-points)
+          (< pointnum 0)
+          (>= pointnum (length old-points)))
+      #f
+      (begin
+        (define new-points (seqblock-stretch-points-remove-nth pointnum old-points))
+        (define new-seqblock (copy-hash seqblock :stretch-points new-points))
+        (set! (seqblocks seqblocknum) new-seqblock)
+
+        (try-finally :try (lambda ()
+                            (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                            (<ra> :undo-sequencer)
+                            (<ra> :apply-gfx-seqblocks seqtracknum))
+                     :failure (lambda ()
+                                (<ra> :cancel-gfx-seqblocks seqtracknum)))
+        #t)))
+
+;; Note: Used by the popup menu.
+(define (delete-all-seqblock-stretch-points seqblockid)
+  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+  (define seqblocks (<ra> :get-seqblocks-state seqtracknum))
+  (define seqblock (seqblocks seqblocknum))
+
+  (if (not (seqblock-state-has-stretch-points seqblock))
+      #f
+      (begin
+        (define new-seqblock (copy-hash seqblock :stretch-points '()))
+        (set! (seqblocks seqblocknum) new-seqblock)
+
+        (try-finally :try (lambda ()
+                            (<ra> :create-gfx-seqblocks-from-state seqblocks seqtracknum)
+                            (<ra> :undo-sequencer)
+                            (<ra> :apply-gfx-seqblocks seqtracknum))
+                     :failure (lambda ()
+                                (<ra> :cancel-gfx-seqblocks seqtracknum)))
+        #t)))
 
 (define (get-audiofile-menu-entry-text audiofile)
   (define info (<ra> :get-file-info audiofile))
@@ -2127,6 +2361,24 @@
     (lambda ()
       (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (split-seqblock pos seqblockid))))
+
+   (let ((pointnum (get-stretchpoint-num-at-x X seqblocknum seqtracknum))
+         (num-points (<ra> :get-num-seqblock-stretch-points seqblocknum seqtracknum)))
+     (list
+      (list "Add stretch point here"
+            :enabled (and seqblockid
+                          (not (<ra> :get-seqblock-automation-enabled 5 seqblockid))
+                          (not (<ra> :get-seqblock-automation-enabled 6 seqblockid)))
+            (lambda ()
+              (add-seqblock-stretch-point (round (get-sequencer-time X)) seqblockid)))
+      (list "Delete stretch point"
+            :enabled (if pointnum #t #f)
+            (lambda ()
+              (delete-seqblock-stretch-point pointnum seqblockid)))
+      (list "Delete all stretch points"
+            :enabled (> num-points 0)
+            (lambda ()
+              (delete-all-seqblock-stretch-points seqblockid)))))
    
    "---------------------"
 
