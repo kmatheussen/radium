@@ -55,15 +55,17 @@ int getScrollMultiplication(void){
     return 1;
 }
 
-bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note)
+static bool scroll_editor_down(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note, bool play_notes)
 {
 	struct WBlocks *wblock = window->wblock;
 
 	if(num_lines==0){
-          int start_realline = wblock->curr_realline;
-          int end_realline = wblock->curr_realline + 1;
-          Scroll_play_down(wblock,start_realline,end_realline, dont_play_this_note);
-          return true;
+          if (play_notes) {
+            int start_realline = wblock->curr_realline;
+            int end_realline = wblock->curr_realline + 1;
+            Scroll_play_down(wblock,start_realline,end_realline, dont_play_this_note);
+          }
+          return play_notes;
         }
         
         bool ret = false;
@@ -75,7 +77,7 @@ bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct
 		num_lines=wblock->num_reallines - wblock->curr_realline;
 	}
 
-	if(num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1){
+	if(play_notes && (num_lines/getScrollMultiplication()==1 || num_lines/getScrollMultiplication()==-1)){
           Scroll_play_down(wblock,wblock->curr_realline,wblock->curr_realline+num_lines-1, dont_play_this_note);
           ret = true;
         }
@@ -98,7 +100,7 @@ bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct
                   if (wblock->curr_realline == wblock->num_reallines-1)
                     wblock->curr_realline=0;
                   else{
-                    ScrollEditorDown(window,  wblock->num_reallines - wblock->curr_realline - 1, dont_play_this_note);
+                    scroll_editor_down(window,  wblock->num_reallines - wblock->curr_realline - 1, dont_play_this_note, play_notes);
                     return ret;
                   }
                         GE_set_curr_realline(0);
@@ -158,9 +160,14 @@ bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct
 }
 
 
-bool MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
+bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note){
+  return scroll_editor_down(window, num_lines, dont_play_this_note, true);
+}
+
+
+bool MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window, const struct Notes *dont_play_this_note, bool play_notes){
   if(!is_playing_current_block() || ATOMIC_GET(root->play_cursor_onoff)==true)
-    return ScrollEditorDown(window,g_downscroll, dont_play_this_note);
+    return scroll_editor_down(window,g_downscroll, dont_play_this_note, play_notes);
   
   return false;
 }

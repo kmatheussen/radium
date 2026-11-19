@@ -898,7 +898,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       autorepeatbutton->setChecked(doAutoRepeat());
 
-      add_notes_on_release->setChecked(doAddNotesWhenReleasingKeys());
+      polyphonic_note_input->setChecked(doPolyphonicNoteInput());
 
       range_paste_cut_button->setChecked(doRangePasteCut());
 
@@ -1639,9 +1639,9 @@ public slots:
     if (_initing==false)
       setAutoRepeat(val);
   }
-  void on_add_notes_on_release_toggled(bool val){
+  void on_polyphonic_note_input_toggled(bool val){
     if (_initing==false)
-      setAddNotesWhenReleasingKeys(val);
+      setPolyphonicNoteInput(val);
   }
   void on_range_paste_cut_button_toggled(bool val){
     if (_initing==false)

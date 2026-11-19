@@ -546,15 +546,16 @@ int NOTE_get_velocity(struct Tracks *track){
 
 static bool maybe_scroll_down(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
   if(window->curr_track_sub==-1) 
-    return MaybeScrollEditorDownAfterEditing(window, dont_play_this_note);
+    return MaybeScrollEditorDownAfterEditing(window, dont_play_this_note, true);
   else
     return false;
 }
 
-// return true if it was scroll-playing (i.e. may have played the note)
-bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float org_velocity){
+// Returns the note that was inserted or edited, or NULL if nothing was done.
+// Does not scroll the editor.
+static struct Notes *insert_note_curr_pos(struct Tracker_Windows *window, float notenum, bool polyphonic, float org_velocity){
   
-  if(notenum<0.001 || notenum>127.9) return false;
+  if(notenum<0.001 || notenum>127.9) return NULL;
 
   ADD_UNDO(Notes_CurrPos(window));
 
@@ -563,14 +564,25 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   struct Tracks  *track         = wtrack->track;
   int             curr_realline = wblock->curr_realline;
 
-  R_ASSERT_RETURN_IF_FALSE2(curr_realline >= 0 && curr_realline<wblock->num_reallines, false);
+  R_ASSERT_RETURN_IF_FALSE2(curr_realline >= 0 && curr_realline<wblock->num_reallines, NULL);
   
   int velocity = org_velocity < 0.0 ? NOTE_get_velocity(wtrack->track) : org_velocity*MAX_VELOCITY;
-    
+
+  const struct LocalZooms *realline = wblock->reallines[curr_realline];
   const Trs &trs = TRS_get(wblock, wtrack, curr_realline);
 
-  if (polyphonic==false && trs.size() > 0) {
-    const TrackRealline2 &tr2 = trs[0];
+  // TRS_get also contains notes from earlier lines that are only spread out
+  // over several lines for display purposes. Only edit an existing note if
+  // the event actually starts at the current line.
+  const TrackRealline2 *tr2_to_edit = NULL;
+  for(const TrackRealline2 &tr2 : trs)
+    if (PlaceEqual(&tr2.p, &realline->l.p)){
+      tr2_to_edit = &tr2;
+      break;
+    }
+
+  if (polyphonic==false && tr2_to_edit != NULL) {
+    const TrackRealline2 &tr2 = *tr2_to_edit;
 
     //struct Notes *note = tr2.note;
     //    R_ASSERT_RETURN_IF_FALSE2(note==NULL, false);
@@ -579,7 +591,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       case TR2_NOTE_START:
       case TR2_NOTE_END:
         {
-          R_ASSERT_RETURN_IF_FALSE2(tr2.note!=NULL, false);
+          R_ASSERT_RETURN_IF_FALSE2(tr2.note!=NULL, NULL);
           
           // lock not necessary
           if (tr2.type==TR2_NOTE_END)
@@ -594,10 +606,10 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
           }
           
           window->must_redraw=true;
-          return maybe_scroll_down(window, tr2.note);
+          return tr2.note;
         }
       case TR2_PITCH:
-        R_ASSERT_RETURN_IF_FALSE2(tr2.note!=NULL, false);
+        R_ASSERT_RETURN_IF_FALSE2(tr2.note!=NULL, NULL);
         {
           r::PitchTimeData::Writer writer(tr2.note->_pitches);
           if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
@@ -606,7 +618,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
             writer.at_ref(tr2.pitchnum)._val = notenum;
         }
         window->must_redraw=true;
-        return maybe_scroll_down(window, tr2.note);
+        return tr2.note;
       case TR2_STOP:
         // Going to replace a stop with a note.
         r::StopTimeData::Writer writer(track->stops2);
@@ -615,8 +627,6 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
     }
   }
 
-  const struct LocalZooms *realline = wblock->reallines[curr_realline];
-  
   struct Notes *note = InsertNote(
                                   wblock,wtrack,&realline->l.p,NULL,notenum,
                                   velocity,
@@ -628,10 +638,26 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   //if(wtrack->l.num==wblock->right_track && polyphonic)
   //  UpdateAllWTracksCoordinates(window,wblock);
 
+  return note;
+}
+
+// return true if it was scroll-playing (i.e. may have played the note)
+bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyphonic, float org_velocity){
+  struct Notes *note = insert_note_curr_pos(window, notenum, polyphonic, org_velocity);
+
+  if (note==NULL)
+    return false;
+
   if (!polyphonic)
     return maybe_scroll_down(window, note);
 
   return false;
+}
+
+// Does not scroll the editor. Returns the note that was inserted or edited,
+// or NULL if nothing was done.
+struct Notes *InsertNoteCurrPosNoScroll(struct Tracker_Windows *window, float notenum, bool polyphonic, float org_velocity){
+  return insert_note_curr_pos(window, notenum, polyphonic, org_velocity);
 }
 
 static void InsertStop(

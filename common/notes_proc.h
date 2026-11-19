@@ -63,6 +63,10 @@ extern LANGSPEC int NOTE_get_velocity(struct Tracks *track);
 // returns true if it may have been scroll-playing
 extern LANGSPEC bool InsertNoteCurrPos(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
 
+// Does not scroll the editor. Returns the note that was inserted or edited,
+// or NULL if nothing was done.
+extern LANGSPEC struct Notes *InsertNoteCurrPosNoScroll(struct Tracker_Windows *window,float notenum,bool polyphonic, float velocity);
+
 extern LANGSPEC void LengthenNotesTo(
                      struct Blocks *block,
                      struct Tracks *track,

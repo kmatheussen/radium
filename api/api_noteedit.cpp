@@ -251,23 +251,35 @@ void setAutoRepeat(bool doit){
 }
 
 
-static bool g_do_addNotesWhenReleasingKeys = true;
+static bool g_do_polyphonic_note_input = true;
 
-bool doAddNotesWhenReleasingKeys(void){
+bool doPolyphonicNoteInput(void){
   static bool has_inited = false;
 
-  if (has_inited==false)
-  {
-	  g_do_addNotesWhenReleasingKeys = SETTINGS_read_bool("add_notes_when_releasing_keys", true);
-	  has_inited = true;
+  if (has_inited==false){
+    // The mode was disabled by default in an earlier, unreleased version.
+    // Reset it once so existing configs get the new default (enabled).
+    if (SETTINGS_read_bool("polyphonic_note_input_has_been_reset", false)==false){
+      SETTINGS_write_bool("polyphonic_note_input", true);
+      SETTINGS_write_bool("polyphonic_note_input_has_been_reset", true);
+    }
+
+    g_do_polyphonic_note_input = SETTINGS_read_bool("polyphonic_note_input", true);
+    has_inited = true;
   }
 
-  return g_do_addNotesWhenReleasingKeys;
+  return g_do_polyphonic_note_input;
 }
 
-void setAddNotesWhenReleasingKeys(bool doit){
-  g_do_addNotesWhenReleasingKeys = doit;
-  SETTINGS_write_bool("add_notes_when_releasing_keys", doit);
+void setPolyphonicNoteInput(bool doit){
+  g_do_polyphonic_note_input = doit;
+  SETTINGS_write_bool("polyphonic_note_input", doit);
+}
+
+void switchPolyphonicNoteInputOnOff(void){
+  setPolyphonicNoteInput(!doPolyphonicNoteInput());
+
+  GFX_SetStatusBar(doPolyphonicNoteInput() ? "Polyphonic mode On" : "Polyphonic mode Off");
 }
 
 

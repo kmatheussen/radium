@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_proc.h"
 
 #include "nsmtracker.h"
+#include "../api/api_keyplayedit_proc.h"
 #include "../common/TimeData.hpp"
 
 #include "../common/list_proc.h"
@@ -84,8 +85,17 @@ DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
 extern const char *NotesTexts3[131];
 
 
+namespace {
+
+struct StepRecordingMidiMsg{
+  uint32_t msg;
+  bool polyphonic;
+};
+
+} // anonymous namespace
+
 // Allocate since static variables are not good for the GC.
-static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<uint32_t, boost::lockfree::capacity<512> > ;
+static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<StepRecordingMidiMsg, boost::lockfree::capacity<2048> > ;
 
 
 static radium::Mutex g_midi_learns_mutex;
@@ -1210,9 +1220,13 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
 		
 	} else {
 		
-		if(msg_is_note_on(msg))
+		if(msg_is_note_on(msg) || msg_is_note_off(msg))
 		{
-			if (!g_step_recording_midi_msg_queue->bounded_push(msg))
+			StepRecordingMidiMsg step_msg;
+			step_msg.msg = msg;
+			step_msg.polyphonic = shiftPressed();
+
+			if (!g_step_recording_midi_msg_queue->bounded_push(step_msg))
 			{
 #if !defined(RELEASE)
 				printf("Playing to fast. Skipping note-msg %u from MIDI input.\n", msg); // don't want to print in realtime thread
@@ -1240,11 +1254,11 @@ void MIDI_HandleInputMessage(void)
 	int num_messages = 0;
 	const int max_num_messages = 128;
 	
-	std::vector<uint32_t> messages;
+	std::vector<StepRecordingMidiMsg> messages;
 
 	auto pull_more_data = [&num_messages, &messages](void)
 		{
-			uint32_t msg;
+			StepRecordingMidiMsg msg;
 	
 			while(num_messages < max_num_messages && g_step_recording_midi_msg_queue->pop(msg)==true)
 			{
@@ -1257,23 +1271,34 @@ void MIDI_HandleInputMessage(void)
 	
 	while(!messages.empty())
 	{
-		std::vector<uint32_t> messages2 = std::move(messages);
+		std::vector<StepRecordingMidiMsg> messages2 = std::move(messages);
 		messages.clear();
 
-		for(uint32_t msg : messages2)
+		for(const StepRecordingMidiMsg &step_msg : messages2)
 			if(ATOMIC_GET(root->editonoff))
 			{
-				float velocity = -1.0f;
+				struct Tracker_Windows *window = root->song->tracker_windows;
+				const int notenum = MIDI_msg_byte2(step_msg.msg);
+
+				if (msg_is_note_on(step_msg.msg)){
+
+					float velocity = -1.0f;
 				
-				if (g_record_velocity)
-					velocity = (float)MIDI_msg_byte3(msg) / 127.0;
-				
-				//printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
-				InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
+					if (g_record_velocity)
+						velocity = (float)MIDI_msg_byte3(step_msg.msg) / 127.0;
+
+					NoteInput_note_on(NOTEINPUT_MIDI, window, notenum, velocity, step_msg.polyphonic, false);
+
+				} else if (msg_is_note_off(step_msg.msg)){
+
+					NoteInput_note_off(NOTEINPUT_MIDI, window, notenum);
+
+				}
 
 				pull_more_data();
 				
-				root->song->tracker_windows->must_redraw = true;
+				if (window != NULL)
+					window->must_redraw = true;
 			}
 	}
 }
