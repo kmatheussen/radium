@@ -23,7 +23,6 @@ extern QMenuBar *g_main_menu_bar;
 extern QMenuBar *g_main_menu_bar_right; // Second menu bar, used to place menus to the right of the notch when the window is full screen on a mac with a notch.
 
 void initMenues(QMenuBar *base_menu);
-void init_recent_menu(void); // Call after all main menus have been set up.
 void GFX_AddMenuMenu(const char *name, QMenu *mymenu);
 void GFX_SetMenuFontsAgain(void);
 

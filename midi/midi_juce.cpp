@@ -59,8 +59,23 @@ struct MidiInputPortOs : juce::MidiInputCallback{
   {
 
 #if !defined(RELEASE)
-    if (g_t_current_thread_is_RT==R_UNINITIALIZED)
-      g_t_current_thread_is_RT=R_IS_RT;
+    // This thread is shared between MIDI message delivery and ALSA sequencer
+    // housekeeping (port announcements etc.). The housekeeping posts
+    // AsyncUpdater messages to the JUCE message queue, which allocates memory
+    // in JUCE. Mark the thread as RT only while executing Radium's MIDI
+    // callback, so those JUCE-internal allocations are not reported as RT
+    // allocations by the ASAN malloc/free hooks in Qt_Main.cpp.
+    const enum R_thread_is_RT thread_is_RT_before = g_t_current_thread_is_RT;
+    g_t_current_thread_is_RT = R_IS_RT;
+
+    struct RestoreThreadIsRT{
+      enum R_thread_is_RT thread_is_RT_before;
+      ~RestoreThreadIsRT(){
+        g_t_current_thread_is_RT = thread_is_RT_before;
+      }
+    } restore_thread_is_RT = {thread_is_RT_before};
+
+    (void)restore_thread_is_RT;
 #endif
     
     /*

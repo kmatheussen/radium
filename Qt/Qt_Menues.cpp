@@ -22,9 +22,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTimer>
 
 #include "../common/nsmtracker.h"
-#include "../common/settings_proc.h"
-#include "../common/disk_load_proc.h"
-#include "../api/api_common_proc.h"
 #include "EditorWidget.h"
 #include "Timer.hpp"
 
@@ -39,84 +36,6 @@ extern QApplication *qapplication;
 
 QMenuBar *g_main_menu_bar = NULL;
 QMenuBar *g_main_menu_bar_right = NULL;
-
-static QMenu *g_first_menu = NULL;
-
-static QMenu *g_recent_menu = nullptr;
-
-static void populate_recent_menu(void)
-{
-  if (g_recent_menu == nullptr)
-    return;
-
-  g_recent_menu->clear();
-
-  bool has_items = false;
-  for (int i = 0; i < 30; i++)
-  {
-    char key[64];
-    snprintf(key, sizeof(key), "recent_song_%d", i);
-    const char *filename = SETTINGS_read_string(key, "");
-    if (filename == nullptr || strlen(filename) == 0)
-      break;
-
-    has_items = true;
-    QAction *action = g_recent_menu->addAction(QString::fromUtf8(filename));
-    action->setData(QString::fromUtf8(filename));
-  }
-
-  if (!has_items)
-  {
-    QAction *action = g_recent_menu->addAction("(no recent files)");
-    action->setEnabled(false);
-  }
-}
-
-static void find_and_setup_recent_menu(QMenu *parent)
-{
-  for (QAction *action : parent->actions())
-  {
-    if (action->text() == "Recent-main-menu-99992222")
-    {
-      QMenu *menu = action->menu();
-      if (menu != nullptr)
-      {
-        action->setText("Recent");
-        g_recent_menu = menu;
-        g_recent_menu->clear();
-
-        QObject::connect(g_recent_menu, &QMenu::aboutToShow, []()
-        {
-			populate_recent_menu();
-        });
-
-        QObject::connect(g_recent_menu, &QMenu::triggered, [](QAction *action)
-        {
-          QString filename = action->data().toString();
-          if (!filename.isEmpty())
-          {
-            GFX_call_when_menus_are_closed([filename]
-            {
-              LoadSong_CurrPos(getWindowFromNum(-1), make_filepath(STRING_create(filename.toUtf8().constData())));
-            });
-          }
-        });
-
-        return;
-      }
-    }
-
-    QMenu *submenu = action->menu();
-    if (submenu != nullptr)
-      find_and_setup_recent_menu(submenu);
-  }
-}
-
-void init_recent_menu(void)
-{
-  if (g_first_menu != nullptr)
-	  find_and_setup_recent_menu(g_first_menu);
-}
 
 namespace{
 
@@ -337,9 +256,6 @@ static void add_menu_menu(const char *name, QMenu *mymenu, bool fixed_size_font)
   menu->up = current_menu;
   menu->menu = mymenu;
   
-  if (g_first_menu==NULL)
-    g_first_menu = menu->menu;
-
   //QFont sansFont("Liberation Mono", 8);
   //QFont sansFont("DejaVu Sans Mono", 7);
   //QFont sansFont("Nimbus Mono L", 9);

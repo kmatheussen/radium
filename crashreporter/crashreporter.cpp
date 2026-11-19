@@ -85,6 +85,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if !defined(CRASHREPORTER_BIN)
 static const char *g_no_plugin_name = "<noplugin>";
 static DEFINE_ATOMIC(bool, g_dont_report) = false;
+
+// Set by CRASHREPORTER_init() when running with RADIUM_TEST_NO_CRASH_DIALOG.
+// Used by test runs (radium_test.sh runs on an invisible Xvfb display): the
+// report, including the backtrace, is written to stderr (the test log) instead
+// of starting the crash reporter GUI, which would wait for a user who is not
+// there.
+static bool g_no_crash_dialog [[maybe_unused]] = false;
 #endif
 
 #define NOPLUGINNAMES "<nopluginnames>"
@@ -964,6 +971,15 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   if (ATOMIC_GET(g_dont_report))
     return;
 
+  if (g_no_crash_dialog) {
+    fprintf(stderr, "************** CRASH REPORT (RADIUM_TEST_NO_CRASH_DIALOG) **************\n");
+    fprintf(stderr, "%s\n", additional_information);
+    for (int i = 0; i < num_messages; i++)
+      fprintf(stderr, "%d: %s\n", i, messages[i]);
+    fflush(stderr);
+    return;
+  }
+
   QString plugin_names = get_plugin_names();
   
   QString tosend = QString(additional_information) + "\n\n";
@@ -1294,6 +1310,8 @@ void CRASHREPORTER_close(void){
 void CRASHREPORTER_init(void){
 
   init_log();
+
+  g_no_crash_dialog = getenv("RADIUM_TEST_NO_CRASH_DIALOG") != NULL;
   
 #if defined(FOR_WINDOWS)
   CRASHREPORTER_windows_init();
@@ -1308,7 +1326,7 @@ void CRASHREPORTER_init(void){
 
 #endif
 
-  mysleep(1000);
+  //mysleep(1000);
 }
 
 

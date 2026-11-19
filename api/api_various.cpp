@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic pop
 //#include <QLinkedList>
 #include <QThread>
+#include <QTimer>
+#include <QCoreApplication>
 #include <QUuid>
 #include <QClipboard>
 
@@ -762,9 +764,17 @@ void toggleInstrumentWidgetOnly(void){
 }
 #endif
 
+bool instrumentWindowIsVisible(void){
+  return GFX_InstrumentWindowIsVisible();
+}
+
 void showHidePlaylist(int windownum){  
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_showHidePlaylist(window);
+}
+
+bool playlistWindowIsVisible(void){
+  return GFX_PlaylistWindowIsVisible();
 }
 
 void showHideMixerStrip(int windownum){  
@@ -791,6 +801,29 @@ void showMenuBar(int windownum){
   if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_ShowMenu(window);
+}
+
+bool mainMenuBarIsEnabled(void){
+  return SETTINGS_read_bool("show_main_menu_bar", false);
+}
+
+// Toggles the same setting as the "Show main menu bar" checkbox in
+// Preferences -> Gui.
+void showHideMainMenuBar(void){
+  bool enable = !mainMenuBarIsEnabled();
+
+  SETTINGS_write_bool("show_main_menu_bar", enable);
+
+  // This function is called from a menu entry in the menu bar itself, or from
+  // the entry in the hamburger popup when the menu bar is hidden. Showing or
+  // hiding the menu bar from inside that callback is not safe, so let the menu
+  // close first.
+  QTimer::singleShot(0, QCoreApplication::instance(), [enable]{
+    if (enable)
+      GFX_ShowMenu(NULL);
+    else
+      GFX_HideMenu(NULL);
+  });
 }
 
 

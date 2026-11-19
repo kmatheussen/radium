@@ -21,6 +21,12 @@
 #              before building and when (re)vendoring the tarball.
 #   install_dirs  Space-separated subdirectories (e.g. examples) copied next
 #              to the installed library.
+#   headers    Space-separated files copied next to the installed library.
+#              Each name is taken from the extracted source tree if present,
+#              otherwise from the libpd source tree (e.g. m_pd.h, needed by
+#              externals that compile code at runtime).
+#   platforms  Space-separated target OS names (Linux, Darwin, Windows) the
+#              library is built for. Empty means every platform.
 #   cppflags   Extra preprocessor flags (PD2_CPPFLAGS).
 #   cflags     Extra C compiler flags (PD2_CFLAGS).
 #   author     Author credit shown in the Help menu's "List of included Pd
@@ -246,6 +252,34 @@ ref_type = tag
 tag_glob = v*
 ref = v0.2.1
 url = https://github.com/pd-externals/hcs/archive/refs/tags/%ref%.tar.gz
+
+# k_cext compiles the C code written in its object boxes with the system C
+# compiler when an object is created, and dlopen()s the result. The Pd2
+# instrument therefore needs a working C compiler on the user's machine
+# (cc/gcc on Linux, the Xcode command line tools on macOS). The generated
+# code #includes m_pd.h, which is copied from the libpd source tree next to
+# the installed binary. The original 2003 Makefile is replaced by a
+# pd-lib-builder one, and k_cext_unix.c is patched to find its headers through
+# dladdr() at runtime. k_cext_win.c compiles with cl.exe and needs Pd's import
+# libraries at runtime, so k_cext is not built for Windows.
+[k_cext]
+tarball = k_cext-92b329a85e45.tar.gz
+srcdir = k_cext-92b329a85e45192fbadf9979f376cdb3a040324f
+flags = --install
+args =
+patches = k_cext-radium-build.patch k_cext-radium-runtime.patch k_cext-radium-help.patch
+exclude = CVS help-k_cfunc.pd
+headers = m_pd.h
+platforms = Linux Darwin
+cppflags = -D_GNU_SOURCE
+author = Kjetil S. Matheussen (Windows port by Olaf Matthes; contributors Thomas Grill, Tim Blechmann)
+copyright = 2002-2013 Kjetil S. Matheussen
+license = GPL-2.0-or-later; k_cext.h LGPL-2.1-or-later
+upstream = https://github.com/kmatheussen/k_cext
+ref_type = branch
+branch = master
+ref = 92b329a85e45192fbadf9979f376cdb3a040324f
+url = https://github.com/kmatheussen/k_cext/archive/%ref%.tar.gz
 
 [ggee]
 tarball = ggee-v0.28.tar.gz

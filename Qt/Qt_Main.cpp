@@ -530,7 +530,7 @@ void __sanitizer_free_hook(const volatile void *ptr){
     handle_RT_malloc_free_error(false, "Current thread is runner thread", true);
   
   if (g_t_current_thread_is_RT==R_IS_RT)
-    handle_RT_malloc_free_error(true, "Current thread is RT");
+    handle_RT_malloc_free_error(false, "Current thread is RT");
 
 #if DEBUG_MEMORY_ALLOC_MORE
   handle_RT_malloc_free(false, (void*)ptr, 0);
@@ -4343,6 +4343,12 @@ int radium_main(const char *arg){
           g_mixerstripparent->setLayout(g_mixerstriplayout);
 
           addWidget(g_mixerstripparent);
+
+          // There is no strip yet. An empty container should not take up any
+          // space, and a hidden splitter child is guaranteed to get zero
+          // width. update_mixer_strip_parent() shows it again when a strip is
+          // added.
+          g_mixerstripparent->hide();
         }
       };
       
@@ -4446,7 +4452,6 @@ int radium_main(const char *arg){
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
     
-  init_recent_menu();
   //getchar();
 
 

@@ -243,16 +243,14 @@
            'stopped)))
 
   (define (block-current-statusbar-text)
-    (list #t
-          (cond ((<ra> :is-playing-block) "Pause block")
-                ((<ra> :is-paused-block) "Continue block")
-                (else "Play block from current position"))))
+    (cond ((<ra> :is-playing-block) "Pause block")
+          ((<ra> :is-paused-block) "Continue block")
+          (else "Play block from current position")))
 
   (define (song-current-statusbar-text)
-    (list #t
-          (cond ((<ra> :is-playing-song) "Pause song")
-                ((<ra> :is-paused-song) "Continue song")
-                (else "Play Song from current position"))))
+    (cond ((<ra> :is-playing-song) "Pause song")
+          ((<ra> :is-paused-song) "Continue song")
+          (else "Play Song from current position")))
 
   (define (click kind)
     (cond ((eq? kind 'stop)
@@ -301,19 +299,19 @@
 
   (create-button (get-x1 0) (get-y1 0) (get-x2 0) (+ (get-y2 0) play-button-y2-extra)
                  'block-start
-                 (list #t "Play block from start"))
+                 "Play block from start")
   (create-button (get-x1 1) (get-y1 0) (get-x2 1) (+ (get-y2 0) play-button-y2-extra)
                  'block-current
                  block-current-statusbar-text)
   (create-button (get-x1 0) (get-y1 1) (get-x2 0) (+ (get-y2 1) play-button-y2-extra)
                  'song-start
-                 (list #t "Play Song from start"))
+                 "Play Song from start")
   (create-button (get-x1 1) (get-y1 1) (get-x2 1) (+ (get-y2 1) play-button-y2-extra)
                  'song-current
                  song-current-statusbar-text)
   (create-button stop-x1 (get-y1 2) stop-x2 (get-y2 2)
                  'stop
-                 (list #t "Stop"))
+                 "Stop")
 
   ;; The buttons consume their own right-clicks, so this handler is only
   ;; reached when the right-click is in an empty part of the bar.

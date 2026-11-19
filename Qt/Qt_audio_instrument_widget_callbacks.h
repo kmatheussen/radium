@@ -24,6 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
+#include <algorithm>
+
+#include <QTimer>
+
 #include "Qt_MyQScrollBar.hpp"
 
 /*
@@ -607,6 +611,38 @@ public:
       _comp_widget->calledRegularlyByParent();
   }
 
+  void adjust_height_to_fit_content(void){
+    // Only the normal small instrument widget is auto-sized. Half/Full mode
+    // and the mixer set the height explicitly.
+    if (_size_type != SIZETYPE_NORMAL || instrumentInMixer())
+      return;
+
+    QScrollBar *scrollbar = scrollArea->verticalScrollBar();
+
+    // maximum() is the number of pixels the content overflows the viewport.
+    // Adding it to the current height makes all content fit in one step.
+    if (!scrollbar->isVisible() || scrollbar->maximum() <= 0)
+      return;
+
+    const int curr_height = height();
+    if (curr_height <= 0)
+      return;
+
+    int new_minimum_height = curr_height + scrollbar->maximum() + 1;
+
+    const int max_height = window()->height();
+    if (max_height > 0 && new_minimum_height > max_height)
+      new_minimum_height = max_height;
+
+    if (new_minimum_height <= minimumHeight())
+      return;
+
+    printf("  **UP** MINIMIZING UP to %d\n", new_minimum_height);
+    setMinimumHeight(new_minimum_height);
+    time_of_last_minheight_inc.restart();
+    number_of_minheight_incs++;
+  }
+
   void calledRegularlyByParent(void){
     
     //printf("hello %p\n", this);
@@ -614,25 +650,7 @@ public:
     if (_size_type == SIZETYPE_HALF && !instrumentInMixer())
       set_half_height();
     
-    int curr_minimum_height = minimumHeight();
-    
-    bool is_visible = scrollArea->verticalScrollBar()->isVisible();
-    
-    if (is_visible) {
-
-      printf("  **UP** MINIMIZING UP to %d\n", curr_minimum_height+5);
-      setMinimumHeight(curr_minimum_height+5);
-      time_of_last_minheight_inc.restart();
-      number_of_minheight_incs++;
-      
-    } else if (_size_type != SIZETYPE_HALF && curr_minimum_height > 5){
-
-      if (time_of_last_minheight_inc.elapsed() > 1000 && number_of_minheight_incs < 3) { // Wait at least 1 second before trying to lower it again. If not, it won't stabilize. (might not stabilize now either though, but it won't be that visible now)
-        printf("  **DOWN** MINIMIZING DOWN to %d\n", curr_minimum_height-5);
-        setMinimumHeight(curr_minimum_height-5);
-        number_of_minheight_incs = 0;
-      }
-    }
+    adjust_height_to_fit_content();
   }
 
   void callSystemSliderpainterUpdateCallbacks(void){
@@ -1045,6 +1063,8 @@ private:
 
   QVector<QWidget*> hidden_widgets;
   int height_before_large;
+  int minimum_height_before_large = -1;
+  bool _is_hiding = false;
 
   void set_half_height(void){
     setFixedHeight(g_main_window->height() / 2);
@@ -1061,6 +1081,12 @@ private:
       hidden_widgets.clear();
 
       height_before_large = height();
+
+      // Remember the normal-mode minimum height, so we can go straight back
+      // to it when leaving Half/Full mode. Do not overwrite a valid stored
+      // value with the temporary minimum used while the widget is hidden.
+      if (minimum_height_before_large <= 0 || minimumHeight() > 10)
+        minimum_height_before_large = minimumHeight();
       
       for (int i = 0; i < effects_layout->count(); ++i){
         QWidget *widget = effects_layout->itemAt(i)->widget();
@@ -1129,8 +1155,13 @@ private:
       MW_instrument_widget_set_size(this, _size_type, SIZETYPE_NORMAL);
     
     _size_type = SIZETYPE_NORMAL;
-    
-    setMinimumHeight(10);
+
+    if (!_is_hiding && minimum_height_before_large > 0) {
+      setMinimumHeight(minimum_height_before_large);
+      minimum_height_before_large = -1;
+    } else {
+      setMinimumHeight(10);
+    }
     setMaximumHeight(16777214);
     //resize(width(), height_before_large);
     
@@ -1252,7 +1283,9 @@ public:
       // kept so that half/full mode is entered the next time the widget is
       // shown.
       _patch->widget_height_type = _size_type;
+      _is_hiding = true;
       change_height(SIZETYPE_NORMAL);
+      _is_hiding = false;
       //show_small();  // If not, all instrument widgets will have large height.
     }
   }
@@ -1275,6 +1308,13 @@ public:
       change_height(restore_type);
     else if (!instrumentInMixer())
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
+
+    // Start the height auto-fit immediately instead of waiting for the next
+    // Instruments_widget timer tick. Defer it so the layout has been updated.
+    QTimer::singleShot(0, this, [this]{
+      if (isVisible())
+        adjust_height_to_fit_content();
+    });
 
     //      show_large();
   }

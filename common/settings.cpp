@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextStream>
 #include <QCoreApplication>
 #include <QTemporaryFile>
+#include <QDateTime>
 
 #include "nsmtracker.h"
 #include "vector_proc.h"
@@ -601,8 +602,13 @@ void SETTINGS_add_recent_song(const char *filename)
 
 	const int max_recent = 30;
 
+	struct RecentSong {
+		QString filename;
+		int64_t timestamp;
+	};
+
 	// Read existing recent entries
-	const char *existing[max_recent];
+	RecentSong existing[max_recent];
 	int num_existing = 0;
 
 	for (int i = 0; i < max_recent; i++)
@@ -612,20 +618,25 @@ void SETTINGS_add_recent_song(const char *filename)
 		const char *val = SETTINGS_read_string(key, "");
 		if (val != NULL && strlen(val) > 0)
 		{
-			existing[num_existing] = val;
+			char time_key[64];
+			snprintf(time_key, sizeof(time_key), "recent_song_time_%d", i);
+
+			existing[num_existing].filename = QString::fromUtf8(val);
+			existing[num_existing].timestamp = SETTINGS_read_int(time_key, 0);
 			num_existing++;
 		}
 	}
 
 	// Build new list: filename first, then existing entries (deduplicated)
-	const char *new_list[max_recent];
+	const QString new_filename = QString::fromUtf8(filename);
+	RecentSong new_list[max_recent];
 	int num_new = 0;
 
-	new_list[num_new++] = filename;
+	new_list[num_new++] = RecentSong{new_filename, QDateTime::currentSecsSinceEpoch()};
 
 	for (int i = 0; i < num_existing && num_new < max_recent; i++)
 	{
-		if (strcmp(existing[i], filename) != 0)
+		if (existing[i].filename != new_filename)
 		{
 			new_list[num_new++] = existing[i];
 		}
@@ -635,12 +646,17 @@ void SETTINGS_add_recent_song(const char *filename)
 	for (int i = 0; i < max_recent; i++)
 	{
 		char key[64];
+		char time_key[64];
 		snprintf(key, sizeof(key), "recent_song_%d", i);
+		snprintf(time_key, sizeof(time_key), "recent_song_time_%d", i);
 
-		if (i < num_new)
-			SETTINGS_write_string(key, new_list[i]);
-		else
+		if (i < num_new) {
+			SETTINGS_write_string(key, new_list[i].filename);
+			SETTINGS_write_int(time_key, new_list[i].timestamp);
+		} else {
 			SETTINGS_remove(key);
+			SETTINGS_remove(time_key);
+		}
 	}
 }
 

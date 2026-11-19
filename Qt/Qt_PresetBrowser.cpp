@@ -511,6 +511,10 @@ void showHidePresetBrowser(void){
   }
 }
 
+bool presetBrowserIsVisible(void){
+  return g_presetbrowser_widget_frame != nullptr && g_presetbrowser_widget_frame->isVisible();
+}
+
 void deletePresetBrowserInstrument(void){
   if (g_presetbrowser_widget) {
     dynamic_cast<PresetBrowser *>(g_presetbrowser_widget)->deletePresetDemoInstrument();
