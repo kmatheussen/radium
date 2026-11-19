@@ -65,6 +65,7 @@ struct MidiLearn{
 
   DEFINE_ATOMIC(bool, is_enabled);
   DEFINE_ATOMIC(bool, is_incremental);
+  DEFINE_ATOMIC(double, incremental_speed); // negative means inverted direction
 
 private:
   
@@ -73,7 +74,7 @@ private:
   DEFINE_ATOMIC(int, byte1);
   DEFINE_ATOMIC(int, byte2);
 
-  DEFINE_ATOMIC(int, last_value); // used in incremental mode
+  DEFINE_ATOMIC(double, last_value); // used in incremental mode
   
 public:
 
@@ -85,12 +86,13 @@ public:
     ATOMIC_SET(is_enabled, true);
     ATOMIC_SET(is_learning, true);
     ATOMIC_SET(is_incremental, false);
+    ATOMIC_DOUBLE_SET(incremental_speed, 1.0);
 
     ATOMIC_SET(port_name, NULL);
     ATOMIC_SET(byte1, 0);
     ATOMIC_SET(byte2, 0);
 
-    ATOMIC_SET(last_value, -1);
+    ATOMIC_DOUBLE_SET(last_value, -1.0);
   }
 
   virtual ~MidiLearn() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor

@@ -10,6 +10,9 @@
 #include <QDialogButtonBox>
 #include <QPainter>
 #include <QLabel>
+#include <QSlider>
+#include <QGuiApplication>
+#include <QScreen>
 
 #include "../common/nsmtracker.h"
 
@@ -41,6 +44,9 @@ struct MidiLearnItem : public QWidget {
   QCheckBox *enabled;
   QPushButton *delete_button;
   QCheckBox *incremental;
+  QLabel *speed_label;
+  QSlider *speed_slider;
+  QLabel *speed_value_label;
 
 public:
 
@@ -63,9 +69,30 @@ public:
     connect(delete_button, SIGNAL(released()), this, SLOT(delete_released()));
 
     incremental = new QCheckBox("Incremental mode", this);
-    incremental->setChecked(false);
+    incremental->setChecked(ATOMIC_GET(midi_learn->is_incremental));
     layout->addWidget(incremental, 0);
     connect(incremental, SIGNAL(toggled(bool)), this, SLOT(incremental_toggled(bool)));
+
+    speed_label = new QLabel("Speed:", this);
+    layout->addWidget(speed_label, 0);
+
+    speed_slider = new QSlider(Qt::Horizontal, this);
+    speed_slider->setRange(-100, 100); // -10x to +10x, in 0.1 steps
+    speed_slider->setSingleStep(1);
+    speed_slider->setPageStep(10);
+    speed_slider->setTickPosition(QSlider::TicksBelow);
+    speed_slider->setTickInterval(50);
+    speed_slider->setMinimumWidth(80);
+    speed_slider->setValue(qBound(-100, qRound(ATOMIC_DOUBLE_GET(midi_learn->incremental_speed) * 10.0), 100));
+    layout->addWidget(speed_slider, 0);
+    connect(speed_slider, SIGNAL(valueChanged(int)), this, SLOT(speed_changed(int)));
+
+    speed_value_label = new QLabel("", this);
+    speed_value_label->setMinimumWidth(50);
+    layout->addWidget(speed_value_label, 0);
+
+    update_speed_label();
+    update_incremental_controls_visibility(ATOMIC_GET(midi_learn->is_incremental));
 
     source = new QLabel("", this);
     dest = new QLabel("", this);
@@ -81,6 +108,22 @@ public:
   void update_gui(){
     source->setText(midi_learn->get_source_info() + " => ");
     dest->setText(midi_learn->get_dest_info());
+    incremental->setChecked(ATOMIC_GET(midi_learn->is_incremental));
+  }
+
+  void update_speed_label(void){
+    const double speed = speed_slider->value() / 10.0;
+    QString text = QString::number(speed, 'f', 1) + "x";
+    if (speed > 0.0)
+      text = "+" + text;
+    speed_value_label->setText(text);
+  }
+
+  void update_incremental_controls_visibility(bool is_incremental){
+    speed_label->setVisible(is_incremental);
+    speed_slider->setVisible(is_incremental);
+    speed_value_label->setVisible(is_incremental);
+    emit incremental_controls_visibility_changed();
   }
 
   void update_midi_learn_gui_things(void){
@@ -88,6 +131,9 @@ public:
     SEQUENCER_update(SEQUPDATE_HEADERS);
   }
   
+signals:
+  void incremental_controls_visibility_changed(void);
+
 public slots:
 
   void enabled_toggled(bool val){
@@ -101,7 +147,13 @@ public slots:
 
   void incremental_toggled(bool val){
     ATOMIC_SET(midi_learn->is_incremental, val);
+    update_incremental_controls_visibility(val);
     update_midi_learn_gui_things();
+  }
+
+  void speed_changed(int val){
+    ATOMIC_DOUBLE_SET(midi_learn->incremental_speed, val / 10.0);
+    update_speed_label();
   }
   
 };
@@ -133,6 +185,80 @@ class MidiLearnPrefs : public RememberGeometryQDialog {
   };
 
   MyTimer timer;
+
+  void ensure_content_is_visible(void){
+    QScreen *screen = g_main_window != NULL ? g_main_window->screen() : QGuiApplication::primaryScreen();
+    if (screen == NULL)
+      return;
+
+    const QRect available = screen->availableGeometry();
+    const int max_width = R_MAX(400, available.width() - 20);
+    const int max_height = R_MAX(200, available.height() - 20);
+
+    // The scroll area's default width hint is too small to show the
+    // "source => destination" text for an item. Calculate the width needed by
+    // the widest item instead.
+    int wanted_width = 0;
+    for (auto *item : items)
+      wanted_width = R_MAX(wanted_width, item->sizeHint().width());
+
+    if (wanted_width > 0) {
+      wanted_width += vertical_scroll->verticalScrollBar()->sizeHint().width();
+      wanted_width += main_layout->contentsMargins().left() + main_layout->contentsMargins().right();
+      wanted_width += 4; // Scroll area border.
+    }
+
+    wanted_width = R_MIN(wanted_width, max_width);
+
+    // Grow the width first, so the height calculation doesn't include a
+    // horizontal scrollbar which will not be needed.
+    if (wanted_width > width())
+      resize(wanted_width, height());
+
+    main_layout->activate();
+
+    QWidget *contents = vertical_scroll->getWidget();
+    if (contents->layout() != NULL)
+      contents->layout()->activate();
+
+    // QScrollArea caches its size hint, so adding or removing items doesn't
+    // necessarily update the height returned by sizeHint(). Set the scroll
+    // area's minimum height to the height of all items while calculating the
+    // dialog size, then reset it so the scroll bar can still be used when
+    // there are too many items to fit on screen.
+    const int old_minimum_height = vertical_scroll->minimumHeight();
+    const int content_height = contents->layout() != NULL ? contents->layout()->sizeHint().height() : contents->sizeHint().height();
+    vertical_scroll->setMinimumHeight(R_MIN(content_height + 4, max_height));
+    main_layout->activate();
+
+    QSize wanted = sizeHint();
+
+    vertical_scroll->setMinimumHeight(old_minimum_height);
+
+    wanted.setWidth(R_MAX(wanted.width(), wanted_width));
+    wanted.setHeight(R_MAX(wanted.height(), height()));
+    wanted.setWidth(R_MIN(wanted.width(), max_width));
+    wanted.setHeight(R_MIN(wanted.height(), max_height));
+
+    // Never shrink a window the user has made larger.
+    wanted = QSize(R_MAX(wanted.width(), width()), R_MAX(wanted.height(), height()));
+
+    // If the window is (or becomes) bigger than the available screen area, move
+    // it so the content stays visible.
+    const QPoint pos = this->pos();
+    int x = R_MAX(pos.x(), available.left());
+    int y = R_MAX(pos.y(), available.top());
+    if (x + wanted.width() - 1 > available.right())
+      x = R_MAX(available.left(), available.right() - wanted.width() + 1);
+    if (y + wanted.height() - 1 > available.bottom())
+      y = R_MAX(available.top(), available.bottom() - wanted.height() + 1);
+
+    if (wanted != size())
+      resize(wanted);
+
+    if (x != pos.x() || y != pos.y())
+      move(x, y);
+  }
   
 public:
   MidiLearnPrefs(QWidget *parent=NULL)
@@ -157,10 +283,26 @@ public:
     timer.start();
   }
 
+  void setVisible(bool visible) override {
+    RememberGeometryQDialog::setVisible(visible);
+
+    if (visible) {
+      ensure_content_is_visible();
+
+      if (remember_geometry.has_stored_geometry == false)
+        moveWindowToCentre(this);
+    }
+  }
+
   void add(radium::MidiLearn *midi_learn){
     auto *gakk = new MidiLearnItem(midi_learn);
+    connect(gakk, SIGNAL(incremental_controls_visibility_changed()), this, SLOT(on_incremental_controls_visibility_changed()));
     items.push_back(gakk);
     vertical_scroll->addWidget(gakk);
+    gakk->show(); // The new item is hidden until shown, and hidden items are not included when calculating the layout size.
+
+    if (isVisible())
+      ensure_content_is_visible();
   }
   
   void remove(radium::MidiLearn *midi_learn){
@@ -177,11 +319,19 @@ public:
     items.remove(item);
 
     delete item;
+
+    if (isVisible())
+      ensure_content_is_visible();
   }
 
 public slots:
   void on_button_box_clicked(QAbstractButton *button){
     hide();
+  }
+
+  void on_incremental_controls_visibility_changed(void){
+    if (isVisible())
+      ensure_content_is_visible();
   }
 };
 
