@@ -75,11 +75,6 @@
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
-            <property name="font">
-             <font>
-              <bold>false</bold>
-             </font>
-            </property>
             <property name="text">
              <string>Number of CPUs:</string>
             </property>
@@ -121,11 +116,6 @@
               <width>50</width>
               <height>0</height>
              </size>
-            </property>
-            <property name="font">
-             <font>
-              <bold>false</bold>
-             </font>
             </property>
             <property name="toolTip">
              <string>Number of CPUs used for audio processing</string>
