@@ -10,6 +10,7 @@
 
 #include "../common/nsmtracker.h"
 #include "../api/api_gui_proc.h"
+#include "../midi/mcu_proc.h"
 
 #include "Qt_Bs_edit_proc.h"
 
@@ -160,6 +161,8 @@ void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
 		
 	for(auto *frame : g_keyboard_focus_frames[(int)type])
 		frame->set_focus(has_focus);
+
+	MCU_set_sequencer_has_focus(FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER));
 
 	//printf("Set focus/END. Right type? %d\n", type==radium::KeyboardFocusFrameType::EDITOR);
 }

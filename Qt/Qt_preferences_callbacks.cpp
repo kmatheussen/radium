@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <gc.h>
 
 #include <QPushButton>
+#include <QCheckBox>
 #include <QColorDialog>
 #include <QCloseEvent>
 #include <QHideEvent>
@@ -408,26 +409,50 @@ public:
     : QWidget(parent)
     , name(name)
     , layout(this)
-  {
-    layout.setSpacing(1);
-    layout.setContentsMargins(1,1,1,1);
-                       
-    QLabel *label = new QLabel(name, this);
-    label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    layout.addWidget(label);
+	{
+		layout.setSpacing(1);
+		layout.setContentsMargins(1,1,1,1);
 
-    layout.addSpacing(10);
-    
-    QPushButton *button = new QPushButton("Delete", this);
-    button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    layout.addWidget(button);
+		QLabel *label = new QLabel(name, this);
+		label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
+		label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+		layout.addWidget(label);
 
-    layout.addSpacing(10);
-        
-    connect(button, SIGNAL(released()), this, SLOT(delete_released()));
+		layout.addSpacing(10);
 
-  }
+		QCheckBox *notes = new QCheckBox("Notes", this);
+		notes->setToolTip("Use this MIDI port for editing notes in the editor.");
+		notes->setChecked(MIDI_editor_input_port_is_keyboard(name.toUtf8().constData()));
+		notes->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+		layout.addWidget(notes);
+
+		layout.addSpacing(10);
+
+		QCheckBox *mcu = new QCheckBox("MCU", this);
+		mcu->setToolTip("Use this MIDI port as an MCU (Mackie Control Universal) compatible controller.");
+		mcu->setChecked(MIDI_editor_input_port_is_mcu(name.toUtf8().constData()));
+		mcu->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+		layout.addWidget(mcu);
+
+		layout.addSpacing(10);
+
+		QPushButton *button = new QPushButton("Delete", this);
+		button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+		layout.addWidget(button);
+
+		layout.addSpacing(10);
+
+		connect(button, SIGNAL(released()), this, SLOT(delete_released()));
+		connect(notes, &QCheckBox::toggled, this, [this, name](bool checked)
+		{
+			MIDI_set_editor_input_port_is_keyboard(name.toUtf8().constData(), checked);
+		});
+		connect(mcu, &QCheckBox::toggled, this, [this, name](bool checked)
+		{
+			MIDI_set_editor_input_port_is_mcu(name.toUtf8().constData(), checked);
+		});
+
+	}
     
 
   public slots:

@@ -2738,6 +2738,8 @@ void Ptask2Mtask(void){
 
 #include <QTimer>
 #include "../midi/midi_i_input_proc.h"
+#include "../midi/midi_ports_proc.h"
+#include "../midi/mcu_proc.h"
 #include "../common/player_proc.h"
 #include "../common/Ptask2Mtask_proc.h"
 
@@ -3157,6 +3159,10 @@ protected:
     GL_update();
     
     MIDI_HandleInputMessage();
+
+	GL_update();
+
+	MCU_call_very_often();
 
     GL_update();
     

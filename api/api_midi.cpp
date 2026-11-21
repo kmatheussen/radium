@@ -310,7 +310,7 @@ void API_MIDI_called_regularly(void){
   }
 }
 
-static void midi_input_callback(const symbol_t *port_name, const radium::MidiMessage &message, void *arg){
+static void midi_input_callback(const symbol_t *port_name, const radium::MidiMessage &message, void *arg, bool is_keyboard, bool is_mcu){
 
   //printf("    API: midi_input_callback called. Message.sysex_msg: %p\n", message._sysex_msg);
   
