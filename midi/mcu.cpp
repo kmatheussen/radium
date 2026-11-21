@@ -21,9 +21,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	Control. Examples are Behringer X-Touch, Icon QCon, and various other
 	devices. This file only implements the parts of the protocol Radium uses.
 
-	Currently only the eight channel faders are supported. Fader movements are
-	sent as pitch bend messages on MIDI channels 1-8 (i.e. channel numbers 0-7),
-	and motor positions are set by sending pitch bend back to the device.
+	Currently the eight channel faders and their mute, solo, and record buttons
+	are supported. Fader movements are sent as pitch bend messages on MIDI
+	channels 1-8 (i.e. channel numbers 0-7), and motor positions are set by
+	sending pitch bend back to the device. Button LEDs are kept in sync with the
+	corresponding seqtrack state.
 */
 
 
@@ -81,6 +83,12 @@ struct McuPort
 	// Used to detect when the visible seqtracks change.
 	int last_target_seqtrack[8];
 
+	// Last sent button LED states. -1 means that the LED has not been
+	// synchronized yet.
+	int last_sent_mute[8];
+	int last_sent_solo[8];
+	int last_sent_rec[8];
+
 	// Used to avoid adding a new undo entry for every single fader message.
 	int64_t last_fader_input_time[8];
 
@@ -100,6 +108,9 @@ struct McuPort
 		{
 			last_sent[i] = -2;
 			last_target_seqtrack[i] = -2;
+			last_sent_mute[i] = -1;
+			last_sent_solo[i] = -1;
+			last_sent_rec[i] = -1;
 			last_fader_input_time[i] = -100000;
 			fader_needs_feedback[i] = false;
 		}
@@ -265,6 +276,94 @@ static void set_fader_value(const FaderTarget &target, float fader)
 
 
 /*********************************************************/
+/**************** Mute / solo / record *******************/
+/*********************************************************/
+
+enum
+{
+	MCU_NOTE_REC = 0x00,
+	MCU_NOTE_SOLO = 0x08,
+	MCU_NOTE_MUTE = 0x10
+};
+
+static bool get_target_mute(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return false;
+
+	return getSeqtrackMute(target.seqtracknum);
+}
+
+static bool get_target_solo(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return false;
+
+	return getSeqtrackSolo(target.seqtracknum);
+}
+
+static bool get_target_recording(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0 || !target.for_audiofiles)
+		return false;
+
+	if (seqtrackIsBus(target.seqtracknum))
+		return false;
+
+	return seqtrackIsRecording(target.seqtracknum, false);
+}
+
+static void toggle_target_mute(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return;
+
+	switchSeqtrackMute(target.seqtracknum);
+}
+
+static void toggle_target_solo(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return;
+
+	switchSeqtrackSolo(target.seqtracknum);
+}
+
+static void toggle_target_recording(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0 || !target.for_audiofiles)
+		return;
+
+	if (seqtrackIsBus(target.seqtracknum))
+		return;
+
+	const bool is_recording = seqtrackIsRecording(target.seqtracknum, false);
+	setSeqtrackIsRecording(target.seqtracknum, !is_recording);
+}
+
+static void send_button_led(McuPort *port, int note, bool is_on, int *last_sent)
+{
+	if (port->output_port == NULL)
+		return;
+
+	const int value = is_on ? 127 : 0;
+
+	if (*last_sent == value)
+		return;
+
+	MIDIPORT_send_message(port->output_port, 0x90, note, value);
+	*last_sent = value;
+}
+
+static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target)
+{
+	send_button_led(port, MCU_NOTE_MUTE + fader, get_target_mute(target), &port->last_sent_mute[fader]);
+	send_button_led(port, MCU_NOTE_SOLO + fader, get_target_solo(target), &port->last_sent_solo[fader]);
+	send_button_led(port, MCU_NOTE_REC + fader, get_target_recording(target), &port->last_sent_rec[fader]);
+}
+
+
+/*********************************************************/
 /**************** Output / device handling ***************/
 /*********************************************************/
 
@@ -322,6 +421,8 @@ static void force_sync_fader(McuPort *port, int fader, const FaderTarget &target
 
 	send_fader(port, fader, value);
 	port->last_target_seqtrack[fader] = target.seqtracknum;
+
+	sync_button_leds(port, fader, target);
 }
 
 static McuPort *find_port(const char *port_name)
@@ -377,6 +478,40 @@ static void process_fader_message(McuPort *port, int byte1, int byte2, int byte3
 	port->fader_needs_feedback[fader] = true;
 }
 
+static void process_button_message(McuPort *port, int byte1, int note, int velocity)
+{
+	if (!g_sequencer_has_focus)
+		return;
+
+	// MCU buttons send note-on with velocity 127 on press and either note-off
+	// or note-on with velocity 0 on release.
+	if ((byte1 & 0xf0) != 0x90 || velocity == 0)
+		return;
+
+	int fader;
+	if (note >= MCU_NOTE_REC && note < MCU_NOTE_REC + 8)
+		fader = note - MCU_NOTE_REC;
+	else if (note >= MCU_NOTE_SOLO && note < MCU_NOTE_SOLO + 8)
+		fader = note - MCU_NOTE_SOLO;
+	else if (note >= MCU_NOTE_MUTE && note < MCU_NOTE_MUTE + 8)
+		fader = note - MCU_NOTE_MUTE;
+	else
+		return;
+
+	FaderTarget target = get_fader_target(fader);
+	if (target.seqtracknum < 0)
+		return;
+
+	if (note >= MCU_NOTE_REC && note < MCU_NOTE_REC + 8)
+		toggle_target_recording(target);
+	else if (note >= MCU_NOTE_SOLO && note < MCU_NOTE_SOLO + 8)
+		toggle_target_solo(target);
+	else
+		toggle_target_mute(target);
+
+	SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
 static void drain_messages(void)
 {
 	McuMessage message;
@@ -390,6 +525,8 @@ static void drain_messages(void)
 		// Faders are pitch bend messages on MIDI channels 0-7.
 		if (message.byte1 >= 0xe0 && message.byte1 <= 0xe7)
 			process_fader_message(port, message.byte1, message.byte2, message.byte3);
+		else if ((message.byte1 & 0xf0) == 0x90)
+			process_button_message(port, message.byte1, message.byte2, message.byte3);
 	}
 }
 
@@ -452,6 +589,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 
 		if (send_deferred_feedback)
 			port->fader_needs_feedback[fader] = false;
+
+		sync_button_leds(port, fader, target);
 	}
 }
 
