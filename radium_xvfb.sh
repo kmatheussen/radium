@@ -108,9 +108,11 @@ if [ "$fallback" = 1 ] && [ -z "${DISPLAY:-}" ]; then
   exit 1
 fi
 
-testhome="$(mktemp -d "${TMPDIR:-/tmp}/radium-xvfb-home.XXXXXX")"
+reuse_testhome="/tmp/radium-xvfb-home.6axtf9"
+testhome="${reuse_testhome:-$(mktemp -d "${TMPDIR:-/tmp}/radium-xvfb-home.XXXXXX")}"
 mkdir -p "$testhome/.radium"
 
+if [ -z "$reuse_testhome" ]; then
 if [ -f "$repo/bin/config" ]; then
   cp "$repo/bin/config" "$testhome/.radium/config"
 else
@@ -132,6 +134,7 @@ if [ "$fallback" = 0 ]; then
   # Software rendering (llvmpipe) makes multisampling very expensive, and the
   # tests do not need it.
   echo "multisample_qrhi = 1" >>"$testhome/.radium/config"
+fi
 fi
 
 if [ -n "${RADIUM_CONTROL_PORT_FILE:-}" ]; then
