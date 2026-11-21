@@ -171,7 +171,7 @@ STRING_TYPE
 color_menu_background
 0
 STRING_TYPE
-#ff0d2542
+#ff153d6b
 color_menu_current_entry
 0
 STRING_TYPE
@@ -179,7 +179,7 @@ STRING_TYPE
 color_menu_entry_background
 0
 STRING_TYPE
-#ff102f53
+#ff153d6b
 color_menu_keybinding_text
 0
 STRING_TYPE

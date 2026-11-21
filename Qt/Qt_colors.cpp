@@ -1828,6 +1828,58 @@ static void refresh_unmodified_default_configuration(void)
   }
 }
 
+// The default menu colors have changed. Update the "Default" configuration too
+// if the user hasn't changed these colors, even if other colors have been
+// modified.
+static bool migrate_menu_color(ColorConfigSnapshot &snapshot, enum ColorNums colornum, const char *old_default_color)
+{
+	if (g_program_default_configuration.colors.size() <= (int)colornum)
+		return false;
+
+	if (g_program_default_configuration.colors[colornum].isValid()==false)
+		return false;
+
+	if (snapshot.colors.size() <= (int)colornum)
+		return false;
+
+	const QColor old_color(old_default_color);
+
+	if (snapshot.colors[colornum].rgba() != old_color.rgba())
+		return false;
+
+	snapshot.colors[colornum] = g_program_default_configuration.colors[colornum];
+
+	return true;
+}
+
+static void migrate_menu_colors(void)
+{
+	if (g_color_configurations.contains("Default")==false)
+		return;
+
+	// Only do this once. installed_default_color_signature is updated to the
+	// new shipped signature later in GFX_InitColorsAndMigrate(), so a user who
+	// deliberately selects an old color afterwards won't have it overwritten
+	// again at the next startup.
+	if (get_installed_default_color_signature() == g_program_default_configuration.getSignature())
+		return;
+
+	ColorConfigSnapshot &snapshot = g_color_configurations["Default"];
+
+	bool changed = migrate_menu_color(snapshot, MENU_BACKGROUND_COLOR_NUM, "#ff0d2542");
+	changed |= migrate_menu_color(snapshot, MENU_ENTRY_BACKGROUND_COLOR_NUM, "#ff102f53");
+
+	if (changed==false)
+		return;
+
+	snapshot.is_dirty = true;
+
+	// Save immediately. GFX_SaveAllColorConfigurations() is normally only called
+	// later, for example when the preferences dialog is closed.
+	if (snapshot.saveState(get_configuration_filename("Default")))
+		snapshot.is_dirty = false;
+}
+
 // The color configurations have changed. Save the colors the user had before the
 // change as the configuration "Previous", rotate the current Default to "Old",
 // install the program's new Default configuration, and make it current.
@@ -1961,6 +2013,7 @@ bool GFX_InitColorsAndMigrate(void)
   }
 
   refresh_unmodified_default_configuration();
+  migrate_menu_colors();
   write_installed_default_color_signature();
 
   g_active_configuration_loaded = true;
