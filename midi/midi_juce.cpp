@@ -253,6 +253,21 @@ const symbol_t *MIDI_OS_get_port_name(const char *name_c){
 
   return get_symbol(name.toUTF8());
 }
+
+// Also matches JUCE names whose stored representation has had a
+// "Radium: " prefix removed by MIDI_OS_get_port_name.
+static int find_device_id(const juce::StringArray &devices, const juce::String &name){
+  int device_id = devices.indexOf(name);
+
+  if (device_id >= 0)
+    return device_id;
+
+  for(int i = 0 ; i < devices.size() ; i++)
+    if (name == MIDI_OS_get_port_name(devices[i].toUTF8())->name)
+      return i;
+
+  return -1;
+}
                                         
 radium::MidiOutputPortOs *MIDI_OS_create_output_port(const symbol_t *port_name, bool create_new_if_not_existing){
 
@@ -301,7 +316,7 @@ radium::MidiInputPortOs *MIDI_OS_create_input_port(const symbol_t *port_name, bo
   
   juce::StringArray devices = juce::MidiInput::getDevices();
 
-  int device_id = devices.indexOf(name);
+  int device_id = find_device_id(devices, name);
 
   if (device_id==-1 && !create_new_if_not_existing)
     return NULL;
@@ -326,12 +341,13 @@ radium::MidiInputPortOs *MIDI_OS_create_input_port(const symbol_t *port_name, bo
     
     if (create_new_if_not_existing)
       GFX_Message(NULL, "Error. Unable to open MIDI input device %s.\n", (const char*)name.toUTF8());
-    
-  } else {
-    
-    midi_input_callback->_midi_input->start();
+
+    delete midi_input_callback;
+    return NULL;
 
   }
+
+  midi_input_callback->_midi_input->start();
 
   return midi_input_callback;
 }

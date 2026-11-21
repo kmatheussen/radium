@@ -121,8 +121,11 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, const radium::M
 
 // Editor/midi learn ports
 bool MIDI_has_editor_input_port(const char *name);
+bool MIDI_editor_input_port_is_open(const char *name);
+bool MIDI_editor_input_port_try_open(const char *name);
 void MIDI_add_editor_input_port(const char *name);
 void MIDI_remove_editor_input_port(const char *name);
+bool MIDI_assign_editor_input_port(const char *old_name, const char *new_name);
 const char **MIDIPORT_get_editor_input_ports(int *retsize);
 bool MIDI_editor_input_port_is_keyboard(const char *name);
 void MIDI_set_editor_input_port_is_keyboard(const char *name, bool is_keyboard);

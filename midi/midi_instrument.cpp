@@ -492,6 +492,10 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,stru
   int num_input_ports;
   const char **input_port_names = MIDIPORT_get_editor_input_ports(&num_input_ports);
   for(int i=0;i<num_input_ports;i++){
+
+    if (!MIDI_editor_input_port_is_open(input_port_names[i]))
+      continue;
+
     printf("   Testing -%s- vs. -%s-\n", input_port_names[i], midi_port->name);
     const char *portname = midi_port->name;
     if (!strncmp(portname,"Radium: ",8))
@@ -790,8 +794,62 @@ int MIDISetInputPort(bool program_state_is_valid){
   if(portname!=NULL){
     if (!MIDI_has_editor_input_port(portname))
       MIDI_add_editor_input_port(portname);
+    else
+      MIDI_editor_input_port_try_open(portname);
   }
   return 0;
+}
+
+void MIDI_handle_missing_editor_input_ports(void){
+  static bool has_handled = false;
+
+  if (has_handled)
+    return;
+
+  has_handled = true;
+
+  if (g_user_interaction_enabled==false)
+    return;
+
+  int num_ports;
+  const char **portnames = MIDIPORT_get_editor_input_ports(&num_ports);
+
+  for(int i = 0 ; i < num_ports ; i++){
+    const char *portname = portnames[i];
+
+    // The entry could have been assigned or deleted by an earlier iteration.
+    if (!MIDI_has_editor_input_port(portname))
+      continue;
+
+    if (MIDI_editor_input_port_is_open(portname))
+      continue;
+
+    // The device might have appeared while Radium was starting up.
+    if (MIDI_editor_input_port_try_open(portname)){
+      PREFERENCES_update();
+      continue;
+    }
+
+    vector_t v = {};
+
+    int dont_use = VECTOR_push_back(&v, "Don't use (keep it saved)");(void)dont_use;
+    int assign   = VECTOR_push_back(&v, "Assign another port...");
+    int delete_port = VECTOR_push_back(&v, "Delete");
+
+    int result = GFX_Message2(&v,
+                              true,
+                              "The saved MIDI input port \"%s\" is not available.\n"
+                              "\n"
+                              "What do you want to do?",
+                              portname);
+
+    if (result==assign){
+      MIDI_assign_editor_input_port_interactive(portname, true);
+    } else if (result==delete_port){
+      MIDI_remove_editor_input_port(portname);
+      PREFERENCES_update();
+    }
+  }
 }
 
 int MIDI_initInstrumentPlugIn(struct Instruments *instrument){

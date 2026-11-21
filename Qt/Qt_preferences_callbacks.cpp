@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QPushButton>
 #include <QColorDialog>
+#include <QInputDialog>
 #include <QCloseEvent>
 #include <QHideEvent>
 #include <QPainter>
@@ -402,6 +403,8 @@ struct MidiInput : public QWidget{
 public:
 
   QString name;
+  bool is_open;
+  QPushButton *is_keyboard_button = NULL;
   QHBoxLayout layout;
 
   MidiInput(QWidget *parent, QString name)
@@ -411,13 +414,39 @@ public:
   {
     layout.setSpacing(1);
     layout.setContentsMargins(1,1,1,1);
+
+    is_open = MIDI_editor_input_port_is_open(name.toUtf8().constData());
                        
-    QLabel *label = new QLabel(name, this);
+    QLabel *label = new QLabel(is_open ? name : name + " (not connected)", this);
     label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
     label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
     layout.addWidget(label);
 
     layout.addSpacing(10);
+
+    const bool is_keyboard = MIDI_editor_input_port_is_keyboard(name.toUtf8().constData());
+
+    is_keyboard_button = new QPushButton(this);
+    is_keyboard_button->setCheckable(true);
+    is_keyboard_button->setChecked(is_keyboard);
+    is_keyboard_button->setText(QStringLiteral("\u2713 Use for editing notes in the editor"));
+    is_keyboard_button->setFixedWidth(is_keyboard_button->sizeHint().width());
+    is_keyboard_button->setText(is_keyboard ? QStringLiteral("\u2713 Use for editing notes in the editor") : QStringLiteral("Use for editing notes in the editor"));
+    is_keyboard_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+    layout.addWidget(is_keyboard_button);
+
+    layout.addSpacing(10);
+
+    if (!is_open) {
+      QPushButton *assign_button = new QPushButton("Assign...", this);
+      assign_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+      assign_button->setToolTip("Assign a currently available MIDI input port to this saved port entry.");
+      layout.addWidget(assign_button);
+
+      layout.addSpacing(10);
+
+      connect(assign_button, SIGNAL(released()), this, SLOT(assign_released()));
+    }
     
     QPushButton *button = new QPushButton("Delete", this);
     button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -425,6 +454,7 @@ public:
 
     layout.addSpacing(10);
         
+    connect(is_keyboard_button, SIGNAL(toggled(bool)), this, SLOT(is_keyboard_toggled(bool)));
     connect(button, SIGNAL(released()), this, SLOT(delete_released()));
 
   }
@@ -432,12 +462,23 @@ public:
 
   public slots:
 
+  void is_keyboard_toggled(bool is_keyboard){
+    is_keyboard_button->setText(is_keyboard ? QStringLiteral("\u2713 Use for editing notes in the editor") : QStringLiteral("Use for editing notes in the editor"));
+    MIDI_set_editor_input_port_is_keyboard(name.toUtf8().constData(), is_keyboard);
+  }
+
+  void assign_released(){
+    MIDI_assign_editor_input_port_interactive(name.toUtf8().constData(), true);
+    PREFERENCES_update();
+  }
+
   void delete_released(){
     printf("%s deleted\n",name.toUtf8().constData());
     MIDI_remove_editor_input_port(name.toUtf8().constData());
     PREFERENCES_update();
   }
 };
+
   
 class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   Q_OBJECT
@@ -2438,6 +2479,64 @@ public slots:
   }
   
 };
+}
+
+
+bool MIDI_assign_editor_input_port_interactive(const char *old_name, bool program_state_is_valid){
+  R_ASSERT(THREADING_is_main_thread());
+
+  // The device might have appeared after startup.
+  if (MIDI_editor_input_port_try_open(old_name))
+    return true;
+
+  int num_ports;
+  const char **portnames = MIDI_OS_getInputPortNames(&num_ports);
+
+  QStringList items;
+
+  for(int i = 0 ; i < num_ports ; i++){
+    if (MIDI_has_editor_input_port(portnames[i]))
+      continue;
+
+    items.push_back(QString::fromUtf8(portnames[i]));
+  }
+
+  if (items.size()==0){
+    GFX_Message(NULL,
+                "No other MIDI input ports are currently available.\n"
+                "\n"
+                "The saved port \"%s\" was not changed.",
+                old_name);
+    return false;
+  }
+
+  bool ok = false;
+
+  QString selected = QInputDialog::getItem(g_main_window,
+                                           "Assign MIDI input port",
+                                           QString("Select a new MIDI input port for the saved port \"%1\":")
+                                           .arg(QString::fromUtf8(old_name)),
+                                           items,
+                                           0,
+                                           false,
+                                           &ok);
+
+  if (!ok || selected.isEmpty())
+    return false;
+
+  QByteArray selected_utf8 = selected.toUtf8();
+
+  if (MIDI_assign_editor_input_port(old_name, selected_utf8.constData()))
+    return true;
+
+  GFX_Message(NULL,
+              "Unable to open MIDI input port \"%s\".\n"
+              "\n"
+              "The saved port \"%s\" was not changed.",
+              selected_utf8.constData(),
+              old_name);
+
+  return false;
 }
 
 
