@@ -21,16 +21,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	Control. Examples are Behringer X-Touch, Icon QCon, and various other
 	devices. This file only implements the parts of the protocol Radium uses.
 
-	Currently the eight channel faders, their mute, solo, record, and select
-	buttons, the channel VU meters, and the track panels are supported. Fader
-	movements are sent as pitch bend messages on MIDI channels 1-8 (i.e. channel
-	numbers 0-7), and motor positions are set by sending pitch bend back to the
-	device. Button LEDs, VU meters, and track panels are kept in sync with the
-	corresponding seqtrack state. X-Touch track panel colors are also supported.
+	Currently the eight channel faders, their V-Pots, mute, solo, record, and
+	select buttons, the channel VU meters, and the track panels are supported.
+	Fader movements are sent as pitch bend messages on MIDI channels 1-8 (i.e.
+	channel numbers 0-7), and motor positions are set by sending pitch bend back
+	to the device. Button LEDs, V-Pot LED rings, VU meters, and track panels are
+	kept in sync with the corresponding seqtrack state. X-Touch track panel
+	colors are also supported.
 */
 
 
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 #include <vector>
 
@@ -107,9 +109,17 @@ struct McuPort
 	int last_sent_solo[8];
 	int last_sent_rec[8];
 	int last_sent_select[8];
+	int last_sent_vpot[8];
 
 	// Used to avoid adding a new undo entry for every single fader message.
 	int64_t last_fader_input_time[8];
+
+	// Same, but for knob movements.
+	int64_t last_vpot_input_time[8];
+
+	// While this is in the future, show the pan value on the track panel
+	// instead of the volume.
+	int64_t pan_display_until[8];
 
 	// True when the fader has been moved by the user and the device still needs
 	// the new motor position. The new position is sent after a short quiet
@@ -151,7 +161,10 @@ struct McuPort
 			last_sent_solo[i] = -1;
 			last_sent_rec[i] = -1;
 			last_sent_select[i] = -1;
+			last_sent_vpot[i] = -1;
 			last_fader_input_time[i] = -100000;
+			last_vpot_input_time[i] = -100000;
+			pan_display_until[i] = -100000;
 			fader_needs_feedback[i] = false;
 			meter_overload[i] = false;
 			pending_peak_db[i] = MIN_DB;
@@ -425,6 +438,124 @@ static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target
 
 
 /*********************************************************/
+/************************ V-Pots *************************/
+/*********************************************************/
+
+static float get_target_pan(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0 || !target.for_audiofiles)
+		return -1.0f;
+
+	if (!instrumentEffectExists(target.instrument_id, "System Pan"))
+		return -1.0f;
+
+	return getStoredInstrumentEffect(target.instrument_id, "System Pan");
+}
+
+static void send_vpot_led(McuPort *port, int fader, float pan)
+{
+	int value;
+
+	if (pan < 0.0f)
+	{
+		value = 0;
+	}
+	else
+	{
+		int position = (int)lrintf(pan * 10.0f) + 1;
+		position = R_BOUNDARIES(1, position, 11);
+
+		// Dot mode. Don't use the center-indicator bit: on the X-Touch it
+		// lights two extra LEDs around 5 and 7 o'clock, which looks cluttered.
+		value = position;
+	}
+
+	if (port->last_sent_vpot[fader] != value)
+	{
+		if (getenv("RADIUM_MCU_DEBUG_VPOT") != NULL)
+			printf("MCU V-Pot ring: fader %d, CC 0x%02x value %d\n", fader, 0x30 + fader, value);
+
+		// Mackie Control V-Pot LED rings use CC 0x30..0x37, not 0x20..0x27.
+		MIDIPORT_send_message(port->output_port, 0xb0, 0x30 + fader, value);
+		port->last_sent_vpot[fader] = value;
+	}
+}
+
+static void undo_pan_start(const FaderTarget &target)
+{
+	openUndo();
+	undoInstrumentEffect(target.instrument_id, "System Pan On/Off");
+	undoInstrumentEffect(target.instrument_id, "System Pan");
+	closeUndo();
+}
+
+static void set_target_pan(const FaderTarget &target, float pan)
+{
+	pan = R_BOUNDARIES(0.0f, pan, 1.0f);
+
+	setInstrumentEffect(target.instrument_id, "System Pan On/Off", 1.0f);
+	setInstrumentEffect(target.instrument_id, "System Pan", pan);
+}
+
+static void reset_target_pan(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0 || !target.for_audiofiles)
+		return;
+
+	if (!instrumentEffectExists(target.instrument_id, "System Pan"))
+		return;
+
+	openUndo();
+	resetInstrumentEffect(target.instrument_id, "System Pan On/Off");
+	resetInstrumentEffect(target.instrument_id, "System Pan");
+	closeUndo();
+
+	SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
+static void process_vpot_message(McuPort *port, int controller, int value)
+{
+	if (!g_sequencer_has_focus)
+		return;
+
+	if (controller < 0x10 || controller >= 0x18)
+		return;
+
+	const int fader = controller - 0x10;
+
+	FaderTarget target = get_fader_target(fader);
+	if (target.seqtracknum < 0 || !target.for_audiofiles)
+		return;
+
+	if (!instrumentEffectExists(target.instrument_id, "System Pan"))
+		return;
+
+	const float sign = (value & 0x40) == 0 ? 1.0f : -1.0f;
+	int ticks = value & 0x3f;
+
+	if (ticks == 0)
+		ticks = 1;
+
+	const float delta = sign * ticks / 63.0f;
+	const int64_t now = (int64_t)TIME_get_ms();
+
+	if (now - port->last_vpot_input_time[fader] > 200)
+		undo_pan_start(target);
+
+	port->last_vpot_input_time[fader] = now;
+	port->pan_display_until[fader] = now + 1000;
+
+	float pan = get_target_pan(target);
+	if (pan < 0.0f)
+		return;
+
+	set_target_pan(target, pan + delta);
+
+	SEQUENCER_update(SEQUPDATE_HEADERS);
+}
+
+
+/*********************************************************/
 /********************** VU meters ************************/
 /*********************************************************/
 
@@ -588,6 +719,30 @@ static void format_volume_6(float db, char *dest)
 		dest[i] = i < (int)strlen(temp) ? temp[i] : ' ';
 }
 
+static void format_pan_6(float pan, char *dest)
+{
+	char temp[32];
+
+	if (pan < 0.0f)
+	{
+		snprintf(temp, sizeof(temp), "      ");
+	}
+	else
+	{
+		// Display the same -90..+90 range that Radium's pan slider uses.
+		int amount = (int)lrintf((pan - 0.5f) * 180.0f);
+		amount = R_BOUNDARIES(-90, amount, 90);
+
+		if (amount == 0)
+			snprintf(temp, sizeof(temp), "%6d", 0);
+		else
+			snprintf(temp, sizeof(temp), "%+6d", amount);
+	}
+
+	for(int i=0 ; i<6 ; i++)
+		dest[i] = i < (int)strlen(temp) ? temp[i] : ' ';
+}
+
 static QColor get_target_color(const FaderTarget &target)
 {
 	if (target.seqtracknum < 0)
@@ -684,6 +839,7 @@ static void update_track_panels(McuPort *port, bool force)
 	char line1[56];
 	char line2[56];
 	int colors[8];
+	const int64_t now = (int64_t)TIME_get_ms();
 
 	memset(line1, ' ', 55);
 	memset(line2, ' ', 55);
@@ -702,10 +858,17 @@ static void update_track_panels(McuPort *port, bool force)
 
 		copy_name_6(getSeqtrackName(target.seqtracknum), &line1[pos]);
 
-		const float fader_value = get_fader_value(target);
+		if (now < port->pan_display_until[fader])
+		{
+			format_pan_6(get_target_pan(target), &line2[pos]);
+		}
+		else
+		{
+			const float fader_value = get_fader_value(target);
 
-		if (fader_value >= 0.0f)
-			format_volume_6(fader_to_db(fader_value), &line2[pos]);
+			if (fader_value >= 0.0f)
+				format_volume_6(fader_to_db(fader_value), &line2[pos]);
+		}
 
 		colors[fader] = color_to_xtouch_color(get_target_color(target));
 	}
@@ -790,6 +953,7 @@ static void force_sync_fader(McuPort *port, int fader, const FaderTarget &target
 	port->last_target_seqtrack[fader] = target.seqtracknum;
 
 	sync_button_leds(port, fader, target);
+	send_vpot_led(port, fader, get_target_pan(target));
 }
 
 static McuPort *find_port(const char *port_name)
@@ -864,6 +1028,8 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 		fader = note - MCU_NOTE_MUTE;
 	else if (note >= MCU_NOTE_SELECT && note < MCU_NOTE_SELECT + 8)
 		fader = note - MCU_NOTE_SELECT;
+	else if (note >= 0x20 && note < 0x28)
+		fader = note - 0x20;
 	else
 		return;
 
@@ -871,7 +1037,12 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 	if (target.seqtracknum < 0)
 		return;
 
-	if (note >= MCU_NOTE_REC && note < MCU_NOTE_REC + 8)
+	if (note >= 0x20 && note < 0x28)
+	{
+		port->pan_display_until[fader] = (int64_t)TIME_get_ms() + 1000;
+		reset_target_pan(target);
+	}
+	else if (note >= MCU_NOTE_REC && note < MCU_NOTE_REC + 8)
 		toggle_target_recording(target);
 	else if (note >= MCU_NOTE_SOLO && note < MCU_NOTE_SOLO + 8)
 		toggle_target_solo(target);
@@ -898,6 +1069,8 @@ static void drain_messages(void)
 			process_fader_message(port, message.byte1, message.byte2, message.byte3);
 		else if ((message.byte1 & 0xf0) == 0x90)
 			process_button_message(port, message.byte1, message.byte2, message.byte3);
+		else if ((message.byte1 & 0xf0) == 0xb0)
+			process_vpot_message(port, message.byte2, message.byte3);
 	}
 }
 
@@ -931,6 +1104,9 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 
 	if (!port->was_sequencer_selected)
 	{
+		for(int fader=0 ; fader<8 ; fader++)
+			port->last_sent_vpot[fader] = -1;
+
 		for(int fader=0 ; fader<8 ; fader++)
 			force_sync_fader(port, fader, get_fader_target(fader));
 
@@ -977,6 +1153,7 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 			port->fader_needs_feedback[fader] = false;
 
 		sync_button_leds(port, fader, target);
+		send_vpot_led(port, fader, get_target_pan(target));
 
 		// Accumulate peaks between each meter update so a short peak is not
 		// lost just because it happened between two 50 ms updates.
