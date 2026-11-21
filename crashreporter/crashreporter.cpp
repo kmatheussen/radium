@@ -91,7 +91,7 @@ static DEFINE_ATOMIC(bool, g_dont_report) = false;
 // report, including the backtrace, is written to stderr (the test log) instead
 // of starting the crash reporter GUI, which would wait for a user who is not
 // there.
-static bool g_no_crash_dialog [[maybe_unused]] = false;
+static bool g_no_crash_dialog [[maybe_unused]] = false; // [NO_STATIC_ARRAY_WARNING]
 #endif
 
 #define NOPLUGINNAMES "<nopluginnames>"
