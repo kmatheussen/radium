@@ -111,6 +111,10 @@ struct McuPort
 	int last_sent_select[8];
 	int last_sent_vpot[8];
 
+	// Main transport button LEDs: rewind, forward, stop, play, record.
+	int last_sent_transport[5];
+	int64_t last_transport_led_update = -100000;
+
 	// Used to avoid adding a new undo entry for every single fader message.
 	int64_t last_fader_input_time[8];
 
@@ -170,6 +174,9 @@ struct McuPort
 			pending_peak_db[i] = MIN_DB;
 			last_colors[i] = -1;
 		}
+
+		for(int i=0 ; i<5 ; i++)
+			last_sent_transport[i] = -1;
 	}
 };
 
@@ -340,7 +347,13 @@ enum
 	MCU_NOTE_REC = 0x00,
 	MCU_NOTE_SOLO = 0x08,
 	MCU_NOTE_MUTE = 0x10,
-	MCU_NOTE_SELECT = 0x18
+	MCU_NOTE_SELECT = 0x18,
+
+	MCU_NOTE_REWIND = 0x5b,
+	MCU_NOTE_FORWARD = 0x5c,
+	MCU_NOTE_STOP = 0x5d,
+	MCU_NOTE_PLAY = 0x5e,
+	MCU_NOTE_RECORD = 0x5f
 };
 
 static bool get_target_mute(const FaderTarget &target)
@@ -434,6 +447,28 @@ static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target
 	send_button_led(port, MCU_NOTE_SOLO + fader, get_target_solo(target), &port->last_sent_solo[fader]);
 	send_button_led(port, MCU_NOTE_REC + fader, get_target_recording(target), &port->last_sent_rec[fader]);
 	send_button_led(port, MCU_NOTE_SELECT + fader, get_target_selected(target), &port->last_sent_select[fader]);
+}
+
+static void sync_transport_leds(McuPort *port)
+{
+	const int64_t now = (int64_t)TIME_get_ms();
+
+	if (now - port->last_transport_led_update < 1000)
+		return;
+
+	port->last_transport_led_update = now;
+
+	// The transport buttons don't control anything yet, but keeping their LEDs
+	// on makes them easy to find on the board. Resend periodically since some
+	// devices clear their button LEDs when they receive other setup messages.
+	for(int i=0 ; i<5 ; i++)
+		port->last_sent_transport[i] = -1;
+
+	send_button_led(port, MCU_NOTE_REWIND,  true, &port->last_sent_transport[0]);
+	send_button_led(port, MCU_NOTE_FORWARD, true, &port->last_sent_transport[1]);
+	send_button_led(port, MCU_NOTE_STOP,    true, &port->last_sent_transport[2]);
+	send_button_led(port, MCU_NOTE_PLAY,    true, &port->last_sent_transport[3]);
+	send_button_led(port, MCU_NOTE_RECORD,  true, &port->last_sent_transport[4]);
 }
 
 
@@ -897,6 +932,19 @@ static void update_track_panels(McuPort *port, bool force)
 /**************** Output / device handling ***************/
 /*********************************************************/
 
+static void send_mcu_wakeup(McuPort *port)
+{
+	if (port->output_port == NULL)
+		return;
+
+	// Standard Mackie Control wakeup message. Ardour sends this when the
+	// surface connects, and some devices need it before they accept all
+	// control messages.
+	uint8_t data[] = {0xf0, 0x00, 0x00, 0x66, 0x14, 0x00, 0xf7};
+
+	MIDIPORT_send_sysex(port->output_port, sizeof(data), data);
+}
+
 static radium::MidiOutputPort *open_output_port(McuPort *port)
 {
 	port->last_output_attempt = (int64_t)TIME_get_ms();
@@ -916,6 +964,7 @@ static radium::MidiOutputPort *open_output_port(McuPort *port)
 	{
 		printf("MCU: Using MIDI output port \"%s\".\n", port->port_name->name);
 		port->has_reported_output_failure = false;
+		send_mcu_wakeup(port);
 	}
 
 	return output_port;
@@ -1087,6 +1136,10 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		return;
 	}
 
+	// Global controls, such as the transport buttons, should light up as soon
+	// as the MCU device is detected, independently of sequencer keyboard focus.
+	sync_transport_leds(port);
+
 	if (!sequencer_has_focus)
 	{
 		if (port->was_sequencer_selected)
@@ -1198,6 +1251,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		update_track_panels(port, port->panels_need_full_update);
 		port->panels_need_full_update = false;
 	}
+
+	sync_transport_leds(port);
 }
 
 
