@@ -35,6 +35,10 @@
 #   RADIUM_TEST_NO_CRASH_DIALOG=1   Write crash reports (including the
 #                                   backtrace) to the log instead of starting
 #                                   the crash reporter GUI
+#   RADIUM_TEST_NO_STARTUP_MESSAGES=1
+#                                   Write startup messages such as graphics
+#                                   backend fallback notices to the log instead
+#                                   of opening a modal dialog
 #
 set -euo pipefail
 
@@ -180,6 +184,10 @@ export UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1${UBSAN_OPTIONS:+:$UBSA
 # There is no visible display, so the crash reporter GUI would silently wait
 # for a user who is not there. Log the report (including the backtrace) instead.
 export RADIUM_TEST_NO_CRASH_DIALOG=1
+
+# Backend fallback and Null-backend notices are informational. In a test run
+# they would otherwise open a modal dialog and block startup forever.
+export RADIUM_TEST_NO_STARTUP_MESSAGES=1
 
 if [ "$fallback" = 0 ]; then
   export LIBGL_ALWAYS_SOFTWARE=1
