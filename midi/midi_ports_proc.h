@@ -72,14 +72,14 @@ namespace radium{
   };
 }
 
-typedef void (*Midi_input_callback) (const symbol_t *port_name, const radium::MidiMessage &message, void *arg);
+typedef void (*Midi_input_callback) (const symbol_t *port_name, const radium::MidiMessage &message, void *arg, bool is_keyboard);
 
 extern const symbol_t *MIDIPORT_get_port_name(radium::MidiInputPort *port);
 extern const symbol_t *MIDIPORT_get_port_name(radium::MidiOutputPort *port);
 
 extern void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, const radium::MidiMessage &message);
 
-extern radium::MidiInputPort *MIDIPORT_open_input(const char *name, Midi_input_callback callback, void *callback_arg, bool create_new_if_not_existing);
+extern radium::MidiInputPort *MIDIPORT_open_input(const char *name, Midi_input_callback callback, void *callback_arg, bool create_new_if_not_existing, bool is_keyboard = true);
 
 
 // 'may_be_used_in_realtime_code' must be set to true to avoid priority inversion if 'MIDIPORT_send_message' may be called from a realtime thread.
@@ -124,3 +124,5 @@ bool MIDI_has_editor_input_port(const char *name);
 void MIDI_add_editor_input_port(const char *name);
 void MIDI_remove_editor_input_port(const char *name);
 const char **MIDIPORT_get_editor_input_ports(int *retsize);
+bool MIDI_editor_input_port_is_keyboard(const char *name);
+void MIDI_set_editor_input_port_is_keyboard(const char *name, bool is_keyboard);

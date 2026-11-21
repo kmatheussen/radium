@@ -981,6 +981,7 @@ typedef struct {
   const symbol_t *port_name;
   int32_t deltatime;
   uint32_t msg;
+  bool is_keyboard;
 } play_buffer_event_t;
 
 // Allocate since static variables are not good for the GC.
@@ -1077,7 +1078,9 @@ void RT_MIDI_handle_play_buffer(void)
 			has_inited = true;
 		}
     
-		if (through_patch!=NULL || has_playing_audio_patches || has_playing_midi_patches)
+		const bool send_to_instruments = event.is_keyboard || !msg_is_note(msg);
+
+		if (send_to_instruments && (through_patch!=NULL || has_playing_audio_patches || has_playing_midi_patches))
 		{
 			uint8_t byte1 = MIDI_msg_byte1(msg);
 	  
@@ -1115,12 +1118,13 @@ void RT_MIDI_handle_play_buffer(void)
 }
 
 // Called from a MIDI input thread
-static void add_event_to_play_buffer(const symbol_t *port_name, uint32_t msg){
+static void add_event_to_play_buffer(const symbol_t *port_name, uint32_t msg, bool is_keyboard){
   play_buffer_event_t event;
   
   event.port_name = port_name;
   event.deltatime = 0;
   event.msg = msg;
+  event.is_keyboard = is_keyboard;
   
   if (!g_play_buffer->bounded_push(event))
     RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
@@ -1175,7 +1179,7 @@ static bool maybe_fix_incremental_mode_for_msg(const symbol_t *port_name, uint32
 }
 
 // Can be called from any thread
-void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2)
+void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2, bool is_keyboard)
 {
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
@@ -1211,7 +1215,13 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
 	if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
 		return;
 	
-	add_event_to_play_buffer(port_name, msg);
+	add_event_to_play_buffer(port_name, msg, is_keyboard);
+
+	// Notes from a non-keyboard port are still passed to the MIDI learn
+	// processing, but they should neither be added to the editor nor played
+	// by instruments.
+	if (!is_keyboard && msg_is_note(msg))
+		return;
 	
 	if (g_record_accurately_while_playing && isplaying) {
 		

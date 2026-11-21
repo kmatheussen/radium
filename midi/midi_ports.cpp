@@ -371,15 +371,17 @@ struct MidiInputPort {
 
   Midi_input_callback _callback;
   void *_callback_arg;
+  DEFINE_ATOMIC(bool, _is_keyboard);
     
-  MidiInputPort(const symbol_t *port_name, Midi_input_callback callback, void *callback_arg)
+  MidiInputPort(const symbol_t *port_name, Midi_input_callback callback, void *callback_arg, bool is_keyboard)
     : _port_name(port_name)
     , _callback(callback)
     , _callback_arg(callback_arg)
+    , _is_keyboard_atomic(is_keyboard)
   {}
 
   void input_message_has_been_received(const radium::MidiMessage &message) const {
-    _callback(_port_name, message, _callback_arg);
+    _callback(_port_name, message, _callback_arg, ATOMIC_GET(_is_keyboard));
   }
 };
 
@@ -413,7 +415,7 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, const radium::M
   }
 }
 
-radium::MidiInputPort *MIDIPORT_open_input(const char *name, Midi_input_callback callback, void *callback_arg, bool create_new_if_not_existing){
+radium::MidiInputPort *MIDIPORT_open_input(const char *name, Midi_input_callback callback, void *callback_arg, bool create_new_if_not_existing, bool is_keyboard){
   R_ASSERT(THREADING_is_main_thread());
 
   const symbol_t *port_name = MIDI_OS_get_port_name(name);
@@ -437,7 +439,7 @@ radium::MidiInputPort *MIDIPORT_open_input(const char *name, Midi_input_callback
 
   holder._num_users++;
   
-  radium::MidiInputPort *port = new radium::MidiInputPort(port_name, callback, callback_arg);
+  radium::MidiInputPort *port = new radium::MidiInputPort(port_name, callback, callback_arg, is_keyboard);
 
   g_input_ports.ensure_there_is_room_for_more_without_having_to_allocate_memory();
   
@@ -494,16 +496,19 @@ static radium::Vector<radium::MidiInputPort*> g_editor_inports;
 static void update_editor_ports_config_settings(void){
   SETTINGS_write_int("midi_num_inports", g_editor_inports.size());
   
-  for(int i = 0 ; i < g_editor_inports.size() ; i++)
+  for(int i = 0 ; i < g_editor_inports.size() ; i++) {
     SETTINGS_write_string(talloc_format("midi_input_port_%d",i), g_editor_inports[i]->_port_name->name);
+    SETTINGS_write_bool(talloc_format("midi_input_port_%d_is_keyboard",i), ATOMIC_GET(g_editor_inports[i]->_is_keyboard));
+  }
 }
 
-static void editor_midi_input_callback(const symbol_t *port_name, const radium::MidiMessage &message, void *arg){
+static void editor_midi_input_callback(const symbol_t *port_name, const radium::MidiMessage &message, void *arg, bool is_keyboard){
   if (message._sysex_msg==NULL)
     MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(port_name,
                                                            MIDI_msg_byte1(message._msg),
                                                            MIDI_msg_byte2(message._msg),
-                                                           MIDI_msg_byte3(message._msg)
+                                                           MIDI_msg_byte3(message._msg),
+                                                           is_keyboard
                                                            );
 }
 
@@ -515,13 +520,13 @@ bool MIDI_has_editor_input_port(const char *name){
   return false;
 }
 
-static bool add_editor_input_port(const char *name){
+static bool add_editor_input_port(const char *name, bool is_keyboard){
   if (MIDI_has_editor_input_port(name)){
     R_ASSERT_NON_RELEASE(false);
     return false;
   }
       
-  radium::MidiInputPort *port = MIDIPORT_open_input(name, editor_midi_input_callback, NULL, true);
+  radium::MidiInputPort *port = MIDIPORT_open_input(name, editor_midi_input_callback, NULL, true, is_keyboard);
   
   R_ASSERT_RETURN_IF_FALSE2(port!=NULL, false);
   
@@ -531,7 +536,7 @@ static bool add_editor_input_port(const char *name){
 }
   
 void MIDI_add_editor_input_port(const char *name){
-  if (add_editor_input_port(name)){
+  if (add_editor_input_port(name, true)){
     update_editor_ports_config_settings();
     PREFERENCES_update();
   }    
@@ -569,6 +574,31 @@ const char **MIDIPORT_get_editor_input_ports(int *retsize){
   return ret;
 }
 
+bool MIDI_editor_input_port_is_keyboard(const char *name){
+  R_ASSERT(THREADING_is_main_thread());
+
+  for(const radium::MidiInputPort *port : g_editor_inports)
+    if (!strcmp(port->_port_name->name, name))
+      return ATOMIC_GET(port->_is_keyboard);
+
+  R_ASSERT_NON_RELEASE(false);
+  return true;
+}
+
+void MIDI_set_editor_input_port_is_keyboard(const char *name, bool is_keyboard){
+  R_ASSERT(THREADING_is_main_thread());
+
+  for(radium::MidiInputPort *port : g_editor_inports) {
+    if (!strcmp(port->_port_name->name, name)) {
+      ATOMIC_SET(port->_is_keyboard, is_keyboard);
+      update_editor_ports_config_settings();
+      return;
+    }
+  }
+
+  R_ASSERT_NON_RELEASE(false);
+}
+
 
 
 /*****************************************************/
@@ -587,7 +617,8 @@ void MIDIPORT_init(void){
   for(int i = 0 ; i < num_inports ; i++){
     const char *name = SETTINGS_read_string(talloc_format("midi_input_port_%d",i),NULL);
     if(name!=NULL){
-      add_editor_input_port(name);
+      bool is_keyboard = SETTINGS_read_bool(talloc_format("midi_input_port_%d_is_keyboard",i), true);
+      add_editor_input_port(name, is_keyboard);
     }
   }
 }
