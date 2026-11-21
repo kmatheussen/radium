@@ -81,6 +81,7 @@ struct FaderTarget
 {
 	int seqtracknum = -1;
 	bool for_audiofiles = false;
+	bool is_master = false;
 	instrument_t instrument_id;
 };
 
@@ -97,12 +98,12 @@ struct McuPort
 	bool has_reported_output_failure = false;
 
 	// Last pitch bend value sent to the device. -2 means that the fader has not
-	// been synchronized yet.
-	int last_sent[8];
+	// been synchronized yet. Index 8 is the master fader.
+	int last_sent[9];
 
 	// The seqtrack each fader was mapped to when it was last synchronized.
 	// Used to detect when the visible seqtracks change.
-	int last_target_seqtrack[8];
+	int last_target_seqtrack[9];
 
 	// Last sent button LED states. -1 means that the LED has not been
 	// synchronized yet.
@@ -118,8 +119,18 @@ struct McuPort
 	bool last_playing_state = false;
 	bool last_punching_state = false;
 
+	// Main display.
+	int last_sent_namevalue_button = -1;
+	int last_sent_timecode_button = -1;
+	int last_sent_smpte_led = -1;
+	int last_sent_beats_led = -1;
+	int64_t last_timecode_update = -100000;
+	char last_timecode[11];
+	bool timecode_needs_full_update = true;
+	bool last_timecode_bars_and_beats = false;
+
 	// Used to avoid adding a new undo entry for every single fader message.
-	int64_t last_fader_input_time[8];
+	int64_t last_fader_input_time[9];
 
 	// Same, but for knob movements.
 	int64_t last_vpot_input_time[8];
@@ -133,7 +144,7 @@ struct McuPort
 	// period, both to avoid fighting the user while dragging and to update the
 	// device's internal motor target before it times out and moves the fader
 	// back to its previous position.
-	bool fader_needs_feedback[8];
+	bool fader_needs_feedback[9];
 
 	bool meter_overload[8];
 
@@ -159,6 +170,7 @@ struct McuPort
 	{
 		memset(last_line1, 0, sizeof(last_line1));
 		memset(last_line2, 0, sizeof(last_line2));
+		memset(last_timecode, 0, sizeof(last_timecode));
 
 		for(int i=0;i<8;i++)
 		{
@@ -177,6 +189,11 @@ struct McuPort
 			pending_peak_db[i] = MIN_DB;
 			last_colors[i] = -1;
 		}
+
+		last_sent[8] = -2;
+		last_target_seqtrack[8] = -2;
+		last_fader_input_time[8] = -100000;
+		fader_needs_feedback[8] = false;
 
 		for(int i=0 ; i<5 ; i++)
 			last_sent_transport[i] = -1;
@@ -263,6 +280,18 @@ static FaderTarget get_fader_target(int fader)
 {
 	FaderTarget target;
 
+	if (fader == 8)
+	{
+		target.is_master = true;
+		target.for_audiofiles = true;
+		target.instrument_id = getMainPipeInstrument();
+
+		if (!instrumentEffectExists(target.instrument_id, "System Volume"))
+			target.is_master = false;
+
+		return target;
+	}
+
 	int num_seqtracks = getNumSeqtracks();
 	if (num_seqtracks <= 0)
 		return target;
@@ -301,7 +330,7 @@ static FaderTarget get_fader_target(int fader)
 
 static float get_fader_value(const FaderTarget &target)
 {
-	if (target.seqtracknum < 0)
+	if (target.seqtracknum < 0 && !target.is_master)
 		return -1.0f;
 
 	float db;
@@ -316,7 +345,7 @@ static float get_fader_value(const FaderTarget &target)
 
 static void maybe_make_undo(const FaderTarget &target)
 {
-	if (target.seqtracknum < 0)
+	if (target.seqtracknum < 0 && !target.is_master)
 		return;
 
 	if (target.for_audiofiles)
@@ -327,7 +356,7 @@ static void maybe_make_undo(const FaderTarget &target)
 
 static void set_fader_value(const FaderTarget &target, float fader)
 {
-	if (target.seqtracknum < 0)
+	if (target.seqtracknum < 0 && !target.is_master)
 		return;
 
 	if (target.for_audiofiles)
@@ -455,6 +484,120 @@ static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target
 	send_button_led(port, MCU_NOTE_SELECT + fader, get_target_selected(target), &port->last_sent_select[fader]);
 }
 
+static void format_bars_and_beats(int64_t pos, char timecode[11])
+{
+	int64_t last_beat_time = -1;
+	int64_t previous_beat_time = -1;
+	int64_t next_beat_time = -1;
+	int bar = 1;
+	int beat = 1;
+
+	SEQUENCER_iterate_time(0, pos + (int64_t)getSampleRate() * 60, GridType::BEAT_GRID,
+		[&](int64_t seqtime, int barnum, int beatnum, int linenum)
+		{
+			if (seqtime <= pos)
+			{
+				previous_beat_time = last_beat_time;
+				last_beat_time = seqtime;
+				bar = barnum;
+				beat = beatnum;
+				return true;
+			}
+
+			if (next_beat_time < 0)
+				next_beat_time = seqtime;
+
+			return false;
+		});
+
+	int64_t beat_length = 0;
+
+	if (last_beat_time >= 0 && next_beat_time > last_beat_time)
+		beat_length = next_beat_time - last_beat_time;
+	else if (last_beat_time >= 0 && previous_beat_time >= 0)
+		beat_length = last_beat_time - previous_beat_time;
+
+	int ticks = 0;
+
+	if (beat_length > 0 && last_beat_time >= 0)
+	{
+		ticks = (int)((pos - last_beat_time) * 1000 / beat_length);
+		ticks = R_BOUNDARIES(0, ticks, 999);
+	}
+
+	const int display_bar = R_BOUNDARIES(0, bar, 999);
+	const int display_beat = R_BOUNDARIES(1, beat, 99);
+
+	char temp[32];
+	snprintf(temp, sizeof(temp), "%03d %02d %03d", display_bar, display_beat, ticks);
+	memcpy(timecode, temp, 10);
+	timecode[10] = '\0';
+}
+
+static void update_timecode_display(McuPort *port)
+{
+	const int64_t now = (int64_t)TIME_get_ms();
+
+	if (now - port->last_timecode_update < 100)
+		return;
+
+	port->last_timecode_update = now;
+
+	const bool show_bars_and_beats = MCU_display_bars_and_beats();
+
+	if (show_bars_and_beats != port->last_timecode_bars_and_beats)
+	{
+		port->last_timecode_bars_and_beats = show_bars_and_beats;
+		port->timecode_needs_full_update = true;
+	}
+
+	send_button_led(port, 0x34, !show_bars_and_beats, &port->last_sent_namevalue_button);
+	send_button_led(port, 0x35, show_bars_and_beats, &port->last_sent_timecode_button);
+	send_button_led(port, 0x71, !show_bars_and_beats, &port->last_sent_smpte_led);
+	send_button_led(port, 0x72, show_bars_and_beats, &port->last_sent_beats_led);
+
+	char timecode[11];
+
+	if (show_bars_and_beats)
+	{
+		format_bars_and_beats(getSongPos(), timecode);
+	}
+	else
+	{
+		const int fps = 25;
+		int64_t total_frames = getSongPos() * fps / getSampleRate();
+
+		if (total_frames < 0)
+			total_frames = 0;
+
+		const int frames = total_frames % fps;
+		const int64_t total_seconds = total_frames / fps;
+		const int seconds = total_seconds % 60;
+		const int64_t total_minutes = total_seconds / 60;
+		const int minutes = total_minutes % 60;
+		const int hours = (total_minutes / 60) % 24;
+
+		snprintf(timecode, sizeof(timecode), "%02d %02d%02d %02d", hours, minutes, seconds, frames);
+	}
+
+	for(int i=0 ; i<10 ; i++)
+	{
+		if (port->timecode_needs_full_update == false && port->last_timecode[i] == timecode[i])
+			continue;
+
+		int value = timecode[i] >= '0' && timecode[i] <= '9'
+			? 0x30 + (timecode[i] - '0')
+			: 0x20;
+
+		// Mackie Control timecode digits: CC 0x40 is the rightmost digit,
+		// CC 0x49 is the leftmost digit.
+		MIDIPORT_send_message(port->output_port, 0xb0, 0x40 + (9 - i), value);
+	}
+
+	memcpy(port->last_timecode, timecode, sizeof(timecode));
+	port->timecode_needs_full_update = false;
+}
+
 static void sync_transport_leds(McuPort *port)
 {
 	const int64_t now = (int64_t)TIME_get_ms();
@@ -560,6 +703,7 @@ static void reset_target_pan(const FaderTarget &target)
 }
 
 static int g_jog_moves_by_bars = -1;
+static int g_display_bars_and_beats = -1;
 
 bool MCU_jog_moves_by_bars(void)
 {
@@ -573,6 +717,20 @@ void MCU_set_jog_moves_by_bars(bool by_bars)
 {
 	g_jog_moves_by_bars = by_bars ? 1 : 0;
 	SETTINGS_write_string("mcu_jog_grid", by_bars ? "bar" : "beat");
+}
+
+bool MCU_display_bars_and_beats(void)
+{
+	if (g_display_bars_and_beats < 0)
+		g_display_bars_and_beats = strcmp(SETTINGS_read_string("mcu_display_mode", "smpte"), "bbt") == 0 ? 1 : 0;
+
+	return g_display_bars_and_beats != 0;
+}
+
+void MCU_set_display_bars_and_beats(bool show_bars_and_beats)
+{
+	g_display_bars_and_beats = show_bars_and_beats ? 1 : 0;
+	SETTINGS_write_string("mcu_display_mode", show_bars_and_beats ? "bbt" : "smpte");
 }
 
 static int64_t find_grid_start_at_or_before(int64_t pos, GridType grid_type)
@@ -1070,6 +1228,16 @@ static radium::MidiOutputPort *open_output_port(McuPort *port)
 	{
 		printf("MCU: Using MIDI output port \"%s\".\n", port->port_name->name);
 		port->has_reported_output_failure = false;
+
+		port->last_sent_namevalue_button = -1;
+		port->last_sent_timecode_button = -1;
+		port->last_sent_smpte_led = -1;
+		port->last_sent_beats_led = -1;
+		port->last_timecode_update = -100000;
+		port->timecode_needs_full_update = true;
+		port->last_timecode_bars_and_beats = false;
+		memset(port->last_timecode, 0, sizeof(port->last_timecode));
+
 		send_mcu_wakeup(port);
 	}
 
@@ -1100,15 +1268,50 @@ static void force_sync_fader(McuPort *port, int fader, const FaderTarget &target
 {
 	float fader_value = get_fader_value(target);
 
-	int value = target.seqtracknum >= 0
+	int value = (target.seqtracknum >= 0 || target.is_master)
 		? fader_to_int(fader_value)
 		: 0;
 
 	send_fader(port, fader, value);
 	port->last_target_seqtrack[fader] = target.seqtracknum;
 
-	sync_button_leds(port, fader, target);
-	send_vpot_led(port, fader, get_target_pan(target));
+	if (fader < 8)
+	{
+		sync_button_leds(port, fader, target);
+		send_vpot_led(port, fader, get_target_pan(target));
+	}
+}
+
+static void update_fader_motor(McuPort *port, int fader, const FaderTarget &target, int64_t now)
+{
+	float fader_value = get_fader_value(target);
+
+	int value = (target.seqtracknum >= 0 || target.is_master)
+		? fader_to_int(fader_value)
+		: 0;
+
+	// After the user has stopped moving the fader, send the new position back
+	// to the device. Otherwise the device's motor target remains at the old
+	// position, and the X-Touch moves the fader back there after a short
+	// timeout.
+	const bool send_deferred_feedback = port->fader_needs_feedback[fader] && now - port->last_fader_input_time[fader] > 150;
+
+	if (target.seqtracknum != port->last_target_seqtrack[fader])
+	{
+		send_fader(port, fader, value);
+		port->last_target_seqtrack[fader] = target.seqtracknum;
+	}
+	else if (send_deferred_feedback)
+	{
+		send_fader(port, fader, value);
+	}
+	else if (value > port->last_sent[fader] + 2 || value < port->last_sent[fader] - 2)
+	{
+		send_fader(port, fader, value);
+	}
+
+	if (send_deferred_feedback)
+		port->fader_needs_feedback[fader] = false;
 }
 
 static McuPort *find_port(const char *port_name)
@@ -1124,18 +1327,19 @@ static McuPort *find_port(const char *port_name)
 
 static void process_fader_message(McuPort *port, int byte1, int byte2, int byte3)
 {
-	if (!g_sequencer_has_focus)
+	const int fader = byte1 & 0x0f;
+	if (fader > 8)
 		return;
 
-	const int fader = byte1 & 0x0f;
-	if (fader >= 8)
+	// The master fader is global. Channel faders require sequencer focus.
+	if (!g_sequencer_has_focus && fader != 8)
 		return;
 
 	const int value = (byte2 & 0x7f) | ((byte3 & 0x7f) << 7);
 	const float fader_value = int_to_fader(value);
 
 	FaderTarget target = get_fader_target(fader);
-	if (target.seqtracknum < 0)
+	if (target.seqtracknum < 0 && !target.is_master)
 		return;
 
 	const int64_t now = (int64_t)TIME_get_ms();
@@ -1194,6 +1398,14 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 	if (note == MCU_NOTE_RECORD)
 	{
 		setSeqpunching(!isSeqpunching());
+		return;
+	}
+
+	// Both buttons beside the main display toggle between SMPTE timecode
+	// and bars and beats.
+	if (note == 0x34 || note == 0x35)
+	{
+		MCU_set_display_bars_and_beats(!MCU_display_bars_and_beats());
 		return;
 	}
 
@@ -1256,7 +1468,7 @@ static void drain_messages(void)
 			continue;
 
 		// Faders are pitch bend messages on MIDI channels 0-7.
-		if (message.byte1 >= 0xe0 && message.byte1 <= 0xe7)
+		if (message.byte1 >= 0xe0 && message.byte1 <= 0xe8)
 			process_fader_message(port, message.byte1, message.byte2, message.byte3);
 		else if ((message.byte1 & 0xf0) == 0x90)
 			process_button_message(port, message.byte1, message.byte2, message.byte3);
@@ -1281,6 +1493,12 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 	// Global controls, such as the transport buttons, should light up as soon
 	// as the MCU device is detected, independently of sequencer keyboard focus.
 	sync_transport_leds(port);
+	update_timecode_display(port);
+
+	{
+		FaderTarget master_target = get_fader_target(8);
+		update_fader_motor(port, 8, master_target, now);
+	}
 
 	if (!sequencer_has_focus)
 	{
@@ -1305,6 +1523,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		for(int fader=0 ; fader<8 ; fader++)
 			force_sync_fader(port, fader, get_fader_target(fader));
 
+		force_sync_fader(port, 8, get_fader_target(8));
+
 		port->panels_need_full_update = true;
 		port->last_panel_update = -100000;
 		port->was_sequencer_selected = true;
@@ -1318,34 +1538,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 	for(int fader=0 ; fader<8 ; fader++)
 	{
 		FaderTarget target = get_fader_target(fader);
-		float fader_value = get_fader_value(target);
 
-		int value = target.seqtracknum >= 0
-			? fader_to_int(fader_value)
-			: 0;
-
-		// After the user has stopped moving the fader, send the new position back
-		// to the device. Otherwise the device's motor target remains at the old
-		// position, and the X-Touch moves the fader back there after a short
-		// timeout.
-		const bool send_deferred_feedback = port->fader_needs_feedback[fader] && now - port->last_fader_input_time[fader] > 150;
-
-		if (target.seqtracknum != port->last_target_seqtrack[fader])
-		{
-			send_fader(port, fader, value);
-			port->last_target_seqtrack[fader] = target.seqtracknum;
-		}
-		else if (send_deferred_feedback)
-		{
-			send_fader(port, fader, value);
-		}
-		else if (value > port->last_sent[fader] + 2 || value < port->last_sent[fader] - 2)
-		{
-			send_fader(port, fader, value);
-		}
-
-		if (send_deferred_feedback)
-			port->fader_needs_feedback[fader] = false;
+		update_fader_motor(port, fader, target, now);
 
 		sync_button_leds(port, fader, target);
 		send_vpot_led(port, fader, get_target_pan(target));

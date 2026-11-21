@@ -21,6 +21,8 @@ extern void MCU_set_sequencer_has_focus(bool has_focus);
 // Global MCU settings.
 extern bool MCU_jog_moves_by_bars(void);
 extern void MCU_set_jog_moves_by_bars(bool by_bars);
+extern bool MCU_display_bars_and_beats(void);
+extern void MCU_set_display_bars_and_beats(bool show_bars_and_beats);
 
 #ifdef __cplusplus
 }

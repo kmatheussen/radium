@@ -29,9 +29,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QPushButton>
 #include <QCheckBox>
-#include <QComboBox>
-#include <QFormLayout>
 #include <QGroupBox>
+#include <QRadioButton>
 #include <QVBoxLayout>
 #include <QColorDialog>
 #include <QCloseEvent>
@@ -476,7 +475,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   bool _initing;
   bool _is_updating_widgets;
   bool _needs_to_update = false;
-  QComboBox *mcu_jog_grid = NULL;
+  QRadioButton *mcu_jog_beat = NULL;
+  QRadioButton *mcu_jog_bar = NULL;
+  QRadioButton *mcu_display_smpte = NULL;
+  QRadioButton *mcu_display_bbt = NULL;
   MyColorDialog _color_dialog;
   Vst_paths_widget *vst_widget = new Vst_paths_widget;
   
@@ -503,24 +505,58 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       QVBoxLayout *mcu_layout = new QVBoxLayout(mcu_tab);
 
       QGroupBox *jog_group = new QGroupBox("Jog wheel", mcu_tab);
-      QFormLayout *jog_layout = new QFormLayout(jog_group);
+      QVBoxLayout *jog_layout = new QVBoxLayout(jog_group);
 
-      mcu_jog_grid = new QComboBox(jog_group);
-      mcu_jog_grid->addItem("Bar");
-      mcu_jog_grid->addItem("Beat");
-      jog_layout->addRow("Move by:", mcu_jog_grid);
+      mcu_jog_beat = new QRadioButton("Beat", jog_group);
+      mcu_jog_bar = new QRadioButton("Bar", jog_group);
+      jog_layout->addWidget(mcu_jog_beat);
+      jog_layout->addWidget(mcu_jog_bar);
 
       mcu_layout->addWidget(jog_group);
+
+      QGroupBox *display_group = new QGroupBox("Main display", mcu_tab);
+      QVBoxLayout *display_layout = new QVBoxLayout(display_group);
+
+      mcu_display_smpte = new QRadioButton("SMPTE timecode (HH MMSS FF)", display_group);
+      mcu_display_bbt = new QRadioButton("Bars and beats", display_group);
+      display_layout->addWidget(mcu_display_smpte);
+      display_layout->addWidget(mcu_display_bbt);
+
+      mcu_layout->addWidget(display_group);
       mcu_layout->addStretch(1);
 
       tabWidget->insertTab(tabWidget->indexOf(MIDI) + 1, mcu_tab, "MCU");
 
-      connect(mcu_jog_grid, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
+      connect(mcu_jog_beat, &QRadioButton::toggled, this, [this](bool checked)
       {
-        if (_initing || _is_updating_widgets)
+        if (checked == false || _initing || _is_updating_widgets)
           return;
 
-        MCU_set_jog_moves_by_bars(index == 0);
+        MCU_set_jog_moves_by_bars(false);
+      });
+
+      connect(mcu_jog_bar, &QRadioButton::toggled, this, [this](bool checked)
+      {
+        if (checked == false || _initing || _is_updating_widgets)
+          return;
+
+        MCU_set_jog_moves_by_bars(true);
+      });
+
+      connect(mcu_display_smpte, &QRadioButton::toggled, this, [this](bool checked)
+      {
+        if (checked == false || _initing || _is_updating_widgets)
+          return;
+
+        MCU_set_display_bars_and_beats(false);
+      });
+
+      connect(mcu_display_bbt, &QRadioButton::toggled, this, [this](bool checked)
+      {
+        if (checked == false || _initing || _is_updating_widgets)
+          return;
+
+        MCU_set_display_bars_and_beats(true);
       });
     }
 
@@ -1119,8 +1155,19 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     }
 
     // MCU
-    if (mcu_jog_grid != NULL)
-      mcu_jog_grid->setCurrentIndex(MCU_jog_moves_by_bars() ? 0 : 1);
+    if (mcu_jog_beat != NULL)
+    {
+      const bool move_by_bars = MCU_jog_moves_by_bars();
+      mcu_jog_beat->setChecked(!move_by_bars);
+      mcu_jog_bar->setChecked(move_by_bars);
+    }
+
+    if (mcu_display_smpte != NULL)
+    {
+      const bool show_bars_and_beats = MCU_display_bars_and_beats();
+      mcu_display_smpte->setChecked(!show_bars_and_beats);
+      mcu_display_bbt->setChecked(show_bars_and_beats);
+    }
 
     minimizeRecursively(this->window());
     
