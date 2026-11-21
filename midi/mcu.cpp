@@ -643,6 +643,8 @@ static void process_jog_message(int value)
 	for(int i=0 ; i<ticks ; i++)
 		pos = get_adjacent_grid_position(pos, direction, grid_type);
 
+	pos = R_MIN(pos, getSongLengthInFrames());
+
 	setSongPos(pos);
 }
 
