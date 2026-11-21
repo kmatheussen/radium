@@ -21,9 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	Control. Examples are Behringer X-Touch, Icon QCon, and various other
 	devices. This file only implements the parts of the protocol Radium uses.
 
-	Currently the eight channel faders and their mute, solo, and record buttons
-	are supported. Fader movements are sent as pitch bend messages on MIDI
-	channels 1-8 (i.e. channel numbers 0-7), and motor positions are set by
+	Currently the eight channel faders and their mute, solo, record, and select
+	buttons are supported. Fader movements are sent as pitch bend messages on
+	MIDI channels 1-8 (i.e. channel numbers 0-7), and motor positions are set by
 	sending pitch bend back to the device. Button LEDs are kept in sync with the
 	corresponding seqtrack state.
 */
@@ -88,6 +88,7 @@ struct McuPort
 	int last_sent_mute[8];
 	int last_sent_solo[8];
 	int last_sent_rec[8];
+	int last_sent_select[8];
 
 	// Used to avoid adding a new undo entry for every single fader message.
 	int64_t last_fader_input_time[8];
@@ -111,6 +112,7 @@ struct McuPort
 			last_sent_mute[i] = -1;
 			last_sent_solo[i] = -1;
 			last_sent_rec[i] = -1;
+			last_sent_select[i] = -1;
 			last_fader_input_time[i] = -100000;
 			fader_needs_feedback[i] = false;
 		}
@@ -283,7 +285,8 @@ enum
 {
 	MCU_NOTE_REC = 0x00,
 	MCU_NOTE_SOLO = 0x08,
-	MCU_NOTE_MUTE = 0x10
+	MCU_NOTE_MUTE = 0x10,
+	MCU_NOTE_SELECT = 0x18
 };
 
 static bool get_target_mute(const FaderTarget &target)
@@ -311,6 +314,14 @@ static bool get_target_recording(const FaderTarget &target)
 		return false;
 
 	return seqtrackIsRecording(target.seqtracknum, false);
+}
+
+static bool get_target_selected(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return false;
+
+	return getCurrSeqtrack() == target.seqtracknum;
 }
 
 static void toggle_target_mute(const FaderTarget &target)
@@ -341,6 +352,14 @@ static void toggle_target_recording(const FaderTarget &target)
 	setSeqtrackIsRecording(target.seqtracknum, !is_recording);
 }
 
+static void select_target(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return;
+
+	setCurrSeqtrack(target.seqtracknum, false, true);
+}
+
 static void send_button_led(McuPort *port, int note, bool is_on, int *last_sent)
 {
 	if (port->output_port == NULL)
@@ -360,6 +379,7 @@ static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target
 	send_button_led(port, MCU_NOTE_MUTE + fader, get_target_mute(target), &port->last_sent_mute[fader]);
 	send_button_led(port, MCU_NOTE_SOLO + fader, get_target_solo(target), &port->last_sent_solo[fader]);
 	send_button_led(port, MCU_NOTE_REC + fader, get_target_recording(target), &port->last_sent_rec[fader]);
+	send_button_led(port, MCU_NOTE_SELECT + fader, get_target_selected(target), &port->last_sent_select[fader]);
 }
 
 
@@ -495,6 +515,8 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 		fader = note - MCU_NOTE_SOLO;
 	else if (note >= MCU_NOTE_MUTE && note < MCU_NOTE_MUTE + 8)
 		fader = note - MCU_NOTE_MUTE;
+	else if (note >= MCU_NOTE_SELECT && note < MCU_NOTE_SELECT + 8)
+		fader = note - MCU_NOTE_SELECT;
 	else
 		return;
 
@@ -506,8 +528,10 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 		toggle_target_recording(target);
 	else if (note >= MCU_NOTE_SOLO && note < MCU_NOTE_SOLO + 8)
 		toggle_target_solo(target);
-	else
+	else if (note >= MCU_NOTE_MUTE && note < MCU_NOTE_MUTE + 8)
 		toggle_target_mute(target);
+	else
+		select_target(target);
 
 	SEQUENCER_update(SEQUPDATE_HEADERS);
 }
