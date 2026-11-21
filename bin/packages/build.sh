@@ -140,6 +140,23 @@ build_faust() {
 		#echo "PATH: $PATH"
 	fi
 	
+	# LLVM's static component libraries include libLLVMLineEditor.a, which uses
+	# libedit. Some distributions build LLVM with editline support but forget to
+	# report -ledit in "llvm-config --system-libs" (e.g. the llvm21 RPMs on
+	# AlmaLinux/RHEL). Without it, linking the faust binary fails with undefined
+	# references to el_set()/history, and libfaust.so is created with unresolved
+	# el_*/history symbols, so Radium cannot load it either. Add -ledit ourselves
+	# when llvm-config doesn't provide it and libedit can be linked.
+	FAUST_LLVM_LDFLAGS=""
+	if ! is_0 $FAUST_USES_LLVM ; then
+		if ! ${LLVM_CONFIG_BIN} --system-libs 2> /dev/null | grep -q -- "-ledit" ; then
+			if printf 'int main(void) { return 0; }\n' | $DASCC -x c - -ledit -o /dev/null > /dev/null 2>&1 ; then
+				echo "Note: llvm-config does not report -ledit, but libedit is available. Adding it to the faust link."
+				FAUST_LLVM_LDFLAGS="-DCMAKE_CXX_STANDARD_LIBRARIES=-ledit"
+			fi
+		fi
+	fi
+
 	# Use all CPUs when building faust.
 	JOBS=$(nproc)
 	
@@ -149,7 +166,7 @@ build_faust() {
 	echo "\n\nNote: Faust might fail if built with gcc. To work around that, simply build faust with clang instead, temporarily setting RADIUM_USE_CLANG=1 only when building faust.\n\n"
 	
 	# release build
-	BUILDOPT="--config Release -j${JOBS}" VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` $DARWIN_CMAKEOPT" make most
+	BUILDOPT="--config Release -j${JOBS}" VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` $DARWIN_CMAKEOPT $FAUST_LLVM_LDFLAGS" make most
 	
 	if ! is_0 $FAUST_USES_LLVM ; then
 		export PATH=$ORGTEMPPATH
