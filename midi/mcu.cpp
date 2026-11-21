@@ -22,10 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 	devices. This file only implements the parts of the protocol Radium uses.
 
 	Currently the eight channel faders, their mute, solo, record, and select
-	buttons, and the channel VU meters are supported. Fader movements are sent
-	as pitch bend messages on MIDI channels 1-8 (i.e. channel numbers 0-7), and
-	motor positions are set by sending pitch bend back to the device. Button LEDs
-	and VU meters are kept in sync with the corresponding seqtrack state.
+	buttons, the channel VU meters, and the track panels are supported. Fader
+	movements are sent as pitch bend messages on MIDI channels 1-8 (i.e. channel
+	numbers 0-7), and motor positions are set by sending pitch bend back to the
+	device. Button LEDs, VU meters, and track panels are kept in sync with the
+	corresponding seqtrack state. X-Touch track panel colors are also supported.
 */
 
 
@@ -35,6 +36,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <boost/lockfree/queue.hpp>
 
+#include <QByteArray>
+#include <QColor>
+#include <QString>
+
 #include "../common/nsmtracker.h"
 #include "../common/sequencer_proc.h"
 #include "../api/api_proc.h"
@@ -42,10 +47,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/AudioMeterPeaks_proc.h"
 
+#include "../Qt/Qt_colors_proc.h"
+
 #include "OS_midi_proc.h"
 #include "midi_ports_proc.h"
 
 #include "mcu_proc.h"
+
+
+static bool is_xtouch_port_name(const symbol_t *port_name)
+{
+	const char *name = port_name->name;
+
+	return strstr(name, "X-Touch") != NULL || strstr(name, "X-TOUCH") != NULL || strstr(name, "x-touch") != NULL;
+}
 
 
 namespace
@@ -69,6 +84,8 @@ struct FaderTarget
 struct McuPort
 {
 	const symbol_t *port_name;
+
+	bool is_xtouch;
 
 	radium::MidiOutputPort *output_port = NULL;
 
@@ -107,13 +124,25 @@ struct McuPort
 
 	int64_t last_meter_update = -100000;
 
+	int64_t last_panel_update = -100000;
+
+	bool panels_need_full_update = true;
+
+	char last_line1[55];
+	char last_line2[55];
+	int last_colors[8];
+
 	bool meters_enabled = false;
 
 	bool was_sequencer_selected = false;
 
 	McuPort(const symbol_t *port_name)
 		: port_name(port_name)
+		, is_xtouch(is_xtouch_port_name(port_name))
 	{
+		memset(last_line1, 0, sizeof(last_line1));
+		memset(last_line2, 0, sizeof(last_line2));
+
 		for(int i=0;i<8;i++)
 		{
 			last_sent[i] = -2;
@@ -126,6 +155,7 @@ struct McuPort
 			fader_needs_feedback[i] = false;
 			meter_overload[i] = false;
 			pending_peak_db[i] = MIN_DB;
+			last_colors[i] = -1;
 		}
 	}
 };
@@ -513,6 +543,194 @@ static void disable_meters(McuPort *port)
 
 
 /*********************************************************/
+/******************* Track panels ************************/
+/*********************************************************/
+
+static void copy_name_6(const char *name, char *dest)
+{
+	QByteArray latin = QString::fromUtf8(name == NULL ? "" : name).toLatin1();
+
+	for(int i=0 ; i<6 ; i++)
+	{
+		if (i < latin.size() && latin.at(i) >= 0x20 && latin.at(i) <= 0x7e)
+			dest[i] = latin.at(i);
+		else
+			dest[i] = ' ';
+	}
+}
+
+static void format_volume_6(float db, char *dest)
+{
+	char temp[32];
+
+	const bool is_zero = fabsf(db) < 0.05f;
+
+	if (is_zero)
+		db = 0.0f;
+
+	if (db <= MIN_DB)
+	{
+		snprintf(temp, sizeof(temp), "  -inf");
+	}
+	else if (is_zero)
+	{
+		snprintf(temp, sizeof(temp), " 0.0dB");
+	}
+	else
+	{
+		snprintf(temp, sizeof(temp), "%+.1fdB", db);
+
+		if (strlen(temp) > 6)
+			snprintf(temp, sizeof(temp), "%+.0fdB", db);
+	}
+
+	for(int i=0 ; i<6 ; i++)
+		dest[i] = i < (int)strlen(temp) ? temp[i] : ' ';
+}
+
+static QColor get_target_color(const FaderTarget &target)
+{
+	if (target.seqtracknum < 0)
+		return QColor();
+
+	if (target.for_audiofiles)
+	{
+		QColor color(getInstrumentColor(target.instrument_id, true));
+
+		if (color.isValid())
+			return color;
+
+		return QColor(Qt::white);
+	}
+
+	return get_qcolor(SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM);
+}
+
+static int color_to_xtouch_color(const QColor &color)
+{
+	if (!color.isValid())
+		return 7; // White
+
+	int red = color.red();
+	int green = color.green();
+	int blue = color.blue();
+
+	int max = R_MAX(red, R_MAX(green, blue));
+
+	if (max == 0)
+		return 7; // White (black means off on the X-Touch)
+
+	const float norm = 255.0f / max;
+
+	red = (int)(red * norm);
+	green = (int)(green * norm);
+	blue = (int)(blue * norm);
+
+	int ret = 0;
+
+	if (red > 0x7f)
+		ret |= 1; // Red
+
+	if (green > 0x7f)
+		ret |= 2; // Green
+
+	if (blue > 0x7f)
+		ret |= 4; // Blue
+
+	return ret == 0 ? 7 : ret;
+}
+
+static void send_display_line(McuPort *port, int line_number, const char line[55])
+{
+	if (port->output_port == NULL)
+		return;
+
+	uint8_t data[63];
+	int pos = 0;
+
+	data[pos++] = 0xf0;
+	data[pos++] = 0x00;
+	data[pos++] = 0x00;
+	data[pos++] = 0x66;
+	data[pos++] = 0x14;
+	data[pos++] = 0x12;
+	data[pos++] = line_number == 0 ? 0x00 : 0x38;
+
+	for(int i=0 ; i<55 ; i++)
+		data[pos++] = (uint8_t)line[i];
+
+	data[pos++] = 0xf7;
+
+	MIDIPORT_send_sysex(port->output_port, pos, data);
+}
+
+static void send_xtouch_colors(McuPort *port, const int colors[8])
+{
+	if (!port->is_xtouch || port->output_port == NULL)
+		return;
+
+	uint8_t data[15] = {0xf0, 0x00, 0x00, 0x66, 0x14, 0x72};
+
+	for(int i=0 ; i<8 ; i++)
+		data[6+i] = (uint8_t)colors[i];
+
+	data[14] = 0xf7;
+
+	MIDIPORT_send_sysex(port->output_port, sizeof(data), data);
+}
+
+static void update_track_panels(McuPort *port, bool force)
+{
+	char line1[56];
+	char line2[56];
+	int colors[8];
+
+	memset(line1, ' ', 55);
+	memset(line2, ' ', 55);
+	line1[55] = '\0';
+	line2[55] = '\0';
+
+	for(int fader=0 ; fader<8 ; fader++)
+	{
+		FaderTarget target = get_fader_target(fader);
+		const int pos = fader * 7;
+
+		colors[fader] = 0; // Off
+
+		if (target.seqtracknum < 0)
+			continue;
+
+		copy_name_6(getSeqtrackName(target.seqtracknum), &line1[pos]);
+
+		const float fader_value = get_fader_value(target);
+
+		if (fader_value >= 0.0f)
+			format_volume_6(fader_to_db(fader_value), &line2[pos]);
+
+		colors[fader] = color_to_xtouch_color(get_target_color(target));
+	}
+
+	if (force || memcmp(port->last_line1, line1, 55) != 0)
+	{
+		send_display_line(port, 0, line1);
+		memcpy(port->last_line1, line1, 55);
+	}
+
+	if (force || memcmp(port->last_line2, line2, 55) != 0)
+	{
+		send_display_line(port, 1, line2);
+		memcpy(port->last_line2, line2, 55);
+	}
+
+	if (port->is_xtouch && (force || memcmp(port->last_colors, colors, sizeof(colors)) != 0))
+	{
+		send_xtouch_colors(port, colors);
+		memcpy(port->last_colors, colors, sizeof(colors));
+	}
+}
+
+
+/*********************************************************/
 /**************** Output / device handling ***************/
 /*********************************************************/
 
@@ -702,6 +920,7 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		{
 			clear_meters(port);
 			disable_meters(port);
+			port->panels_need_full_update = true;
 		}
 
 		port->was_sequencer_selected = false;
@@ -715,6 +934,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		for(int fader=0 ; fader<8 ; fader++)
 			force_sync_fader(port, fader, get_fader_target(fader));
 
+		port->panels_need_full_update = true;
+		port->last_panel_update = -100000;
 		port->was_sequencer_selected = true;
 		return;
 	}
@@ -792,6 +1013,13 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 				port->meter_overload[fader] = false;
 			}
 		}
+	}
+
+	if (now - port->last_panel_update >= 200)
+	{
+		port->last_panel_update = now;
+		update_track_panels(port, port->panels_need_full_update);
+		port->panels_need_full_update = false;
 	}
 }
 
