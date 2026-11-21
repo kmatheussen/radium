@@ -693,6 +693,7 @@ def parse():
     parser=Parser(filehandle,filehandle2)
     defnum=0
     reader=protoconfparser.Read()
+    had_error=False
     
     while parser.nextLine()!="ENDFILE":
 
@@ -710,7 +711,13 @@ def parse():
                 outfilehandle.write(parser.getCurrLine()+"\n")
 
         if parser.getLineType()=="ERROR":
-            return False
+            # Don't return here. The generated module must be reloaded even if
+            # parsing fails, or the keyhandles added before the error will
+            # refer to functions that don't exist in the module (for example a
+            # stale or empty generated_keybinding_code.py), and pressing those
+            # keys gives an AttributeError instead of running the command.
+            had_error=True
+            break
 
         if parser.getLineType()=="NORMAL":
             commands=parser.getCommands()
@@ -760,7 +767,7 @@ def parse():
 
     #sys.exit(1)
     
-    return True
+    return not had_error
 
 
 

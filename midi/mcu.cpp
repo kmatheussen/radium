@@ -44,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/sequencer_proc.h"
+#include "../common/settings_proc.h"
 #include "../api/api_proc.h"
 
 #include "../audio/SoundPlugin.h"
@@ -114,6 +115,8 @@ struct McuPort
 	// Main transport button LEDs: rewind, forward, stop, play, record.
 	int last_sent_transport[5];
 	int64_t last_transport_led_update = -100000;
+	bool last_playing_state = false;
+	bool last_punching_state = false;
 
 	// Used to avoid adding a new undo entry for every single fader message.
 	int64_t last_fader_input_time[8];
@@ -427,18 +430,21 @@ static void select_target(const FaderTarget &target)
 	setCurrSeqtrack(target.seqtracknum, false, true);
 }
 
-static void send_button_led(McuPort *port, int note, bool is_on, int *last_sent)
+static void send_button_led_value(McuPort *port, int note, int value, int *last_sent)
 {
 	if (port->output_port == NULL)
 		return;
-
-	const int value = is_on ? 127 : 0;
 
 	if (*last_sent == value)
 		return;
 
 	MIDIPORT_send_message(port->output_port, 0x90, note, value);
 	*last_sent = value;
+}
+
+static void send_button_led(McuPort *port, int note, bool is_on, int *last_sent)
+{
+	send_button_led_value(port, note, is_on ? 127 : 0, last_sent);
 }
 
 static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target)
@@ -452,23 +458,28 @@ static void sync_button_leds(McuPort *port, int fader, const FaderTarget &target
 static void sync_transport_leds(McuPort *port)
 {
 	const int64_t now = (int64_t)TIME_get_ms();
+	const bool playing = isPlaying();
+	const bool punching = isSeqpunching();
+	const bool transport_state_changed = playing != port->last_playing_state || punching != port->last_punching_state;
 
-	if (now - port->last_transport_led_update < 1000)
+	port->last_playing_state = playing;
+	port->last_punching_state = punching;
+
+	if (now - port->last_transport_led_update < 1000 && !transport_state_changed)
 		return;
 
 	port->last_transport_led_update = now;
 
-	// The transport buttons don't control anything yet, but keeping their LEDs
-	// on makes them easy to find on the board. Resend periodically since some
-	// devices clear their button LEDs when they receive other setup messages.
+	// Resend periodically since some devices clear their button LEDs when they
+	// receive other setup messages.
 	for(int i=0 ; i<5 ; i++)
 		port->last_sent_transport[i] = -1;
 
 	send_button_led(port, MCU_NOTE_REWIND,  true, &port->last_sent_transport[0]);
 	send_button_led(port, MCU_NOTE_FORWARD, true, &port->last_sent_transport[1]);
 	send_button_led(port, MCU_NOTE_STOP,    true, &port->last_sent_transport[2]);
-	send_button_led(port, MCU_NOTE_PLAY,    true, &port->last_sent_transport[3]);
-	send_button_led(port, MCU_NOTE_RECORD,  true, &port->last_sent_transport[4]);
+	send_button_led_value(port, MCU_NOTE_PLAY, playing ? 1 : 127, &port->last_sent_transport[3]);
+	send_button_led(port, MCU_NOTE_RECORD,  punching, &port->last_sent_transport[4]);
 }
 
 
@@ -548,8 +559,101 @@ static void reset_target_pan(const FaderTarget &target)
 	SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
+static int g_jog_moves_by_bars = -1;
+
+bool MCU_jog_moves_by_bars(void)
+{
+	if (g_jog_moves_by_bars < 0)
+		g_jog_moves_by_bars = strcmp(SETTINGS_read_string("mcu_jog_grid", "beat"), "beat") == 0 ? 0 : 1;
+
+	return g_jog_moves_by_bars != 0;
+}
+
+void MCU_set_jog_moves_by_bars(bool by_bars)
+{
+	g_jog_moves_by_bars = by_bars ? 1 : 0;
+	SETTINGS_write_string("mcu_jog_grid", by_bars ? "bar" : "beat");
+}
+
+static int64_t find_grid_start_at_or_before(int64_t pos, GridType grid_type)
+{
+	int64_t result = -1;
+
+	SEQUENCER_iterate_time(0, pos + 1, grid_type,
+		[&](int64_t seqtime, int barnum, int beatnum, int linenum)
+		{
+			if (seqtime <= pos)
+			{
+				result = seqtime;
+				return true;
+			}
+
+			return false;
+		});
+
+	return result;
+}
+
+static int64_t get_adjacent_grid_position(int64_t pos, int direction, GridType grid_type)
+{
+	const int64_t song_length = getSongLengthInFrames();
+	const int64_t max_pos = R_MAX(song_length, pos + (int64_t)getSampleRate() * 60 * 60 * 24);
+
+	if (direction > 0)
+	{
+		int64_t result = -1;
+
+		SEQUENCER_iterate_time(pos + 1, max_pos, grid_type,
+			[&](int64_t seqtime, int barnum, int beatnum, int linenum)
+			{
+				if (seqtime > pos)
+				{
+					if (result < 0)
+						result = seqtime;
+					return false;
+				}
+
+				return true;
+			});
+
+		return result >= 0 ? result : pos;
+	}
+
+	const int64_t current_grid_start = find_grid_start_at_or_before(pos, grid_type);
+
+	if (current_grid_start <= 0)
+		return 0;
+
+	const int64_t previous_grid_start = find_grid_start_at_or_before(current_grid_start - 1, grid_type);
+
+	return previous_grid_start >= 0 ? previous_grid_start : 0;
+}
+
+static void process_jog_message(int value)
+{
+	int ticks = value & 0x3f;
+
+	if (ticks == 0)
+		return;
+
+	const int direction = (value & 0x40) == 0 ? 1 : -1;
+	const GridType grid_type = MCU_jog_moves_by_bars() ? GridType::BAR_GRID : GridType::BEAT_GRID;
+	int64_t pos = getSongPos();
+
+	for(int i=0 ; i<ticks ; i++)
+		pos = get_adjacent_grid_position(pos, direction, grid_type);
+
+	setSongPos(pos);
+}
+
 static void process_vpot_message(McuPort *port, int controller, int value)
 {
+	if (controller == 0x3c)
+	{
+		process_jog_message(value);
+		return;
+	}
+
 	if (!g_sequencer_has_focus)
 		return;
 
@@ -1060,12 +1164,48 @@ static void process_fader_message(McuPort *port, int byte1, int byte2, int byte3
 
 static void process_button_message(McuPort *port, int byte1, int note, int velocity)
 {
-	if (!g_sequencer_has_focus)
-		return;
-
 	// MCU buttons send note-on with velocity 127 on press and either note-off
 	// or note-on with velocity 0 on release.
 	if ((byte1 & 0xf0) != 0x90 || velocity == 0)
+		return;
+
+	// Transport controls are global and work regardless of sequencer focus.
+	if (note == MCU_NOTE_REWIND)
+	{
+		jumpPrevSequencerMark();
+		return;
+	}
+
+	if (note == MCU_NOTE_FORWARD)
+	{
+		jumpNextSequencerMark();
+		return;
+	}
+
+	if (note == MCU_NOTE_STOP)
+	{
+		playStop();
+		setSongPos(getLastSongPosStart());
+		return;
+	}
+
+	if (note == MCU_NOTE_RECORD)
+	{
+		setSeqpunching(!isSeqpunching());
+		return;
+	}
+
+	if (note == MCU_NOTE_PLAY)
+	{
+		if (isPlaying())
+			pausePlaying();
+		else
+			playSongFromCurrentSequencerPosition();
+
+		return;
+	}
+
+	if (!g_sequencer_has_focus)
 		return;
 
 	int fader;

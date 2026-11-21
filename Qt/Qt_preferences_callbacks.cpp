@@ -29,6 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QPushButton>
 #include <QCheckBox>
+#include <QComboBox>
+#include <QFormLayout>
+#include <QGroupBox>
+#include <QVBoxLayout>
 #include <QColorDialog>
 #include <QCloseEvent>
 #include <QHideEvent>
@@ -53,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_instrument_proc.h"
 #include "../midi/midi_ports_proc.h"
+#include "../midi/mcu_proc.h"
 #include "../midi/OS_midi_proc.h"
 
 #include "../api/api_various_proc.h"
@@ -471,6 +476,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   bool _initing;
   bool _is_updating_widgets;
   bool _needs_to_update = false;
+  QComboBox *mcu_jog_grid = NULL;
   MyColorDialog _color_dialog;
   Vst_paths_widget *vst_widget = new Vst_paths_widget;
   
@@ -489,6 +495,34 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     scrollArea->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
     scrollArea_2->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
     scrollArea_2->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+
+    // MCU
+    {
+      QWidget *mcu_tab = new QWidget;
+
+      QVBoxLayout *mcu_layout = new QVBoxLayout(mcu_tab);
+
+      QGroupBox *jog_group = new QGroupBox("Jog wheel", mcu_tab);
+      QFormLayout *jog_layout = new QFormLayout(jog_group);
+
+      mcu_jog_grid = new QComboBox(jog_group);
+      mcu_jog_grid->addItem("Bar");
+      mcu_jog_grid->addItem("Beat");
+      jog_layout->addRow("Move by:", mcu_jog_grid);
+
+      mcu_layout->addWidget(jog_group);
+      mcu_layout->addStretch(1);
+
+      tabWidget->insertTab(tabWidget->indexOf(MIDI) + 1, mcu_tab, "MCU");
+
+      connect(mcu_jog_grid, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](int index)
+      {
+        if (_initing || _is_updating_widgets)
+          return;
+
+        MCU_set_jog_moves_by_bars(index == 0);
+      });
+    }
 
     updateWidgets();
 
@@ -1083,6 +1117,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       faust_llvm_opt_level_box->hide();
 #endif
     }
+
+    // MCU
+    if (mcu_jog_grid != NULL)
+      mcu_jog_grid->setCurrentIndex(MCU_jog_moves_by_bars() ? 0 : 1);
 
     minimizeRecursively(this->window());
     
