@@ -1325,7 +1325,17 @@ Examples:
              (<gui> :set-text save+reload-button (<-> "*" save+reload-button-text))))
     
     (<gui> :set-size (text-editor :gui) (round (/ (<gui> :width -1) 1.3)) (round (/ (<gui> :height -1) 1.3)))
-    
+
+    ;; Clear the cache when the editor is closed. The Gui is only marked as
+    ;; closed after this callback has run, so without this a quick reopen could
+    ;; show the closing window again, and the next Close click would fail with
+    ;; "Gui #... has already been closed".
+    (<gui> :add-close-callback (text-editor :gui)
+           (lambda (radium-runs-custom-exec)
+             (when (eq? *keybindings-editor* text-editor)
+               (set! *keybindings-editor* #f))
+             #t))
+
     (text-editor :show-window)
 
     text-editor))
