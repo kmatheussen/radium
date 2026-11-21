@@ -6,6 +6,7 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <cstring>
 #include <thread>
 
 #include <QQueue>
@@ -389,6 +390,14 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 
 			auto show_backend_message = [](const QString &message)
 			{
+				const char *suppress = std::getenv("RADIUM_TEST_NO_STARTUP_MESSAGES");
+
+				if (suppress != NULL && std::strcmp(suppress, "1") == 0)
+				{
+					fprintf(stderr, "radium: %s\n", message.toUtf8().constData());
+					return;
+				}
+
 				QMetaObject::invokeMethod(qApp->thread(), [message]
 					{
 						GFX_Message(NULL, "%s", message.toUtf8().constData());
