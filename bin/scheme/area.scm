@@ -1810,6 +1810,8 @@
                                           :sub-areas-can-be-cached #f
                                           :background-color #f
                                           :num-areas-to-mousewheel-scroll 3
+                                          :get-sub-area-vamp-func #f ;; Optional. Function taking a sub-area and returning its vertical audio meter id, or #f.
+                                          :vamp-group #f ;; Optional. All meters belonging to this list are removed before the list is repositioned, and are recreated by the visible sub-areas.
                                           )
 
   (assert (not sub-areas-can-be-cached)) ;; There'a a bug here when using this. An error message pops up when scrolling.
@@ -1826,6 +1828,29 @@
   (define areas-used (make-vector num-sub-areas #f))
 
   (define area-heights (make-vector num-sub-areas #f))
+
+  (define known-vamps '())
+
+  (define (remove-vamps!)
+    (when vamp-group
+      (<gui> :remove-all-vertical-audio-meters-in-group gui vamp-group)))
+
+  ;; Remove meters belonging to sub-areas that are no longer present. This
+  ;; catches meters left behind if a sub-area was removed without its
+  ;; about-to-be-removed callback being called.
+  (define (sync-vamps!)
+    (when get-sub-area-vamp-func
+      (define current-vamps '())
+      (for-each (lambda (sub-area)
+                  (define vamp (get-sub-area-vamp-func sub-area))
+                  (when vamp
+                    (push! current-vamps vamp)))
+                sub-areas)
+      (for-each (lambda (vamp)
+                  (when (not (any? (lambda (vamp2) (= vamp2 vamp)) current-vamps))
+                    (<gui> :remove-vertical-audio-meter vamp #f)))
+                known-vamps)
+      (set! known-vamps current-vamps)))
 
   (define (get-area-height num)
     (if (number? get-sub-area-height)
@@ -1939,6 +1964,11 @@
       (define area (areas num))
       (when area
         ;;(c-display "REMOVING" num)
+        ;; Repaint the area before removing it, so that graphics belonging to
+        ;; it (for instance vertical audio meters) don't remain on screen.
+        (area :get-position
+              (lambda (x1 y1 x2 y2 width height)
+                (<gui> :update gui x1 y1 x2 y2)))
         (remove-sub-area! area)
         (set! (areas-used num) #f)
         (if (not sub-areas-can-be-cached)
@@ -1966,19 +1996,40 @@
   ;; has been removed. Do not try to reposition/remove areas in that case.
   (define (position-areas! start-y1)
     (when is-alive
-      (position-areas-internal! start-y1)))
+      ;; Recreate the meters for all visible rows. This guarantees that no
+      ;; stale meters are left behind, and also resets their peaks.
+      (remove-vamps!)
+      (position-areas-internal! start-y1)
+      (sync-vamps!)))
 
   ;; Drop the cached area references when the area tree is removed. Otherwise
   ;; a late scrollbar callback could try to remove a cached area that is no
   ;; longer in sub-areas.
+  ;;
+  ;; A cached area can be left over if it was removed from sub-areas without
+  ;; its about-to-be-removed callback being called. Remove such areas here so
+  ;; that their resources (for instance vertical audio meters) are released.
+  ;; This must happen before super:remove-sub-areas! to keep the same ordering
+  ;; as before (the cache is cleared before any callbacks run).
   (define-override (remove-sub-areas!)
+    (define orphans '())
     (let loop ((num 0))
       (when (< num num-sub-areas)
+        (define area (areas num))
+        (when (and area
+                   (not (any? (lambda (sub-area) (eq? sub-area area)) sub-areas)))
+          (push! orphans area))
         (set! (areas num) #f)
         (set! (areas-used num) #f)
         (set! (area-heights num) #f)
         (loop (+ num 1))))
-    (super:remove-sub-areas!))
+    ;; Clear the whole cache before calling any callbacks, like before.
+    (for-each (lambda (area)
+                (area :about-to-be-removed-internal!))
+              orphans)
+    (super:remove-sub-areas!)
+    (remove-vamps!)
+    (sync-vamps!))
  
   (position-areas! y1)
 
@@ -2526,12 +2577,14 @@
 
     (add-sub-area-plain! (<new> :button gui x1 pathline-y1 (- reload-x1 border) (- browser-y1 border)
                                 :text "⇧"
+                                :statusbar-text "Go to parent folder"
                                 :callback-release
                                 (lambda ()
                                   (set-new-path! (<ra> :get-parent-path path)))))
 
     (add-sub-area-plain! (<new> :button gui reload-x1 pathline-y1 (- line-input-x1 border) (- browser-y1 border)
                                 :text "↻"
+                                :statusbar-text "Refresh folder contents"
                                 :callback-release
                                 (lambda ()
                                   (set-new-path! path))))

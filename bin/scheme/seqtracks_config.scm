@@ -1,5 +1,7 @@
 (provide 'seqtracks_config.scm)
 
+(define *seqtracks-vam-group* 1)
+
 
 #!!
 (let ((box (<new> :checkbox gui x1 y1 x2 y2
@@ -154,26 +156,38 @@
 
   (define vam #f)
 
-  (define-override (about-to-be-removed-callback)
+  (define (remove-vam)
     (when vam
-      (define removed (<gui> :remove-vertical-audio-meter vam #f))
-      ;;  (c-display "   " seqtracknum ": ! Removing vam" vam ". Removed:" removed))
-      )
-    )
+      (<gui> :remove-vertical-audio-meter vam #f)
+      (set! vam #f)))
+
+  (add-method! :get-vam (lambda () vam))
+
+  (define (update-vam-clip-rect)
+    (when (and vam (>= vam 0))
+      (if (< y1 top-visible-y1)
+          (<gui> :set-vertical-audio-meter-clip-rect vam x1 top-visible-y1 x2 y2)
+          ;; Clear the clip rect in case the entry has been moved down again.
+          (<gui> :set-vertical-audio-meter-clip-rect vam 0 0 0 0))))
+
+  (define-override (about-to-be-removed-callback)
+    (remove-vam))
   
   (define-override (has-been-moved)
-    (when vam
-      (define removed (<gui> :remove-vertical-audio-meter vam #f))
-      ;;  (c-display "   " seqtracknum ": Removing vam" vam ". Removed:" removed))
-      )
-    
-    (when for-audiofiles      
-      (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2))
-      ;;(c-display "   " seqtracknum ": Added vam" vam " y1/y2:" y1 y2)
-      (when (< y1 top-visible-y1)
-        (<gui> :set-vertical-audio-meter-clip-rect vam x1 top-visible-y1 x2 y2)
-        ;;(c-display "set clip rect:" x1 top-visible-y1 x2 y2))
-        )))
+    (cond ((not is-alive)
+           ;; A late scrollbar callback can move an area after it has been
+           ;; removed. Do not create a new meter in that case.
+           (remove-vam))
+          ((not for-audiofiles)
+           (remove-vam))
+          ((and vam (<gui> :set-vertical-audio-meter-rect vam (+ b x-meter-split) y1 x2 y2))
+           (update-vam-clip-rect))
+          (else
+           ;; The meter may have been removed by a reconfigure (gui_removeAllVerticalAudioMeters),
+           ;; or this is the first time the entry is moved. Create a new meter in both cases.
+           (set! vam #f)
+           (set! vam (<gui> :add-vertical-audio-meter gui (find-meter-instrument-id instrument-id) (+ b x-meter-split) y1 x2 y2 -1 *seqtracks-vam-group*))
+           (update-vam-clip-rect))))
 
   ;;(c-display seqtracknum text-x1 y1 x2 y2)
   
@@ -258,7 +272,12 @@
                                     :get-sub-area-height entry-height
                                     :create-sub-area
                                     (lambda (seqtracknum x1 x2)
-                                      (<new> :seqtrack-config-entry gui x1 0 x2 (- entry-height 1) scroll-y1 seqtracknum))))
+                                      (<new> :seqtrack-config-entry gui x1 0 x2 (- entry-height 1) scroll-y1 seqtracknum))
+                                    :get-sub-area-vamp-func
+                                    (lambda (sub-area)
+                                      (and (eq? (sub-area :class-name) '<seqtrack-config-entry>)
+                                           (sub-area :get-vam)))
+                                    :vamp-group *seqtracks-vam-group*))
                                       
     (add-sub-area-plain! vertical-list-area)
     )
