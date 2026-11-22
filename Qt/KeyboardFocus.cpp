@@ -163,6 +163,7 @@ void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
 		frame->set_focus(has_focus);
 
 	MCU_set_sequencer_has_focus(FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::SEQUENCER));
+	MCU_set_editor_has_focus(FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR));
 
 	//printf("Set focus/END. Right type? %d\n", type==radium::KeyboardFocusFrameType::EDITOR);
 }

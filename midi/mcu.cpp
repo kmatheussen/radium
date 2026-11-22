@@ -81,8 +81,10 @@ struct McuMessage
 struct FaderTarget
 {
 	int seqtracknum = -1;
+	int tracknum = -1;
 	bool for_audiofiles = false;
 	bool is_master = false;
+	bool editor_mode = false;
 	instrument_t instrument_id;
 };
 
@@ -171,6 +173,7 @@ struct McuPort
 	bool meters_enabled = false;
 
 	bool was_sequencer_selected = false;
+	bool was_editor_selected = false;
 
 	McuPort(const symbol_t *port_name)
 		: port_name(port_name)
@@ -216,6 +219,7 @@ static auto *g_messages = new boost::lockfree::queue<McuMessage, boost::lockfree
 static std::vector<McuPort*> g_ports;
 
 static bool g_sequencer_has_focus = false;
+static bool g_editor_has_focus = false;
 
 
 /*********************************************************/
@@ -344,9 +348,25 @@ static float int_to_fader(int value)
 /**************** Seqtrack/fader mapping *****************/
 /*********************************************************/
 
-static void change_bank(McuPort *port, int delta, bool whole_bank)
+static int get_target_id(const FaderTarget &target)
 {
-	const int num_seqtracks = getNumSeqtracks();
+	if (target.is_master)
+		return -2;
+
+	if (target.editor_mode)
+		return -1000 - target.tracknum;
+
+	return target.seqtracknum;
+}
+
+static int get_num_bank_items(bool editor_mode)
+{
+	return editor_mode ? getNumTracks(-1) : getNumSeqtracks();
+}
+
+static void change_bank(McuPort *port, int delta, bool whole_bank, bool editor_mode)
+{
+	const int num_seqtracks = get_num_bank_items(editor_mode);
 
 	if (num_seqtracks <= 0)
 	{
@@ -380,7 +400,7 @@ static void change_bank(McuPort *port, int delta, bool whole_bank)
 	port->last_panel_update = -100000;
 }
 
-static FaderTarget get_fader_target(int fader, int bank_offset)
+static FaderTarget get_fader_target(int fader, int bank_offset, bool editor_mode)
 {
 	FaderTarget target;
 
@@ -397,6 +417,20 @@ static FaderTarget get_fader_target(int fader, int bank_offset)
 
 		if (!instrumentEffectExists(target.instrument_id, "System In"))
 			target.is_master = false;
+
+		return target;
+	}
+
+	if (editor_mode)
+	{
+		const int num_tracks = getNumTracks(-1);
+		const int tracknum = bank_offset + fader;
+
+		if (tracknum < 0 || tracknum >= num_tracks)
+			return target;
+
+		target.tracknum = tracknum;
+		target.editor_mode = true;
 
 		return target;
 	}
@@ -428,6 +462,9 @@ static const char *get_volume_effect_name(const FaderTarget &target)
 
 static float get_fader_value(const FaderTarget &target)
 {
+	if (target.editor_mode)
+		return getTrackVolume(target.tracknum, -1, -1);
+
 	if (target.seqtracknum < 0 && !target.is_master)
 		return -1.0f;
 
@@ -443,6 +480,12 @@ static float get_fader_value(const FaderTarget &target)
 
 static void maybe_make_undo(const FaderTarget &target)
 {
+	if (target.editor_mode)
+	{
+		undoTrackVolume(target.tracknum, -1, -1);
+		return;
+	}
+
 	if (target.seqtracknum < 0 && !target.is_master)
 		return;
 
@@ -454,6 +497,12 @@ static void maybe_make_undo(const FaderTarget &target)
 
 static void set_fader_value(const FaderTarget &target, float fader)
 {
+	if (target.editor_mode)
+	{
+		setTrackVolume(fader, target.tracknum, -1, -1);
+		return;
+	}
+
 	if (target.seqtracknum < 0 && !target.is_master)
 		return;
 
@@ -701,9 +750,9 @@ static void update_timecode_display(McuPort *port)
 	port->timecode_needs_full_update = false;
 }
 
-static void sync_bank_leds(McuPort *port)
+static void sync_bank_leds(McuPort *port, bool editor_mode)
 {
-	const int num_seqtracks = getNumSeqtracks();
+	const int num_seqtracks = get_num_bank_items(editor_mode);
 	const int max_channel_offset = R_MAX(0, num_seqtracks - 1);
 	const int max_bank_offset = num_seqtracks > 0 ? ((num_seqtracks - 1) / 8) * 8 : 0;
 
@@ -939,7 +988,7 @@ static void process_vpot_message(McuPort *port, int controller, int value)
 
 	const int fader = controller - 0x10;
 
-	FaderTarget target = get_fader_target(fader, port->bank_offset);
+	FaderTarget target = get_fader_target(fader, port->bank_offset, false);
 	if (target.seqtracknum < 0 || !target.for_audiofiles)
 		return;
 
@@ -1274,7 +1323,7 @@ static void update_track_panels(McuPort *port, bool force)
 
 	for(int fader=0 ; fader<8 ; fader++)
 	{
-		FaderTarget target = get_fader_target(fader, port->bank_offset);
+		FaderTarget target = get_fader_target(fader, port->bank_offset, false);
 		const int pos = fader * 7;
 
 		colors[fader] = 0; // Off
@@ -1399,12 +1448,12 @@ static void force_sync_fader(McuPort *port, int fader, const FaderTarget &target
 {
 	float fader_value = get_fader_value(target);
 
-	int value = (target.seqtracknum >= 0 || target.is_master)
+	int value = (target.seqtracknum >= 0 || target.is_master || target.editor_mode)
 		? fader_to_int(fader_value)
 		: 0;
 
 	send_fader(port, fader, value);
-	port->last_target_seqtrack[fader] = target.seqtracknum;
+	port->last_target_seqtrack[fader] = get_target_id(target);
 
 	if (fader < 8)
 	{
@@ -1417,7 +1466,7 @@ static void update_fader_motor(McuPort *port, int fader, const FaderTarget &targ
 {
 	float fader_value = get_fader_value(target);
 
-	int value = (target.seqtracknum >= 0 || target.is_master)
+	int value = (target.seqtracknum >= 0 || target.is_master || target.editor_mode)
 		? fader_to_int(fader_value)
 		: 0;
 
@@ -1427,10 +1476,12 @@ static void update_fader_motor(McuPort *port, int fader, const FaderTarget &targ
 	// timeout.
 	const bool send_deferred_feedback = port->fader_needs_feedback[fader] && now - port->last_fader_input_time[fader] > 150;
 
-	if (target.seqtracknum != port->last_target_seqtrack[fader])
+	const int target_id = get_target_id(target);
+
+	if (target_id != port->last_target_seqtrack[fader])
 	{
 		send_fader(port, fader, value);
-		port->last_target_seqtrack[fader] = target.seqtracknum;
+		port->last_target_seqtrack[fader] = target_id;
 	}
 	else if (send_deferred_feedback)
 	{
@@ -1462,15 +1513,17 @@ static void process_fader_message(McuPort *port, int byte1, int byte2, int byte3
 	if (fader > 8)
 		return;
 
-	// The master fader is global. Channel faders require sequencer focus.
-	if (!g_sequencer_has_focus && fader != 8)
+	const bool editor_mode = g_editor_has_focus && !g_sequencer_has_focus;
+
+	// The master fader is global. Channel faders require editor or sequencer focus.
+	if (!g_sequencer_has_focus && !editor_mode && fader != 8)
 		return;
 
 	const int value = (byte2 & 0x7f) | ((byte3 & 0x7f) << 7);
 	const float fader_value = int_to_fader(value);
 
-	FaderTarget target = get_fader_target(fader, port->bank_offset);
-	if (target.seqtracknum < 0 && !target.is_master)
+	FaderTarget target = get_fader_target(fader, port->bank_offset, editor_mode);
+	if (target.seqtracknum < 0 && !target.is_master && !target.editor_mode)
 		return;
 
 	const int64_t now = (int64_t)TIME_get_ms();
@@ -1495,7 +1548,7 @@ static void process_fader_message(McuPort *port, int byte1, int byte2, int byte3
 	if (actual_value >= 0.0f)
 		port->last_sent[fader] = fader_to_int(actual_value);
 
-	port->last_target_seqtrack[fader] = target.seqtracknum;
+	port->last_target_seqtrack[fader] = get_target_id(target);
 	port->fader_needs_feedback[fader] = true;
 }
 
@@ -1509,25 +1562,25 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 	// Fader bank/channel controls.
 	if (note == MCU_NOTE_BANK_LEFT)
 	{
-		change_bank(port, -1, true);
+		change_bank(port, -1, true, g_editor_has_focus && !g_sequencer_has_focus);
 		return;
 	}
 
 	if (note == MCU_NOTE_BANK_RIGHT)
 	{
-		change_bank(port, 1, true);
+		change_bank(port, 1, true, g_editor_has_focus && !g_sequencer_has_focus);
 		return;
 	}
 
 	if (note == MCU_NOTE_CHANNEL_LEFT)
 	{
-		change_bank(port, -1, false);
+		change_bank(port, -1, false, g_editor_has_focus && !g_sequencer_has_focus);
 		return;
 	}
 
 	if (note == MCU_NOTE_CHANNEL_RIGHT)
 	{
-		change_bank(port, 1, false);
+		change_bank(port, 1, false, g_editor_has_focus && !g_sequencer_has_focus);
 		return;
 	}
 
@@ -1592,7 +1645,7 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 	else
 		return;
 
-	FaderTarget target = get_fader_target(fader, port->bank_offset);
+	FaderTarget target = get_fader_target(fader, port->bank_offset, false);
 	if (target.seqtracknum < 0)
 		return;
 
@@ -1649,16 +1702,18 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 	// Global controls, such as the transport buttons, should light up as soon
 	// as the MCU device is detected, independently of sequencer keyboard focus.
 	sync_transport_leds(port);
-	sync_bank_leds(port);
+	sync_bank_leds(port, g_editor_has_focus && !g_sequencer_has_focus);
 	update_timecode_display(port);
 
 	{
-		FaderTarget master_target = get_fader_target(8, 0);
+		FaderTarget master_target = get_fader_target(8, 0, false);
 		update_fader_motor(port, 8, master_target, now);
 	}
 
 	if (!sequencer_has_focus)
 	{
+		const bool editor_has_focus = g_editor_has_focus;
+
 		if (port->was_sequencer_selected)
 		{
 			clear_meters(port);
@@ -1667,9 +1722,34 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		}
 
 		port->was_sequencer_selected = false;
+
+		if (editor_has_focus)
+		{
+			if (!port->was_editor_selected)
+			{
+				for(int fader=0 ; fader<8 ; fader++)
+					force_sync_fader(port, fader, get_fader_target(fader, port->bank_offset, true));
+
+				port->was_editor_selected = true;
+			}
+			else
+			{
+				for(int fader=0 ; fader<8 ; fader++)
+				{
+					FaderTarget target = get_fader_target(fader, port->bank_offset, true);
+					update_fader_motor(port, fader, target, now);
+				}
+			}
+		}
+		else
+		{
+			port->was_editor_selected = false;
+		}
+
 		return;
 	}
 
+	port->was_editor_selected = false;
 	enable_meters(port);
 
 	if (!port->was_sequencer_selected)
@@ -1678,9 +1758,9 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 			port->last_sent_vpot[fader] = -1;
 
 		for(int fader=0 ; fader<8 ; fader++)
-			force_sync_fader(port, fader, get_fader_target(fader, port->bank_offset));
+			force_sync_fader(port, fader, get_fader_target(fader, port->bank_offset, false));
 
-		force_sync_fader(port, 8, get_fader_target(8, 0));
+		force_sync_fader(port, 8, get_fader_target(8, 0, false));
 
 		port->panels_need_full_update = true;
 		port->last_panel_update = -100000;
@@ -1694,7 +1774,7 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 
 	for(int fader=0 ; fader<8 ; fader++)
 	{
-		FaderTarget target = get_fader_target(fader, port->bank_offset);
+		FaderTarget target = get_fader_target(fader, port->bank_offset, false);
 
 		update_fader_motor(port, fader, target, now);
 
@@ -1810,4 +1890,9 @@ void MCU_call_very_often(void)
 void MCU_set_sequencer_has_focus(bool has_focus)
 {
 	g_sequencer_has_focus = has_focus;
+}
+
+void MCU_set_editor_has_focus(bool has_focus)
+{
+	g_editor_has_focus = has_focus;
 }
