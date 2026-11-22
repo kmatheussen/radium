@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/sequencer_proc.h"
 #include "../common/settings_proc.h"
+#include "../common/OS_visual_input.h"
 #include "../api/api_proc.h"
 
 #include "../audio/SoundPlugin.h"
@@ -112,6 +113,13 @@ struct McuPort
 	int last_sent_rec[8];
 	int last_sent_select[8];
 	int last_sent_vpot[8];
+
+	// Fader bank / channel buttons.
+	int bank_offset = 0;
+	int last_sent_bank_left = -1;
+	int last_sent_bank_right = -1;
+	int last_sent_channel_left = -1;
+	int last_sent_channel_right = -1;
 
 	// Main transport button LEDs: rewind, forward, stop, play, record.
 	int last_sent_transport[5];
@@ -214,32 +222,92 @@ static bool g_sequencer_has_focus = false;
 /**************** Fader value conversion *****************/
 /*********************************************************/
 
-// Same conversion as the volume sliders in bin/scheme/instruments.scm and
-// bin/scheme/seqtrack-headers.scm.
+// Calibration of the fader positions against the printed dB scale on the
+// X-Touch. The scale is a standard Mackie Control scale; the values below were
+// measured on an X-Touch.
+//
+// Radium's actual volume value can go above the slider maximum of +6 dB, so
+// use the whole printed +10 dB range. Below -35 dB the printed scale is ignored
+// and the fader instead goes linearly down to -inf at the bottom.
 static float db_to_fader(float db)
 {
+	const float points[][2] = {
+		{-35.0f, 0.201990f},
+		{-30.0f, 0.236915f},
+		{-20.0f, 0.367430f},
+		{-10.0f, 0.497945f},
+		{-5.0f,  0.627044f},
+		{0.0f,   0.756144f},
+		{5.0f,   0.878072f},
+		{6.0f,   0.902457f},
+		{10.0f,  1.0f}
+	};
+
 	if (db <= MIN_DB)
 		return 0.0f;
 
-	float mixer_normalized = (db - MIN_DB) / (MAX_VOLUME_SLIDER_DB - MIN_DB);
+	// Below -35 dB, ignore the printed scale and go linearly down to -inf.
+	if (db < -35.0f)
+	{
+		const float t = (db - MIN_DB) / (-35.0f - MIN_DB);
+		return t * 0.201990f;
+	}
 
-	if (mixer_normalized < 0.0f)
-		mixer_normalized = 0.0f;
-	else if (mixer_normalized > 1.0f)
-		mixer_normalized = 1.0f;
+	if (db >= 10.0f)
+		return points[8][1];
 
-	return mixer_normalized * mixer_normalized;
+	for(int i=0 ; i<8 ; i++)
+	{
+		if (db <= points[i+1][0])
+		{
+			const float t = (db - points[i][0]) / (points[i+1][0] - points[i][0]);
+			return points[i][1] + t * (points[i+1][1] - points[i][1]);
+		}
+	}
+
+	return points[8][1];
 }
 
 static float fader_to_db(float fader)
 {
-	if (fader <= 0.0f)
+	const float points[][2] = {
+		{0.201990f, -35.0f},
+		{0.236915f, -30.0f},
+		{0.367430f, -20.0f},
+		{0.497945f, -10.0f},
+		{0.627044f, -5.0f},
+		{0.756144f, 0.0f},
+		{0.878072f, 5.0f},
+		{0.902457f, 6.0f},
+		{1.0f, 10.0f}
+	};
+
+	// Below -35 dB, ignore the printed scale and go linearly down to -inf.
+	if (fader <= 0.001f)
 		return MIN_DB;
 
-	if (fader > 1.0f)
-		fader = 1.0f;
+	if (fader < 0.201990f)
+	{
+		const float t = fader / 0.201990f;
+		return MIN_DB + t * 5.0f;
+	}
 
-	return MIN_DB + sqrtf(fader) * (MAX_VOLUME_SLIDER_DB - MIN_DB);
+	// Some X-Touch units report slightly less than 16383 at the physical top
+	// stop. Snap the last tiny part of the travel to +10 so the status bar
+	// shows 10.00 dB instead of 9.99 dB.
+	if (fader >= 0.999f)
+		return 10.0f;
+
+	for(int i=0 ; i<8 ; i++)
+	{
+		if (fader <= points[i+1][0])
+		{
+			const float t = (fader - points[i][0]) / (points[i+1][0] - points[i][0]);
+			return points[i][1] + t * (points[i+1][1] - points[i][1]);
+		}
+	}
+
+	return 10.0f;
 }
 
 static float fader_to_radium_normalized(float fader)
@@ -276,56 +344,86 @@ static float int_to_fader(int value)
 /**************** Seqtrack/fader mapping *****************/
 /*********************************************************/
 
-static FaderTarget get_fader_target(int fader)
+static void change_bank(McuPort *port, int delta, bool whole_bank)
+{
+	const int num_seqtracks = getNumSeqtracks();
+
+	if (num_seqtracks <= 0)
+	{
+		port->bank_offset = 0;
+		return;
+	}
+
+	if (whole_bank)
+	{
+		if (delta > 0)
+		{
+			const int max_bank_offset = ((num_seqtracks - 1) / 8) * 8;
+			int next_offset = port->bank_offset + 8;
+
+			if (next_offset > max_bank_offset)
+				next_offset = port->bank_offset < max_bank_offset ? max_bank_offset : port->bank_offset;
+
+			port->bank_offset = next_offset;
+		}
+		else
+		{
+			port->bank_offset = R_MAX(0, port->bank_offset - 8);
+		}
+	}
+	else
+	{
+		port->bank_offset = R_BOUNDARIES(0, port->bank_offset + delta, num_seqtracks - 1);
+	}
+
+	port->panels_need_full_update = true;
+	port->last_panel_update = -100000;
+}
+
+static FaderTarget get_fader_target(int fader, int bank_offset)
 {
 	FaderTarget target;
 
 	if (fader == 8)
 	{
+		struct Patch *system_out = GFX_OS_get_system_out();
+
+		if (system_out == NULL)
+			return target;
+
 		target.is_master = true;
 		target.for_audiofiles = true;
-		target.instrument_id = getMainPipeInstrument();
+		target.instrument_id = system_out->id;
 
-		if (!instrumentEffectExists(target.instrument_id, "System Volume"))
+		if (!instrumentEffectExists(target.instrument_id, "System In"))
 			target.is_master = false;
 
 		return target;
 	}
 
-	int num_seqtracks = getNumSeqtracks();
-	if (num_seqtracks <= 0)
+	const int num_seqtracks = getNumSeqtracks();
+	const int seqtracknum = bank_offset + fader;
+
+	if (seqtracknum < 0 || seqtracknum >= num_seqtracks)
 		return target;
 
-	// Map the faders to the seqtracks currently visible in the sequencer,
-	// starting with the topmost visible seqtrack.
-	const int topmost = getTopmostVisibleSeqtrack();
-	int num_found = 0;
+	target.seqtracknum = seqtracknum;
+	target.for_audiofiles = seqtrackForAudiofiles(seqtracknum);
 
-	for(int seqtracknum = topmost ; seqtracknum < num_seqtracks ; seqtracknum++)
+	if (target.for_audiofiles)
 	{
-		if (!getSeqtrackVisible(seqtracknum))
-			continue;
+		target.instrument_id = getSeqtrackInstrument(seqtracknum);
 
-		if (num_found == fader)
-		{
-			target.seqtracknum = seqtracknum;
-			target.for_audiofiles = seqtrackForAudiofiles(seqtracknum);
-
-			if (target.for_audiofiles)
-			{
-				target.instrument_id = getSeqtrackInstrument(seqtracknum);
-
-				if (!instrumentEffectExists(target.instrument_id, "System Volume"))
-					target.seqtracknum = -1; // Not a seqtrack with a volume slider.
-			}
-
-			return target;
-		}
-
-		num_found++;
+		if (!instrumentEffectExists(target.instrument_id, "System Volume"))
+			target.seqtracknum = -1; // Not a seqtrack with a volume slider.
 	}
 
 	return target;
+}
+
+static const char *get_volume_effect_name(const FaderTarget &target)
+{
+	return target.is_master ? "System In" : "System Volume";
 }
 
 static float get_fader_value(const FaderTarget &target)
@@ -336,7 +434,7 @@ static float get_fader_value(const FaderTarget &target)
 	float db;
 
 	if (target.for_audiofiles)
-		db = MIN_DB + getStoredInstrumentEffect(target.instrument_id, "System Volume") * (MAX_DB - MIN_DB);
+		db = MIN_DB + getStoredInstrumentEffect(target.instrument_id, get_volume_effect_name(target)) * (MAX_DB - MIN_DB);
 	else
 		db = gainToDb(getSeqtrackNoteGain(target.seqtracknum));
 
@@ -349,7 +447,7 @@ static void maybe_make_undo(const FaderTarget &target)
 		return;
 
 	if (target.for_audiofiles)
-		undoInstrumentEffect(target.instrument_id, "System Volume");
+		undoInstrumentEffect(target.instrument_id, get_volume_effect_name(target));
 	else
 		undoSeqtrackNoteGain(target.seqtracknum);
 }
@@ -361,7 +459,7 @@ static void set_fader_value(const FaderTarget &target, float fader)
 
 	if (target.for_audiofiles)
 	{
-		setInstrumentEffect(target.instrument_id, "System Volume", fader_to_radium_normalized(fader));
+		setInstrumentEffect(target.instrument_id, get_volume_effect_name(target), fader_to_radium_normalized(fader));
 	}
 	else
 	{
@@ -380,6 +478,11 @@ enum
 	MCU_NOTE_SOLO = 0x08,
 	MCU_NOTE_MUTE = 0x10,
 	MCU_NOTE_SELECT = 0x18,
+
+	MCU_NOTE_BANK_LEFT = 0x2e,
+	MCU_NOTE_BANK_RIGHT = 0x2f,
+	MCU_NOTE_CHANNEL_LEFT = 0x30,
+	MCU_NOTE_CHANNEL_RIGHT = 0x31,
 
 	MCU_NOTE_REWIND = 0x5b,
 	MCU_NOTE_FORWARD = 0x5c,
@@ -596,6 +699,20 @@ static void update_timecode_display(McuPort *port)
 
 	memcpy(port->last_timecode, timecode, sizeof(timecode));
 	port->timecode_needs_full_update = false;
+}
+
+static void sync_bank_leds(McuPort *port)
+{
+	const int num_seqtracks = getNumSeqtracks();
+	const int max_channel_offset = R_MAX(0, num_seqtracks - 1);
+	const int max_bank_offset = num_seqtracks > 0 ? ((num_seqtracks - 1) / 8) * 8 : 0;
+
+	port->bank_offset = R_BOUNDARIES(0, port->bank_offset, max_channel_offset);
+
+	send_button_led(port, MCU_NOTE_BANK_LEFT, port->bank_offset > 0, &port->last_sent_bank_left);
+	send_button_led(port, MCU_NOTE_BANK_RIGHT, port->bank_offset < max_bank_offset, &port->last_sent_bank_right);
+	send_button_led(port, MCU_NOTE_CHANNEL_LEFT, port->bank_offset > 0, &port->last_sent_channel_left);
+	send_button_led(port, MCU_NOTE_CHANNEL_RIGHT, port->bank_offset < max_channel_offset, &port->last_sent_channel_right);
 }
 
 static void sync_transport_leds(McuPort *port)
@@ -822,7 +939,7 @@ static void process_vpot_message(McuPort *port, int controller, int value)
 
 	const int fader = controller - 0x10;
 
-	FaderTarget target = get_fader_target(fader);
+	FaderTarget target = get_fader_target(fader, port->bank_offset);
 	if (target.seqtracknum < 0 || !target.for_audiofiles)
 		return;
 
@@ -976,16 +1093,26 @@ static void disable_meters(McuPort *port)
 /******************* Track panels ************************/
 /*********************************************************/
 
-static void copy_name_6(const char *name, char *dest)
+static void copy_track_name_6(int seqtracknum, const char *name, char *dest)
 {
 	QByteArray latin = QString::fromUtf8(name == NULL ? "" : name).toLatin1();
+	char number[32];
 
-	for(int i=0 ; i<6 ; i++)
+	snprintf(number, sizeof(number), "%d", seqtracknum);
+
+	int pos = 0;
+	for(int i=0 ; number[i] != '\0' && pos<6 ; i++)
+		dest[pos++] = number[i];
+
+	if (pos < 6)
+		dest[pos++] = ' ';
+
+	for(int i=0 ; pos<6 ; i++)
 	{
 		if (i < latin.size() && latin.at(i) >= 0x20 && latin.at(i) <= 0x7e)
-			dest[i] = latin.at(i);
+			dest[pos++] = latin.at(i);
 		else
-			dest[i] = ' ';
+			dest[pos++] = ' ';
 	}
 }
 
@@ -1147,7 +1274,7 @@ static void update_track_panels(McuPort *port, bool force)
 
 	for(int fader=0 ; fader<8 ; fader++)
 	{
-		FaderTarget target = get_fader_target(fader);
+		FaderTarget target = get_fader_target(fader, port->bank_offset);
 		const int pos = fader * 7;
 
 		colors[fader] = 0; // Off
@@ -1155,7 +1282,7 @@ static void update_track_panels(McuPort *port, bool force)
 		if (target.seqtracknum < 0)
 			continue;
 
-		copy_name_6(getSeqtrackName(target.seqtracknum), &line1[pos]);
+		copy_track_name_6(target.seqtracknum, getSeqtrackName(target.seqtracknum), &line1[pos]);
 
 		if (now < port->pan_display_until[fader])
 		{
@@ -1229,6 +1356,10 @@ static radium::MidiOutputPort *open_output_port(McuPort *port)
 		printf("MCU: Using MIDI output port \"%s\".\n", port->port_name->name);
 		port->has_reported_output_failure = false;
 
+		port->last_sent_bank_left = -1;
+		port->last_sent_bank_right = -1;
+		port->last_sent_channel_left = -1;
+		port->last_sent_channel_right = -1;
 		port->last_sent_namevalue_button = -1;
 		port->last_sent_timecode_button = -1;
 		port->last_sent_smpte_led = -1;
@@ -1338,7 +1469,7 @@ static void process_fader_message(McuPort *port, int byte1, int byte2, int byte3
 	const int value = (byte2 & 0x7f) | ((byte3 & 0x7f) << 7);
 	const float fader_value = int_to_fader(value);
 
-	FaderTarget target = get_fader_target(fader);
+	FaderTarget target = get_fader_target(fader, port->bank_offset);
 	if (target.seqtracknum < 0 && !target.is_master)
 		return;
 
@@ -1374,6 +1505,31 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 	// or note-on with velocity 0 on release.
 	if ((byte1 & 0xf0) != 0x90 || velocity == 0)
 		return;
+
+	// Fader bank/channel controls.
+	if (note == MCU_NOTE_BANK_LEFT)
+	{
+		change_bank(port, -1, true);
+		return;
+	}
+
+	if (note == MCU_NOTE_BANK_RIGHT)
+	{
+		change_bank(port, 1, true);
+		return;
+	}
+
+	if (note == MCU_NOTE_CHANNEL_LEFT)
+	{
+		change_bank(port, -1, false);
+		return;
+	}
+
+	if (note == MCU_NOTE_CHANNEL_RIGHT)
+	{
+		change_bank(port, 1, false);
+		return;
+	}
 
 	// Transport controls are global and work regardless of sequencer focus.
 	if (note == MCU_NOTE_REWIND)
@@ -1436,7 +1592,7 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 	else
 		return;
 
-	FaderTarget target = get_fader_target(fader);
+	FaderTarget target = get_fader_target(fader, port->bank_offset);
 	if (target.seqtracknum < 0)
 		return;
 
@@ -1493,10 +1649,11 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 	// Global controls, such as the transport buttons, should light up as soon
 	// as the MCU device is detected, independently of sequencer keyboard focus.
 	sync_transport_leds(port);
+	sync_bank_leds(port);
 	update_timecode_display(port);
 
 	{
-		FaderTarget master_target = get_fader_target(8);
+		FaderTarget master_target = get_fader_target(8, 0);
 		update_fader_motor(port, 8, master_target, now);
 	}
 
@@ -1521,9 +1678,9 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 			port->last_sent_vpot[fader] = -1;
 
 		for(int fader=0 ; fader<8 ; fader++)
-			force_sync_fader(port, fader, get_fader_target(fader));
+			force_sync_fader(port, fader, get_fader_target(fader, port->bank_offset));
 
-		force_sync_fader(port, 8, get_fader_target(8));
+		force_sync_fader(port, 8, get_fader_target(8, 0));
 
 		port->panels_need_full_update = true;
 		port->last_panel_update = -100000;
@@ -1537,7 +1694,7 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 
 	for(int fader=0 ; fader<8 ; fader++)
 	{
-		FaderTarget target = get_fader_target(fader);
+		FaderTarget target = get_fader_target(fader, port->bank_offset);
 
 		update_fader_motor(port, fader, target, now);
 
