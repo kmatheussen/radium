@@ -155,6 +155,29 @@ build_faust() {
 				FAUST_LLVM_LDFLAGS="-DCMAKE_CXX_STANDARD_LIBRARIES=-ledit"
 			fi
 		fi
+
+		# libfaust.so embeds a *static* LLVM, and LLVM marks its public symbols
+		# with default visibility. A plain link therefore exports all of them
+		# (~39k symbols, including globals such as llvm::KnownAssumptionStrings
+		# and class destructors such as llvm::TensorSpec::~TensorSpec()) from
+		# libfaust.so, and they interpose with any other LLVM in the host
+		# process. Hosts do load another LLVM: Mesa's llvmpipe/lavapipe drivers
+		# link the system libLLVM.so, so any program that opens a GL or Vulkan
+		# context while libfaust is loaded ends up with two LLVM copies in one
+		# process. Symbols then resolve to whichever copy came first, so e.g. an
+		# object constructed by one copy is destroyed through the other copy's
+		# destructor: double frees and heap corruption, observed as a crash in
+		# libfaust's static destructors at exit (in llvm::KnownAssumptionStrings'
+		# StringMap, or llvm::TensorSpec's destructor).
+		#
+		# --exclude-libs,ALL makes the symbols that come from the static LLVM
+		# archives local to libfaust.so, so its LLVM stays private. libfaust's
+		# own API is compiled from object files (not archives) and stays
+		# exported. macOS dylibs use two-level namespaces and cannot interpose
+		# this way, and the flag is ELF-only.
+		if [ "$(uname -s)" = "Linux" ] ; then
+			FAUST_LLVM_LDFLAGS="$FAUST_LLVM_LDFLAGS -DCMAKE_SHARED_LINKER_FLAGS=-Wl,--exclude-libs,ALL"
+		fi
 	fi
 
 	# Use all CPUs when building faust.
