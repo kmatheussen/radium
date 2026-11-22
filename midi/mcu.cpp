@@ -1142,16 +1142,15 @@ static void disable_meters(McuPort *port)
 /******************* Track panels ************************/
 /*********************************************************/
 
-static void copy_track_name_6(int seqtracknum, const char *name, char *dest)
+static void copy_number_and_name_6(int number, const char *name, char *dest)
 {
 	QByteArray latin = QString::fromUtf8(name == NULL ? "" : name).toLatin1();
-	char number[32];
-
-	snprintf(number, sizeof(number), "%d", seqtracknum);
+	char number_string[32];
+	snprintf(number_string, sizeof(number_string), "%d", number);
 
 	int pos = 0;
-	for(int i=0 ; number[i] != '\0' && pos<6 ; i++)
-		dest[pos++] = number[i];
+	for(int i=0 ; number_string[i] != '\0' && pos<6 ; i++)
+		dest[pos++] = number_string[i];
 
 	if (pos < 6)
 		dest[pos++] = ' ';
@@ -1189,6 +1188,16 @@ static void format_volume_6(float db, char *dest)
 		if (strlen(temp) > 6)
 			snprintf(temp, sizeof(temp), "%+.0fdB", db);
 	}
+
+	for(int i=0 ; i<6 ; i++)
+		dest[i] = i < (int)strlen(temp) ? temp[i] : ' ';
+}
+
+static void format_normalized_6(float value, char *dest)
+{
+	char temp[32];
+
+	snprintf(temp, sizeof(temp), "%6.2f", value);
 
 	for(int i=0 ; i<6 ; i++)
 		dest[i] = i < (int)strlen(temp) ? temp[i] : ' ';
@@ -1234,6 +1243,21 @@ static QColor get_target_color(const FaderTarget &target)
 	}
 
 	return get_qcolor(SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM);
+}
+
+static QColor get_editor_target_color(const FaderTarget &target)
+{
+	if (!target.editor_mode)
+		return QColor();
+
+	instrument_t instrument_id = getInstrumentForTrack(target.tracknum, -1, -1);
+
+	if (!isLegalInstrument(instrument_id))
+		return QColor(Qt::white);
+
+	QColor color(getInstrumentColor(instrument_id, true));
+
+	return color.isValid() ? color : QColor(Qt::white);
 }
 
 static int color_to_xtouch_color(const QColor &color)
@@ -1309,7 +1333,7 @@ static void send_xtouch_colors(McuPort *port, const int colors[8])
 	MIDIPORT_send_sysex(port->output_port, sizeof(data), data);
 }
 
-static void update_track_panels(McuPort *port, bool force)
+static void update_track_panels(McuPort *port, bool force, bool editor_mode)
 {
 	char line1[56];
 	char line2[56];
@@ -1323,15 +1347,27 @@ static void update_track_panels(McuPort *port, bool force)
 
 	for(int fader=0 ; fader<8 ; fader++)
 	{
-		FaderTarget target = get_fader_target(fader, port->bank_offset, false);
+		FaderTarget target = get_fader_target(fader, port->bank_offset, editor_mode);
 		const int pos = fader * 7;
 
 		colors[fader] = 0; // Off
 
+		if (target.editor_mode)
+		{
+			instrument_t instrument_id = getInstrumentForTrack(target.tracknum, -1, -1);
+			const char *name = isLegalInstrument(instrument_id) ? getInstrumentName(instrument_id) : get_track_name(target.tracknum);
+
+			copy_number_and_name_6(target.tracknum, name, &line1[pos]);
+
+			format_normalized_6(getTrackVolume(target.tracknum, -1, -1), &line2[pos]);
+			colors[fader] = color_to_xtouch_color(get_editor_target_color(target));
+			continue;
+		}
+
 		if (target.seqtracknum < 0)
 			continue;
 
-		copy_track_name_6(target.seqtracknum, getSeqtrackName(target.seqtracknum), &line1[pos]);
+		copy_number_and_name_6(target.seqtracknum, getSeqtrackName(target.seqtracknum), &line1[pos]);
 
 		if (now < port->pan_display_until[fader])
 		{
@@ -1584,6 +1620,26 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 		return;
 	}
 
+	const bool editor_mode = g_editor_has_focus && !g_sequencer_has_focus;
+
+	if (editor_mode)
+	{
+		if (note >= MCU_NOTE_MUTE && note < MCU_NOTE_MUTE + 8)
+		{
+			const int fader = note - MCU_NOTE_MUTE;
+			FaderTarget target = get_fader_target(fader, port->bank_offset, true);
+
+			if (target.editor_mode)
+				switchTrackOn(target.tracknum, -1);
+
+			return;
+		}
+
+		// Solo is not used in editor mode.
+		if (note >= MCU_NOTE_SOLO && note < MCU_NOTE_SOLO + 8)
+			return;
+	}
+
 	// Transport controls are global and work regardless of sequencer focus.
 	if (note == MCU_NOTE_REWIND)
 	{
@@ -1730,6 +1786,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 				for(int fader=0 ; fader<8 ; fader++)
 					force_sync_fader(port, fader, get_fader_target(fader, port->bank_offset, true));
 
+				port->panels_need_full_update = true;
+				port->last_panel_update = -100000;
 				port->was_editor_selected = true;
 			}
 			else
@@ -1739,6 +1797,27 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 					FaderTarget target = get_fader_target(fader, port->bank_offset, true);
 					update_fader_motor(port, fader, target, now);
 				}
+			}
+
+			for(int fader=0 ; fader<8 ; fader++)
+			{
+				FaderTarget target = get_fader_target(fader, port->bank_offset, true);
+				const bool has_track = target.editor_mode;
+				const bool is_disabled = has_track && !trackOn(target.tracknum, -1, -1);
+
+				send_button_led(port, MCU_NOTE_MUTE + fader, is_disabled, &port->last_sent_mute[fader]);
+				send_button_led(port, MCU_NOTE_SOLO + fader, false, &port->last_sent_solo[fader]);
+				send_button_led(port, MCU_NOTE_REC + fader, false, &port->last_sent_rec[fader]);
+				send_button_led(port, MCU_NOTE_SELECT + fader, false, &port->last_sent_select[fader]);
+
+				send_vpot_led(port, fader, -1.0f);
+			}
+
+			if (now - port->last_panel_update >= 200)
+			{
+				port->last_panel_update = now;
+				update_track_panels(port, port->panels_need_full_update, true);
+				port->panels_need_full_update = false;
 			}
 		}
 		else
@@ -1821,7 +1900,7 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 	if (now - port->last_panel_update >= 200)
 	{
 		port->last_panel_update = now;
-		update_track_panels(port, port->panels_need_full_update);
+		update_track_panels(port, port->panels_need_full_update, false);
 		port->panels_need_full_update = false;
 	}
 
