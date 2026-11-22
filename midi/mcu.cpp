@@ -1317,6 +1317,50 @@ static QColor get_editor_target_color(const FaderTarget &target)
 	return color.isValid() ? color : QColor(Qt::white);
 }
 
+static int color_to_closest_xtouch_color(const QColor &color)
+{
+	if (!color.isValid())
+		return 7; // White
+
+	const int red = color.red();
+	const int green = color.green();
+	const int blue = color.blue();
+
+	if (R_MAX(red, R_MAX(green, blue)) == 0)
+		return 7; // White; black means off on the X-Touch.
+
+	const int colors[8][3] = {
+		{0, 0, 0},       // Off
+		{255, 0, 0},     // Red
+		{0, 255, 0},     // Green
+		{255, 255, 0},   // Yellow
+		{0, 0, 255},     // Blue
+		{255, 0, 255},   // Purple
+		{0, 255, 255},   // Cyan
+		{255, 255, 255}  // White
+	};
+
+	int best = 7;
+	int best_distance = INT_MAX;
+
+	// Skip Off. An instrument color should result in a visible background.
+	for(int i=1 ; i<8 ; i++)
+	{
+		const int dr = red - colors[i][0];
+		const int dg = green - colors[i][1];
+		const int db = blue - colors[i][2];
+		const int distance = dr * dr + dg * dg + db * db;
+
+		if (distance < best_distance)
+		{
+			best_distance = distance;
+			best = i;
+		}
+	}
+
+	return best;
+}
+
 static int color_to_xtouch_color(const QColor &color)
 {
 	if (!color.isValid())
@@ -1412,7 +1456,7 @@ static void update_track_panels(McuPort *port, bool force, bool editor_mode)
 		if (target.editor_mode)
 		{
 			instrument_t instrument_id = getInstrumentForTrack(target.tracknum, -1, -1);
-			const char *name = isLegalInstrument(instrument_id) ? getInstrumentName(instrument_id) : get_track_name(target.tracknum);
+			const char *name = isLegalInstrument(instrument_id) ? getInstrumentName(instrument_id) : "none";
 
 			copy_number_and_name_6(target.tracknum, name, &line1[pos]);
 
@@ -1424,7 +1468,7 @@ static void update_track_panels(McuPort *port, bool force, bool editor_mode)
 			else
 				format_normalized_6(getTrackVolume(target.tracknum, -1, -1), &line2[pos]);
 
-			colors[fader] = color_to_xtouch_color(get_editor_target_color(target));
+			colors[fader] = color_to_closest_xtouch_color(get_editor_target_color(target));
 			continue;
 		}
 
@@ -1709,7 +1753,12 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 			FaderTarget target = get_fader_target(fader, port->bank_offset, true);
 
 			if (target.editor_mode)
-				selectTrack(target.tracknum, -1);
+			{
+				if (noteTrackVisible(target.tracknum, -1, -1))
+					setCurrentTrack(target.tracknum, -1, -1, true);
+				else
+					selectTrack(target.tracknum, -1);
+			}
 
 			return;
 		}
