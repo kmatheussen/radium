@@ -46,6 +46,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/sequencer_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/OS_visual_input.h"
+#include "../common/instruments_proc.h"
+#include "../common/patch_proc.h"
 #include "../api/api_proc.h"
 
 #include "../audio/SoundPlugin.h"
@@ -1083,6 +1085,21 @@ static void process_vpot_message(McuPort *port, int controller, int value)
 
 static SoundPlugin *get_target_plugin(const FaderTarget &target)
 {
+	if (target.editor_mode)
+	{
+		instrument_t instrument_id = getInstrumentForTrack(target.tracknum, -1, -1);
+
+		if (!isLegalInstrument(instrument_id))
+			return NULL;
+
+		struct Patch *patch = PATCH_get_from_id(instrument_id);
+
+		if (patch == NULL || patch->instrument != get_audio_instrument() || patch->patchdata == NULL)
+			return NULL;
+
+		return (SoundPlugin*)patch->patchdata;
+	}
+
 	if (target.seqtracknum < 0 || !target.for_audiofiles)
 		return NULL;
 
@@ -1145,6 +1162,45 @@ static void send_meter_overload(McuPort *port, int fader, bool overload)
 	                      0xd0,
 	                      (fader << 4) | (overload ? 0x0e : 0x0f),
 	                      0);
+}
+
+static void process_target_meter(McuPort *port, int fader, const FaderTarget &target, bool update_meters)
+{
+	// Accumulate peaks between each meter update so a short peak is not lost
+	// just because it happened between two 50 ms updates.
+	port->pending_peak_db[fader] = R_MAX(port->pending_peak_db[fader], get_target_meter_input_db(target));
+
+	if (!update_meters)
+		return;
+
+	const float db = port->pending_peak_db[fader];
+	port->pending_peak_db[fader] = MIN_DB;
+
+	const int segment = db_to_meter_segment(db);
+	// Match Radium's own meter: it turns red above +4 dB. Use the overload/clip
+	// segment only at that point, so the yellow/orange range below +4 dB is
+	// still shown by the normal meter segments.
+	const bool overload = db > 4.0f;
+
+	if (segment > 0)
+	{
+		// Send the current peak value. The X-Touch has its own falloff, so we
+		// do not send decaying values ourselves.
+		send_meter(port, fader, segment);
+	}
+
+	if (overload)
+	{
+		// Send the overload segment last. Some devices treat 0xE as a normal
+		// meter segment rather than a latching clip indication.
+		send_meter_overload(port, fader, true);
+		port->meter_overload[fader] = true;
+	}
+	else if (port->meter_overload[fader])
+	{
+		send_meter_overload(port, fader, false);
+		port->meter_overload[fader] = false;
+	}
 }
 
 static void clear_meters(McuPort *port)
@@ -1775,6 +1831,18 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 
 			return;
 		}
+
+		// Touching a fader selects its editor track.
+		if (note >= 0x68 && note < 0x70)
+		{
+			const int fader = note - 0x68;
+			FaderTarget target = get_fader_target(fader, port->bank_offset, true);
+
+			if (target.editor_mode)
+				selectTrack(target.tracknum, -1);
+
+			return;
+		}
 	}
 
 	// Transport controls are global and work regardless of sequencer focus.
@@ -1936,6 +2004,12 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 				}
 			}
 
+			enable_meters(port);
+
+			const bool update_meters = now - port->last_meter_update >= 50;
+			if (update_meters)
+				port->last_meter_update = now;
+
 			for(int fader=0 ; fader<8 ; fader++)
 			{
 				FaderTarget target = get_fader_target(fader, port->bank_offset, true);
@@ -1949,6 +2023,8 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 				send_button_led(port, MCU_NOTE_SELECT + fader, is_selected, &port->last_sent_select[fader]);
 
 				send_vpot_led(port, fader, get_editor_target_pan_normalized(target));
+
+				process_target_meter(port, fader, target, update_meters);
 			}
 
 			if (now - port->last_panel_update >= 200)
@@ -1960,10 +2036,22 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		}
 		else
 		{
+			if (port->was_editor_selected)
+			{
+				clear_meters(port);
+				disable_meters(port);
+			}
+
 			port->was_editor_selected = false;
 		}
 
 		return;
+	}
+
+	if (port->was_editor_selected)
+	{
+		clear_meters(port);
+		disable_meters(port);
 	}
 
 	port->was_editor_selected = false;
@@ -1998,41 +2086,7 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 		sync_button_leds(port, fader, target);
 		send_vpot_led(port, fader, get_target_pan(target));
 
-		// Accumulate peaks between each meter update so a short peak is not
-		// lost just because it happened between two 50 ms updates.
-		port->pending_peak_db[fader] = R_MAX(port->pending_peak_db[fader], get_target_meter_input_db(target));
-
-		if (update_meters)
-		{
-			const float db = port->pending_peak_db[fader];
-			port->pending_peak_db[fader] = MIN_DB;
-
-			const int segment = db_to_meter_segment(db);
-			// Match Radium's own meter: it turns red above +4 dB. Use the
-			// overload/clip segment only at that point, so the yellow/orange
-			// range below +4 dB is still shown by the normal meter segments.
-			const bool overload = db > 4.0f;
-
-			if (segment > 0)
-			{
-				// Send the current peak value. The X-Touch has its own falloff,
-				// so we do not send decaying values ourselves.
-				send_meter(port, fader, segment);
-			}
-
-			if (overload)
-			{
-				// Send the overload segment last. Some devices treat 0xE as a
-				// normal meter segment rather than a latching clip indication.
-				send_meter_overload(port, fader, true);
-				port->meter_overload[fader] = true;
-			}
-			else if (port->meter_overload[fader])
-			{
-				send_meter_overload(port, fader, false);
-				port->meter_overload[fader] = false;
-			}
-		}
+		process_target_meter(port, fader, target, update_meters);
 	}
 
 	if (now - port->last_panel_update >= 200)
