@@ -515,6 +515,19 @@ static constexpr int FADE_LENGTH_MS = 50;
 static constexpr int FADE_POLL_RETRIES = 15;
 
 
+// Shutdown state, set by FAUST2_shut_down().
+//
+// FAUST2_shut_down() empties libfaust's global factory tables, which deletes
+// every factory at once - including factories that still have a compile
+// completion queued on the main thread (the fade-out poll below re-enters
+// perform_compile_completion, and a compile that finished while the instruments
+// were being closed queues a completion too). Those closures only hold raw
+// pointers, so after this point they must neither touch the plugin nor call
+// into a factory that libfaust has already destroyed.
+static bool g_faust_is_shutting_down = false;
+static bool g_faust_factories_are_deleted = false;
+
+
 static void perform_compile_completion(instrument_t patch_id,
 									   dsp_factory *factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
@@ -526,6 +539,23 @@ static void perform_compile_completion(instrument_t patch_id,
 									   const QString &compile_code,
 									   int retries_left)
 {
+	if (g_faust_is_shutting_down){
+		// The instruments are closed and FAUST2_shut_down() is running or has
+		// run. The plugin must not be touched anymore, and if libfaust's
+		// factory table has already been emptied, 'factory' does not exist
+		// anymore either (calling e.g. createDSPInstance() on it would be a
+		// use-after-free that corrupts libfaust's/LLVM's global state).
+		if (!g_faust_factories_are_deleted)
+			delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+						   llvm_factory,
+#endif
+						   interp_factory);
+		delete svg_dir;
+		delete soundfile_data;
+		return;
+	}
+
 	struct Patch *patch = PATCH_get_from_id(patch_id);
 	if (patch == NULL || patch->patchdata == NULL){
 		// The instrument was deleted while we were compiling.
@@ -929,6 +959,9 @@ bool FAUST2_lint_compile_check_is_safe(const SoundPlugin *plugin)
 static void start_compilation(SoundPlugin *plugin)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+
+	if (g_faust_is_shutting_down)
+		return; // Don't create a factory that FAUST2_shut_down() has to free.
 
 	if (devdata->is_compiling)
 		return;
@@ -1712,6 +1745,9 @@ void FAUST2_start_compilation(SoundPlugin *plugin)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 
+	if (g_faust_is_shutting_down)
+		return; // Don't create a factory that FAUST2_shut_down() has to free.
+
 	if (devdata->code == "")
 		return;
 
@@ -1729,12 +1765,34 @@ void FAUST2_start_compilation(SoundPlugin *plugin)
 
 void FAUST2_shut_down(void)
 {
-	// Wait for any in-flight compiles so no factory is created while (or
-	// after) we empty libfaust's global factory table.
+	// No compile may start from here on: a compile that finishes after the
+	// factory tables below are emptied queues a completion callback holding a
+	// raw factory pointer, and that factory does not exist anymore by then.
+	g_faust_is_shutting_down = true;
+
+	// Wait for any in-flight compiles. A compile thread is inside libfaust
+	// (and LLVM) and owns a factory, so the global factory tables must not be
+	// emptied while it runs: freeing its factory (or libfaust's global state)
+	// behind its back corrupts libfaust/LLVM, and the damage typically shows up
+	// much later, in libfaust's static destructor at exit().
+	static constexpr int MAX_WAIT_MS = 60000;
+	bool still_compiling = false;
 	for (const QPointer<Dev2CompileThread> &thread : g_compile_threads)
-		if (thread)
-			thread->wait(10000);
+		if (thread != NULL && thread->isRunning() && thread->wait(MAX_WAIT_MS) == false)
+			still_compiling = true;
 	g_compile_threads.clear();
+
+	if (still_compiling){
+		// Leave the tables alone. Their factories are then destroyed by
+		// libfaust's static destructor at exit(), which is the crash this
+		// function normally prevents, but freeing them while a compile thread
+		// is still inside libfaust would corrupt memory in the running process.
+		// Compiles this slow only happen for pathological programs.
+		fprintf(stderr,
+				"Faust Dev 2: a compilation was still running %d ms after shutdown started; leaving libfaust's factory tables alone.\n",
+				MAX_WAIT_MS);
+		return;
+	}
 
 	// Empty the global factory tables now, while libfaust's static objects are
 	// still alive. If factories are left in the table, libfaust destroys them
@@ -1745,6 +1803,10 @@ void FAUST2_shut_down(void)
 	deleteAllDSPFactories();
 #endif
 	deleteAllInterpreterDSPFactories();
+
+	// Pending completion callbacks (see g_faust_is_shutting_down) must not
+	// delete their factory anymore, and must not use it either.
+	g_faust_factories_are_deleted = true;
 }
 
 bool FAUST2_set_use_interpreter_backend(SoundPlugin *plugin, bool use_interpreter)
