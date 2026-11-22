@@ -807,6 +807,28 @@ static float get_target_pan(const FaderTarget &target)
 	return getStoredInstrumentEffect(target.instrument_id, "System Pan");
 }
 
+static float get_editor_target_pan(const FaderTarget &target)
+{
+	if (!target.editor_mode)
+		return -1.0f;
+
+	return getTrackPan(target.tracknum, -1, -1);
+}
+
+static float editor_pan_to_normalized(float pan)
+{
+	return R_BOUNDARIES(0.0f, (pan + 1.0f) * 0.5f, 1.0f);
+}
+
+static float get_editor_target_pan_normalized(const FaderTarget &target)
+{
+	if (!target.editor_mode || !getTrackPanOnOff(target.tracknum, -1, -1))
+		return -1.0f;
+
+	const float pan = get_editor_target_pan(target);
+	return pan < -1.0f ? -1.0f : editor_pan_to_normalized(pan);
+}
+
 static void send_vpot_led(McuPort *port, int fader, float pan)
 {
 	int value;
@@ -843,6 +865,14 @@ static void undo_pan_start(const FaderTarget &target)
 	undoInstrumentEffect(target.instrument_id, "System Pan");
 	closeUndo();
 }
+
+static void undo_editor_pan_start(const FaderTarget &target)
+{
+	openUndo();
+	undoTrackPan(target.tracknum, -1, -1);
+	closeUndo();
+}
+
 
 static void set_target_pan(const FaderTarget &target, float pan)
 {
@@ -980,7 +1010,9 @@ static void process_vpot_message(McuPort *port, int controller, int value)
 		return;
 	}
 
-	if (!g_sequencer_has_focus)
+	const bool editor_mode = g_editor_has_focus && !g_sequencer_has_focus;
+
+	if (!g_sequencer_has_focus && !editor_mode)
 		return;
 
 	if (controller < 0x10 || controller >= 0x18)
@@ -988,12 +1020,7 @@ static void process_vpot_message(McuPort *port, int controller, int value)
 
 	const int fader = controller - 0x10;
 
-	FaderTarget target = get_fader_target(fader, port->bank_offset, false);
-	if (target.seqtracknum < 0 || !target.for_audiofiles)
-		return;
-
-	if (!instrumentEffectExists(target.instrument_id, "System Pan"))
-		return;
+	FaderTarget target = get_fader_target(fader, port->bank_offset, editor_mode);
 
 	const float sign = (value & 0x40) == 0 ? 1.0f : -1.0f;
 	int ticks = value & 0x3f;
@@ -1001,8 +1028,38 @@ static void process_vpot_message(McuPort *port, int controller, int value)
 	if (ticks == 0)
 		ticks = 1;
 
-	const float delta = sign * ticks / 63.0f;
 	const int64_t now = (int64_t)TIME_get_ms();
+
+	if (editor_mode)
+	{
+		if (!target.editor_mode)
+			return;
+
+		const float delta = sign * ticks / 63.0f * 2.0f;
+
+		if (now - port->last_vpot_input_time[fader] > 200)
+			undo_editor_pan_start(target);
+
+		port->last_vpot_input_time[fader] = now;
+		port->pan_display_until[fader] = now + 1000;
+
+		const float pan = get_editor_target_pan(target);
+		if (pan < -1.0f)
+			return;
+
+		const float new_pan = R_BOUNDARIES(-1.0f, pan + delta, 1.0f);
+		setTrackPan(new_pan, target.tracknum, -1, -1);
+
+		return;
+	}
+
+	if (target.seqtracknum < 0 || !target.for_audiofiles)
+		return;
+
+	if (!instrumentEffectExists(target.instrument_id, "System Pan"))
+		return;
+
+	const float delta = sign * ticks / 63.0f;
 
 	if (now - port->last_vpot_input_time[fader] > 200)
 		undo_pan_start(target);
@@ -1359,7 +1416,14 @@ static void update_track_panels(McuPort *port, bool force, bool editor_mode)
 
 			copy_number_and_name_6(target.tracknum, name, &line1[pos]);
 
-			format_normalized_6(getTrackVolume(target.tracknum, -1, -1), &line2[pos]);
+			const float pan = get_editor_target_pan(target);
+			const bool show_pan = getTrackPanOnOff(target.tracknum, -1, -1);
+
+			if (show_pan && now < port->pan_display_until[fader] && pan >= -1.0f)
+				format_pan_6(editor_pan_to_normalized(pan), &line2[pos]);
+			else
+				format_normalized_6(getTrackVolume(target.tracknum, -1, -1), &line2[pos]);
+
 			colors[fader] = color_to_xtouch_color(get_editor_target_color(target));
 			continue;
 		}
@@ -1638,6 +1702,31 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 		// Solo is not used in editor mode.
 		if (note >= MCU_NOTE_SOLO && note < MCU_NOTE_SOLO + 8)
 			return;
+
+		if (note >= MCU_NOTE_SELECT && note < MCU_NOTE_SELECT + 8)
+		{
+			const int fader = note - MCU_NOTE_SELECT;
+			FaderTarget target = get_fader_target(fader, port->bank_offset, true);
+
+			if (target.editor_mode)
+				selectTrack(target.tracknum, -1);
+
+			return;
+		}
+
+		if (note >= 0x20 && note < 0x28)
+		{
+			const int fader = note - 0x20;
+			FaderTarget target = get_fader_target(fader, port->bank_offset, true);
+
+			if (target.editor_mode)
+			{
+				port->pan_display_until[fader] = (int64_t)TIME_get_ms() + 1000;
+				switchTrackPanOnOff(target.tracknum, -1, -1);
+			}
+
+			return;
+		}
 	}
 
 	// Transport controls are global and work regardless of sequencer focus.
@@ -1804,13 +1893,14 @@ static void process_port(McuPort *port, bool sequencer_has_focus)
 				FaderTarget target = get_fader_target(fader, port->bank_offset, true);
 				const bool has_track = target.editor_mode;
 				const bool is_disabled = has_track && !trackOn(target.tracknum, -1, -1);
+				const bool is_selected = has_track && getCurrentTrack(-1) == target.tracknum;
 
 				send_button_led(port, MCU_NOTE_MUTE + fader, is_disabled, &port->last_sent_mute[fader]);
 				send_button_led(port, MCU_NOTE_SOLO + fader, false, &port->last_sent_solo[fader]);
 				send_button_led(port, MCU_NOTE_REC + fader, false, &port->last_sent_rec[fader]);
-				send_button_led(port, MCU_NOTE_SELECT + fader, false, &port->last_sent_select[fader]);
+				send_button_led(port, MCU_NOTE_SELECT + fader, is_selected, &port->last_sent_select[fader]);
 
-				send_vpot_led(port, fader, -1.0f);
+				send_vpot_led(port, fader, get_editor_target_pan_normalized(target));
 			}
 
 			if (now - port->last_panel_update >= 200)
