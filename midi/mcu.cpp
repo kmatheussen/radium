@@ -1461,9 +1461,8 @@ static void update_track_panels(McuPort *port, bool force, bool editor_mode)
 			copy_number_and_name_6(target.tracknum, name, &line1[pos]);
 
 			const float pan = get_editor_target_pan(target);
-			const bool show_pan = getTrackPanOnOff(target.tracknum, -1, -1);
 
-			if (show_pan && now < port->pan_display_until[fader] && pan >= -1.0f)
+			if (now < port->pan_display_until[fader] && pan >= -1.0f)
 				format_pan_6(editor_pan_to_normalized(pan), &line2[pos]);
 			else
 				format_normalized_6(getTrackVolume(target.tracknum, -1, -1), &line2[pos]);
