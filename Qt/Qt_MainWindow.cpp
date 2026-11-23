@@ -404,6 +404,33 @@ void GFX_update_main_x_splitter_grow_widget(void){
   g_editor->xsplitter_grow_widget->setVisible(!GFX_EditorIsVisible() && !mixer_takes_available_space);
 }
 
+// A hidden splitter child normally gets zero width, but the splitter layout can
+// be left with the old allocation (showing up as an empty gray pane) when the
+// mixer is shown and hidden before the layout has settled. Re-run the splitter
+// and editor layout explicitly, and recalculate the editor track coordinates so
+// the editor track headers are rebuilt for the new editor width.
+void GFX_refresh_editor_layout_after_main_x_splitter_change(void){
+	if (g_editor == NULL)
+		return;
+
+	if (g_editor->xsplitter != NULL)
+		g_editor->xsplitter->refresh();
+
+	if (g_editor->editor_layout_widget != NULL) {
+		QLayout *layout = g_editor->editor_layout_widget->layout();
+		if (layout != NULL)
+			layout->activate();
+	}
+
+	if (g_editor->header_widget != NULL)
+		g_editor->header_widget->updateGeometry();
+
+	if (root != NULL && root->song != NULL && root->song->tracker_windows != NULL) {
+		calculateNewWindowWidthAndHeight(root->song->tracker_windows);
+		root->song->tracker_windows->must_redraw = true;
+	}
+}
+
 void GFX_ShowEditor(void){
   if (sequencerInFullMode() && !sequencerInWindow()){
     setSequencerInFullMode(false);    

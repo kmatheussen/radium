@@ -71,6 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenu>
 #include <QPainter>
 #include <QMouseEvent>
+#include <QTimer>
 
 
 #include "../common/nsmtracker.h"
@@ -848,7 +849,9 @@ Chip *MW_get_chip_at(float x, float y, const Chip *except){
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
-    if(chip!=NULL && chip!=except){
+    // Hidden chips (e.g. the preset preview instrument) should not block a
+    // mixer slot even though they are still present in the scene.
+    if(chip!=NULL && chip!=except && chip->isVisible()){
       const QPointF pos = chip->pos();
       //printf("%d / %d,    %d / %d\n",get_slot_x(pos.x()+grid_width/2), slot_x,    get_slot_y(pos.y()+grid_height/2), slot_y);
       if(get_slot_x(pos.x()+grid_width/2)==slot_x && get_slot_y(pos.y()+grid_height/2)==slot_y)
@@ -2619,6 +2622,25 @@ MixerWidget_OnlyMixer::MixerWidget_OnlyMixer(QWidget *parent)
   //qApp->installEventFilter(this);
 }
 
+static void schedule_editor_layout_refresh_after_mixer_visibility_change(void){
+	GFX_refresh_editor_layout_after_main_x_splitter_change();
+
+	// The splitter/layout may need another event loop iteration to settle,
+	// especially during the mixer show/hide workaround at startup. The delayed
+	// refresh also handles layouts that are still pending after that.
+	QTimer::singleShot(0, []{
+		GFX_refresh_editor_layout_after_main_x_splitter_change();
+	});
+	QTimer::singleShot(100, []{
+		GFX_refresh_editor_layout_after_main_x_splitter_change();
+	});
+}
+
+static void update_layout_after_mixer_visibility_change(void){
+	GFX_update_main_x_splitter_grow_widget();
+	schedule_editor_layout_refresh_after_mixer_visibility_change();
+}
+
 bool GFX_MixerIsVisible(void){
   return !g_mixer_widget->isHidden();
 }
@@ -2631,12 +2653,12 @@ void GFX_ShowMixer(void){
     setMixerKeyboardFocus(true);
     g_mixer_widget->show();
   }GL_unlock();
-  GFX_update_main_x_splitter_grow_widget();
+  update_layout_after_mixer_visibility_change();
 }
 void GFX_HideMixer(void){
   g_mixer_widget->hide();
   set_editor_focus();
-  GFX_update_main_x_splitter_grow_widget();
+  update_layout_after_mixer_visibility_change();
 }
 
 void GFX_showHideMixerWidget(void){
@@ -2663,7 +2685,7 @@ void GFX_showHideMixerWidget(void){
     }
   }GL_unlock();
   set_editor_focus();
-  GFX_update_main_x_splitter_grow_widget();
+  update_layout_after_mixer_visibility_change();
 }
 
 static const instrument_t g_main_pipe_patch_id = make_instrument(0);

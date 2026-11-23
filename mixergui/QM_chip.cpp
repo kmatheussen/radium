@@ -1886,8 +1886,11 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
 
    if (!is_visible) {
      setVisible(false);
-     x = 100000;
-     y = 100000;
+     // Don't move hidden chips to a large sentinel position. The mixer scene
+     // calculates its implicit scene rect from all items, including hidden
+     // ones, so a chip at e.g. (100000, 100000) makes the mixer's scroll range
+     // gigantic. Hidden chips don't receive mouse events, and chip hit-testing
+     // ignores them, so keeping the normal position is safe.
    }
 
 

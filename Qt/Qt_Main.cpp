@@ -3033,10 +3033,22 @@ protected:
         if(num_calls_at_this_point<150/_interval)
           updateWidgetRecursively(g_main_window);
         
-        // Show mixer briefly to workaround a Qt quirk/bug causing SceneRect size to be calculated from invisible items when the scene hasn't been shown yet.
-        // (Fixes extremely large Mixer scene rect if previewing preset before opening the mixer for the first time)
-        // This breaks opening mixer window at startup form configuration - don't know needed anymore I do not see any difference when commented
-	//
+        // Old workaround: show the mixer briefly during startup and then hide
+        // it again. It was presumably added to force Qt to initialize the
+        // mixer's QGraphicsScene while the mixer was visible, so the scene
+        // rect would not be calculated from invisible items. That could
+        // otherwise result in an extremely large mixer scene rect if a preset
+        // was previewed before the mixer had been opened for the first time.
+        //
+        // The show/hide also made the main horizontal splitter reserve space
+        // for the mixer for a few timer ticks. If the layout did not settle
+        // before the mixer was hidden, the editor could keep the old, narrower
+        // width and the freed space was left as an empty gray pane. This is
+        // now handled by refreshing the splitter/editor layout in
+        // GFX_ShowMixer() and GFX_HideMixer(), and it was never clear whether
+        // the original Qt scene rect workaround was still needed, so keep it
+        // disabled until proven necessary.
+#if 0
 	if (!getDoSaveRestoreWindows())
 	{
 		if(num_calls_at_this_point==50/_interval)
@@ -3045,6 +3057,7 @@ protected:
 		if(num_calls_at_this_point==70/_interval)
 			GFX_HideMixer();
         }
+#endif
 
         // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
         {
@@ -4671,6 +4684,8 @@ int radium_main(const char *arg){
   // Hide preset browser at startup.
   if (SETTINGS_read_bool("preset_browser_visible", false)==false)
     hidePresetBrowserAtStartup();
+  else
+    ensurePresetBrowserFolderExists();
 
   if (getDoSaveRestoreWindows())
 	  restoreWindowsState(main_window);
