@@ -1,0 +1,29 @@
+--- s7.c
++++ s7.c
+@@ -6024,11 +6024,21 @@
+ {
+   s7_int loc;
+   loc = s7_gc_protect(sc, x);
+-  if (loc > 8192)
+-    {
+-      fprintf(stderr, "infinite loop or memory leak at line %d %s?\n", line, string_value(s7_object_to_string(sc, current_code(sc), false)));
+-      abort();
+-    }
++  {
++    /* Radium keeps a lot of Scheme callbacks alive for its GUI widgets, and
++     * remaking many widgets at once can temporarily hold several thousand
++     * protections.  The old test looked at the slot index, which stays high
++     * after any legitimate transient peak, so it could abort even when only
++     * a small number of objects were actually protected.  Count the slots
++     * currently in use instead, and only abort on a genuine runaway leak.
++     */
++    s7_int num_in_use = sc->protected_objects_size - (sc->protected_objects_free_list_loc + 1);
++    if (num_in_use > 1000000)
++      {
++        fprintf(stderr, "too many gc-protected objects (%" ld64 ") at line %d %s?\n", num_in_use, line, string_value(s7_object_to_string(sc, current_code(sc), false)));
++        abort();
++      }
++  }
+   return(loc);
+ }
+ #define gc_protect_1(Sc, X) gc_protect_2(Sc, X, __LINE__)

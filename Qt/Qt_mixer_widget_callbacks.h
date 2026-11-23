@@ -327,6 +327,23 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     rows4->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-R4-popup-menu");
     };
+
+    widen_all_strips->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-all-strips-width-popup-menu");
+    };
+    narrow_all_strips->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-show-mixer-all-strips-width-popup-menu");
+    };
+
+    widen_all_strips->_statusbar_text = "Make all mixer strips wide";
+    narrow_all_strips->_statusbar_text = "Make all mixer strips narrow";
+
+    widen_all_strips->setText("widen-all-strips.svg");
+    narrow_all_strips->setText("narrow-all-strips.svg");
+
+    int icon_button_width = R_MAX(15, fontMetrics().height() * 1.25);
+    widen_all_strips->setFixedWidth(icon_button_width);
+    narrow_all_strips->setFixedWidth(icon_button_width);
   }
 
   void enterEvent(QEnterEvent *event) override {
@@ -927,7 +944,15 @@ public slots:
     if(val)
       change_num_mixerstrips_rows(4);
   }
-  
+
+  void on_widen_all_strips_clicked(){
+    S7CALL2(void_void,"FROM_C-make-all-mixer-strips-wide");
+  }
+
+  void on_narrow_all_strips_clicked(){
+    S7CALL2(void_void,"FROM_C-make-all-mixer-strips-narrow");
+  }
+
   void on_ratio13_toggled(bool val){
     if(val)
       change_mixerstrips_vert_ratio(make_ratio(1,3));

@@ -3028,8 +3028,8 @@ endif
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 -fPIC $(UNIVERSAL)
 
-bin/packages/s7/s7.c: bin/packages/s7.tar.gz bin/packages/s7_fix_sort_hang.patch
-	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && cd s7 && patch -p0 <../s7_fix_sort_hang.patch && touch s7.c && mv s7webserver s7webserver_org # Note: renaming s7webserver to avoid mistakenly using it instead of bin/s7webserver
+bin/packages/s7/s7.c: bin/packages/s7.tar.gz bin/packages/s7_fix_sort_hang.patch bin/packages/s7_fix_gc_protect_abort.patch
+	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && cd s7 && patch -p0 <../s7_fix_sort_hang.patch && patch -p0 <../s7_fix_gc_protect_abort.patch && touch s7.c && mv s7webserver s7webserver_org # Note: renaming s7webserver to avoid mistakenly using it instead of bin/s7webserver
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c $(QT_PCH)

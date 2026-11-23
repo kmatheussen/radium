@@ -3,6 +3,7 @@
 #define _RADIUM_API_API_GUI_PROC_H
 
 extern LANGSPEC void API_gui_call_regularly(void);
+extern LANGSPEC void API_gui_collect_all_garbage(void);
 
 extern LANGSPEC bool MIXERSTRIPS_has_mouse_pointer(void);
 

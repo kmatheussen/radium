@@ -3344,6 +3344,7 @@ protected:
         }
 
         //printf("          (remake called from qt main)\n");
+        API_gui_collect_all_garbage();
         S7CALL2(void_void,"remake-mixer-strips");
 
 	GL_update();
@@ -3365,6 +3366,7 @@ protected:
         
         code += ")";
        
+        API_gui_collect_all_garbage();
         evalScheme(code.toUtf8().constData());
 
 	GL_update();

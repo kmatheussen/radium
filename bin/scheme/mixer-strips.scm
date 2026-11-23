@@ -51,14 +51,22 @@
 ;; Note: Used for shortcut
 (define (make-all-mixer-strips-wide)
   (for-each (lambda (i)
-              (<ra> :set-wide-instrument-strip i #t))
+              (when (not (<ra> :has-wide-instrument-strip i))
+                (<ra> :set-wide-instrument-strip i #t)))
             (get-all-audio-instruments)))
 
 ;; Note: Used for shortcut
 (define (make-no-mixer-strips-wide)
   (for-each (lambda (i)
-              (<ra> :set-wide-instrument-strip i #f))
+              (when (<ra> :has-wide-instrument-strip i)
+                (<ra> :set-wide-instrument-strip i #f)))
             (get-all-audio-instruments)))
+
+(define (FROM_C-make-all-mixer-strips-wide)
+  (make-all-mixer-strips-wide))
+
+(define (FROM_C-make-all-mixer-strips-narrow)
+  (make-no-mixer-strips-wide))
 
 ;; Note: Used for shortcut
 (define (switch-all-no-mixer-strips-wide)
@@ -92,15 +100,6 @@
      (and (not is-standalone)
           (list
            "---------Mixer"
-           (list "Make all strips wide"
-                 :shortcut switch-all-no-mixer-strips-wide
-                 make-all-mixer-strips-wide)
-           (list "Make no strips wide"
-                 :shortcut switch-all-no-mixer-strips-wide
-                 make-no-mixer-strips-wide)
-           
-           "----------"
-           
            (list
             :radio-buttons
             (map (lambda (num-rows)
@@ -305,6 +304,14 @@
   (define key (list gui instrument-id effect-name monitor-stored monitor-automation))
   (when (not (*update-gui-effect-monitors* key))
     (set! (*update-gui-effect-monitors* key) #t)
+    ;; Guis created from existing Qt widgets (for example widgets in the
+    ;; instrument widget) do not support callbacks, and they are not recreated
+    ;; by the mixer strips anyway.
+    (when (<gui> :supports-callbacks gui)
+      (<gui> :add-deleted-callback gui
+             (lambda (radium-runs-custom-exec)
+               ;; S7 removes a key when its value is set to #f.
+               (set! (*update-gui-effect-monitors* key) #f))))
     (add-gui-effect-monitor gui instrument-id effect-name monitor-stored monitor-automation
                             (lambda (on/off automation)
                               (<gui> :update gui)))))
@@ -567,6 +574,7 @@
 
   (define (recreate-config-gui-content)
     (define old-content is-enabled-content)
+    (<ra> :gui_release-scheme-callbacks-recursively old-content)
     (set! is-enabled-content (create-is-enabled-gui this))
     (<gui> :replace config-gui old-content is-enabled-content)
     (<gui> :close old-content))
@@ -612,7 +620,14 @@
                                (reset!)
                                (remake :non-are-valid)))
                   ((:show-config-gui) (show-config-gui))
-                  ((:recreate-config-gui-content) (recreate-config-gui-content))
+                  ((:recreate-config-gui-content)
+                   ;; Only rebuild the instrument on/off checkbox list when
+                   ;; the config window is actually visible. It is recreated
+                   ;; by show-config-gui when it is opened, and rebuilding it
+                   ;; on every mixer-strip remake creates a lot of temporary
+                   ;; GUI callbacks.
+                   (when (<gui> :is-visible config-gui)
+                     (recreate-config-gui-content)))
                   ((:num-rows) num-rows)
                   ((:vert-ratio) vert-ratio)
                   ((:get) (hash-table :num-rows num-rows
@@ -3214,6 +3229,7 @@
                                    (lambda (new-mixer-strips new-mixer-strips-gui)
                                      (if das-mixer-strips-gui
                                          (begin
+                                           (<ra> :gui_release-scheme-callbacks-recursively das-mixer-strips-gui)
                                            (<gui> :replace gui das-mixer-strips-gui new-mixer-strips-gui)
                                            (<gui> :close das-mixer-strips-gui))
                                          (begin

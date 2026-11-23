@@ -146,6 +146,9 @@ mid-horizontal-layout
 FROM_C-create-mixer-strips-gui
 FROM_C-mixer-strips-get-num-rows
 FROM_C-mixer-strips-change-num-rows
+FROM_C-make-all-mixer-strips-wide
+FROM_C-make-all-mixer-strips-narrow
+FROM_C-show-mixer-all-strips-width-popup-menu
 mixer-strips-get-vert-ratio
 mixer-strips-change-vert-ratio
 mixer-strips-reset-configuration!

@@ -112,7 +112,7 @@ if [ "$fallback" = 1 ] && [ -z "${DISPLAY:-}" ]; then
   exit 1
 fi
 
-reuse_testhome="/tmp/radium-xvfb-home.6axtf9"
+reuse_testhome="${RADIUM_XVFB_REUSE_TESTHOME:-}"
 testhome="${reuse_testhome:-$(mktemp -d "${TMPDIR:-/tmp}/radium-xvfb-home.XXXXXX")}"
 mkdir -p "$testhome/.radium"
 

@@ -1039,6 +1039,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 #endif
     }
 
+    // Release the Scheme protection without deleting the QObject. This is
+    // useful when a Gui is being closed and may still be in the middle of
+    // calling one of its callbacks.
+    void release_scheme_callback(void){
+      _func.set(NULL);
+    }
+
 #if !defined(RELEASE)
     ~Callback(){
       g_num_callbacks--;
@@ -1379,6 +1386,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
     bool _has_been_closed = false;
     bool _delayed_deletion = false;
+    bool _is_releasing_scheme_callbacks = false;
 
     radium::Modality _modality = radium::MAY_BE_MODAL; // We need to remember whether modality should be on or not, since modality is a parameter for set_window_parent.
     bool _have_set_size = false;
@@ -1528,6 +1536,53 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         });
 
       _after_deleted_callbacks.clear();
+    }
+
+    // Called when a Gui is really being closed. The QWidget itself may stay
+    // alive until the GUI garbage collector gets around to deleting it, but
+    // no Scheme callbacks should be called anymore. Release their GC
+    // protections now instead of waiting for the destructor, since a burst
+    // of mixer-strip remakes can otherwise keep thousands of protected
+    // closures alive at the same time.
+    void release_scheme_callbacks(bool force_release_qobject_callbacks = false){
+      if (_is_releasing_scheme_callbacks)
+        return;
+
+      _is_releasing_scheme_callbacks = true;
+
+      _visibility_change_callback.set(NULL);
+      _mouse_callback.set(NULL);
+      _mouse_wheel_callback.set(NULL);
+      _key_callback.set(NULL);
+      _focus_in_callback.set(NULL);
+      _doubleclick_callback.set(NULL);
+      _close_callback.set(NULL);
+      _resize_callback.set(NULL);
+      _paint_callback.set(NULL);
+
+      if (g_delayed_resized_guis.contains(this))
+        g_delayed_resized_guis.removeOne(this);
+
+      // Run cleanup callbacks before dropping them. In particular, mixer
+      // strips use these to remove their effect monitors; skipping them
+      // would leak the monitors (and their protected Scheme callbacks) when
+      // a GUI tree is released through the recursive helper below.
+      apply_deleted_callbacks();
+
+      // QObject-based callbacks may be executing right now (for example when
+      // a button callback closes the window). Don't delete them here; just
+      // disconnect them and release the Scheme protection. The Gui
+      // destructor deletes the objects later.
+      if (force_release_qobject_callbacks || safe_to_close_widget()) {
+        QWidget *widget = _widget.data();
+        for(Callback *callback : _callbacks){
+          if (widget != NULL)
+            QObject::disconnect(widget, nullptr, callback, nullptr);
+          callback->release_scheme_callback();
+        }
+      }
+
+      _is_releasing_scheme_callbacks = false;
     }
     
     void I_am_the_last_pos_of_valid_guis_move_me_somewhere_else(int new_pos) {
@@ -2139,6 +2194,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else
         abort();
 #endif
+
+      // The window is hidden and will not be used again. Release its Scheme
+      // callbacks now instead of waiting for the delayed deletion, so a
+      // remake of many mixer strips doesn't keep all old callbacks protected
+      // while the new strips are being created.
+      release_scheme_callbacks();
     }
 
     int _num_close_calls = 0;
@@ -2206,7 +2267,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         return false; // delay closing        
       }
 
-      
+      release_scheme_callbacks();
+
       return true; // close it.
     }
 
@@ -6895,6 +6957,50 @@ bool gui_isOpen(int64_t guinum){
     return true;
 }
 
+// Release the Scheme callbacks for a Gui and all Guis below it in the widget
+// hierarchy. Used when an entire GUI tree is about to be replaced: the Qt
+// widgets may stay alive until the GUI garbage collector deletes them, but
+// the Scheme closures should not stay protected meanwhile.
+void gui_releaseSchemeCallbacksRecursively(int64_t guinum){
+  Gui *root_gui = get_gui(guinum);
+  if (root_gui==NULL || root_gui->_widget==NULL)
+    return;
+
+  QVector<int64_t> guinums;
+  {
+    QWidget *root_widget = root_gui->_widget.data();
+    for(Gui *gui : g_valid_guis){
+      QWidget *widget = gui->_widget.data();
+      if (widget != NULL && (gui==root_gui || root_widget->isAncestorOf(widget)))
+        guinums.push_back(gui->get_gui_num());
+    }
+  }
+
+  // deleted callbacks are allowed to delete other Guis, so look the Guis up
+  // again by number for every release. Release the root last so its children
+  // are still reachable while they are processed.
+  for(int64_t guinum2 : guinums){
+    if (guinum2 == guinum)
+      continue;
+
+    Gui *root_gui2 = get_gui_maybeclosed(guinum);
+    if (root_gui2==NULL || root_gui2->_widget==NULL)
+      return;
+
+    Gui *gui = get_gui_maybeclosed(guinum2);
+    if (gui==NULL)
+      continue;
+
+    QWidget *widget = gui->_widget.data();
+    if (widget != NULL && root_gui2->_widget->isAncestorOf(widget))
+      gui->release_scheme_callbacks(true);
+  }
+
+  root_gui = get_gui_maybeclosed(guinum);
+  if (root_gui != NULL)
+    root_gui->release_scheme_callbacks(true);
+}
+
 int64_t gui_getParentWindow(int64_t guinum){
   if (guinum < 0)
     return guinum;
@@ -8707,6 +8813,30 @@ float gui_getGfxScale(float woh, float downscale){
 
 ////////////
 
+// Same as API_gui_call_regularly, but tries to remove all closed Guis
+// instead of only a small batch. Called before remaking a large number of
+// mixer strips so the old strips' Scheme callbacks are released before yet
+// another full set of strips is created.
+void API_gui_collect_all_garbage(void){
+  if (!THREADING_is_main_thread())
+    return;
+
+  if (g_scheme_nested_level > 0 || safe_to_close_widget()==false)
+    return;
+
+  // One pass closes delayed widgets and deletes Guis whose widgets are
+  // already gone. Closing a parent widget can make its children collectible,
+  // so run a few passes to catch those too.
+  for(int i=0;i<4;i++){
+    int size_before = g_valid_guis.size();
+    if (size_before==0)
+      break;
+    perhaps_collect_a_little_bit_of_gui_garbage(size_before);
+    if (g_valid_guis.size()==size_before && i>=1)
+      break;
+  }
+}
+
 // NOTE. This function can be called from a custom exec().
 // This means that _patch->plugin might be gone, and the same goes for soundproducer.
 // (_patch is never gone, never deleted)
@@ -8719,7 +8849,17 @@ void API_gui_call_regularly(void){
       gui->callVampRegularly(vamp);
   }
   
-  perhaps_collect_a_little_bit_of_gui_garbage(15);
+  // Drain more aggressively when there are many widgets. Closing a large
+  // mixer strips window can create hundreds of closed Guis at once, and the
+  // old fixed limit of 15 per timer pass could not keep up with a burst of
+  // remakes.
+  int num_guis_to_check = 15;
+  if (g_valid_guis.size() > 1000)
+    num_guis_to_check = 150;
+  else if (g_valid_guis.size() > 300)
+    num_guis_to_check = 75;
+
+  perhaps_collect_a_little_bit_of_gui_garbage(num_guis_to_check);
 }
 
 QWidget *API_gui_get_widget(int64_t guinum){
