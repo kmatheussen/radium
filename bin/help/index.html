@@ -718,7 +718,7 @@ There are two ways to edit keybindings:
       <LI> Main menu entries
     </UL>
     After right-clicking one of these elements, select "Add keybinding", "Change keybinding", or "Remove keybinding".
-    If you select "Add keybinding" or "Change keybinding", the program will ask you to press a key combination.
+    If you select "Add keybinding" or "Change keybinding", the program will ask you to press a key combination or play a MIDI note.
     <p>
       
   <LI> Add custom keybindings manually to the config file.
@@ -907,6 +907,60 @@ F12          : ra.showMixerHelpWindow
   </OL>
 
   
+  <h3>MIDI note keybindings</h3>
+
+  <p>
+    In addition to keyboard keys, the keybinding grab dialog accepts MIDI
+    note-on messages. Right-click a GUI element, select "Add keybinding" or
+    "Change keybinding", and play a note on a MIDI device while the dialog
+    says "Waiting for key or MIDI note....". Note that the MIDI device must first be added
+    as an input port under <i>Preferences -&gt; MIDI</i>.
+
+  <p>
+    Both the MIDI note number and the device are stored. This means that the
+    same note from two different MIDI devices can have separate keybindings.
+    The focus checkboxes in the grab dialog work the same way as for keyboard
+    keybindings.
+
+  <p>
+    Only note-on messages trigger keybindings: the status byte must be
+    <b>0x9x</b> and the velocity must be greater than zero. Note-off messages,
+    and note-on messages with zero velocity, do not trigger keybindings. MIDI
+    note numbers range from <b>0</b> to <b>127</b>. Keyboard modifiers are not
+    part of a MIDI note binding; only the <b>FOCUS_</b> and <b>MOUSE_</b>
+    qualifiers apply.
+
+  <p>
+    A MIDI note binding is stored in the keybindings config file like this:
+  <blockquote>
+<pre>
+#MIDI: MIDI_NOTE_60 MIDI_DEVICE_MyKeyboard FOCUS_EDITOR : ra.switchMetronome
+</pre>
+  </blockquote>
+
+  <ul>
+    <li><b>MIDI_NOTE_</b> is followed by the raw MIDI note number, from 0 to 127.
+    <li><b>MIDI_DEVICE_</b> is followed by the percent-encoded name of the MIDI
+      input port. The example above decodes to <i>My Keyboard</i>.
+      Normally you do not need to type this yourself; the grab dialog writes it
+      automatically.
+    <li>The leading <b>#MIDI:</b> is optional. By starting the
+	  line with "#MIDI", you avoid seeing an error message in older versions of Radium,
+      which do not understand MIDI note keybindings. If you don't go back and forth between new and old versions
+	  of Radium, you don't need use "#MIDI", just write "MIDI_NOTE_60 MIDI_DEVICE_MyKeyboard FOCUS_EDITOR : ra.switchMetronome" instead.
+  </ul>
+
+  <p>
+    As with ordinary MIDI input, a note used as a keybinding is still sent to
+    the editor and instruments unless the corresponding MIDI input port has
+    <i>Use for editing notes in the editor</i> disabled in
+    <i>Preferences -&gt; MIDI</i>. If the device is only used as a shortcut
+    controller, disable that option.
+
+  <p>
+    If you edit the keybindings file manually, restart Radium or select
+    <i>Help -&gt; Reload keyboard configuration</i> to apply the change.
+
   <p>
   <h3>Bind Scheme code or Python code</h3>
 
