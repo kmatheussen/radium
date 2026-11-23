@@ -479,6 +479,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   QRadioButton *mcu_jog_bar = NULL;
   QRadioButton *mcu_display_smpte = NULL;
   QRadioButton *mcu_display_bbt = NULL;
+  QCheckBox *mcu_editor_touch_select = NULL;
   MyColorDialog _color_dialog;
   Vst_paths_widget *vst_widget = new Vst_paths_widget;
   
@@ -523,6 +524,14 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       display_layout->addWidget(mcu_display_bbt);
 
       mcu_layout->addWidget(display_group);
+
+      QGroupBox *editor_group = new QGroupBox("Editor", mcu_tab);
+      QVBoxLayout *editor_layout = new QVBoxLayout(editor_group);
+
+      mcu_editor_touch_select = new QCheckBox("Fader touch selects track", editor_group);
+      editor_layout->addWidget(mcu_editor_touch_select);
+
+      mcu_layout->addWidget(editor_group);
       mcu_layout->addStretch(1);
 
       tabWidget->insertTab(tabWidget->indexOf(MIDI) + 1, mcu_tab, "MCU");
@@ -557,6 +566,14 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
           return;
 
         MCU_set_display_bars_and_beats(true);
+      });
+
+      connect(mcu_editor_touch_select, &QCheckBox::toggled, this, [this](bool checked)
+      {
+        if (_initing || _is_updating_widgets)
+          return;
+
+        MCU_set_editor_touch_selects_track(checked);
       });
     }
 
@@ -1168,6 +1185,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       mcu_display_smpte->setChecked(!show_bars_and_beats);
       mcu_display_bbt->setChecked(show_bars_and_beats);
     }
+
+    if (mcu_editor_touch_select != NULL)
+      mcu_editor_touch_select->setChecked(MCU_editor_touch_selects_track());
 
     minimizeRecursively(this->window());
     

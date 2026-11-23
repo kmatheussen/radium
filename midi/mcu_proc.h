@@ -24,6 +24,8 @@ extern bool MCU_jog_moves_by_bars(void);
 extern void MCU_set_jog_moves_by_bars(bool by_bars);
 extern bool MCU_display_bars_and_beats(void);
 extern void MCU_set_display_bars_and_beats(bool show_bars_and_beats);
+extern bool MCU_editor_touch_selects_track(void);
+extern void MCU_set_editor_touch_selects_track(bool doit);
 
 #ifdef __cplusplus
 }

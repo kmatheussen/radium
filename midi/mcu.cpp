@@ -902,6 +902,7 @@ static void reset_target_pan(const FaderTarget &target)
 
 static int g_jog_moves_by_bars = -1;
 static int g_display_bars_and_beats = -1;
+static int g_editor_touch_selects_track = -1;
 
 bool MCU_jog_moves_by_bars(void)
 {
@@ -929,6 +930,20 @@ void MCU_set_display_bars_and_beats(bool show_bars_and_beats)
 {
 	g_display_bars_and_beats = show_bars_and_beats ? 1 : 0;
 	SETTINGS_write_string("mcu_display_mode", show_bars_and_beats ? "bbt" : "smpte");
+}
+
+bool MCU_editor_touch_selects_track(void)
+{
+	if (g_editor_touch_selects_track < 0)
+		g_editor_touch_selects_track = SETTINGS_read_bool("mcu_editor_touch_selects_track", true) ? 1 : 0;
+
+	return g_editor_touch_selects_track != 0;
+}
+
+void MCU_set_editor_touch_selects_track(bool doit)
+{
+	g_editor_touch_selects_track = doit ? 1 : 0;
+	SETTINGS_write_bool("mcu_editor_touch_selects_track", doit);
 }
 
 static int64_t find_grid_start_at_or_before(int64_t pos, GridType grid_type)
@@ -1838,7 +1853,7 @@ static void process_button_message(McuPort *port, int byte1, int note, int veloc
 			const int fader = note - 0x68;
 			FaderTarget target = get_fader_target(fader, port->bank_offset, true);
 
-			if (target.editor_mode)
+			if (target.editor_mode && MCU_editor_touch_selects_track())
 				selectTrack(target.tracknum, -1);
 
 			return;
