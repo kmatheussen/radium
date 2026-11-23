@@ -41,6 +41,8 @@ extern LANGSPEC struct Patch *MIDI_GetThroughPatch(void);
 
 extern LANGSPEC void MIDI_HandleInputMessage(void);
 
+extern LANGSPEC void MIDI_set_keybinding_grab_active(bool active);
+
 extern LANGSPEC void MIDI_input_init(void);
 
 #ifdef __cplusplus

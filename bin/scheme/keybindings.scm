@@ -391,7 +391,59 @@
             (or (string-starts-with? key "FOCUS_")
                 (string-starts-with? key "MOUSE_")))
           keys))
-  
+
+(define (percent-decode-hex-value char)
+  (let ((value (char->integer char)))
+    (cond ((and (>= value (char->integer #\0))
+                (<= value (char->integer #\9)))
+           (- value (char->integer #\0)))
+          ((and (>= value (char->integer #\a))
+                (<= value (char->integer #\f)))
+           (+ 10 (- value (char->integer #\a))))
+          ((and (>= value (char->integer #\A))
+                (<= value (char->integer #\F)))
+           (+ 10 (- value (char->integer #\A))))
+          (else
+           #f))))
+
+(define (percent-decode string*)
+  (let ((len (string-length string*)))
+    (let loop ((i 0)
+               (bytes '()))
+      (if (>= i len)
+          (byte-vector->string (apply byte-vector (reverse bytes)))
+          (if (and (char=? (string-ref string* i) #\%)
+                   (< (+ i 2) len))
+              (let ((high (percent-decode-hex-value (string-ref string* (+ i 1))))
+                    (low (percent-decode-hex-value (string-ref string* (+ i 2)))))
+                (if (and high low)
+                    (loop (+ i 3)
+                          (cons (+ (* high 16) low) bytes))
+                    (loop (+ i 1)
+                          (cons (char->integer (string-ref string* i)) bytes))))
+              (loop (+ i 1)
+                    (cons (char->integer (string-ref string* i)) bytes)))))))
+
+(***assert*** (percent-decode "Launchkey%2049") "Launchkey 49")
+(***assert*** (percent-decode "A%2FB") "A/B")
+
+(define (midi-note-token? key)
+  (string-starts-with? key "MIDI_NOTE_"))
+
+(define (midi-device-token? key)
+  (string-starts-with? key "MIDI_DEVICE_"))
+
+(define (get-displayable-midi-key keys)
+  (define note-token (find-first keys midi-note-token?))
+  (define device-token (find-first keys midi-device-token?))
+  (if note-token
+      (<-> "Note "
+           (string-drop note-token (string-length "MIDI_NOTE_"))
+           (if device-token
+               (<-> " on \"" (percent-decode (string-drop device-token (string-length "MIDI_DEVICE_"))) "\"")
+               ""))
+      #f))
+
 (define (get-displayable-keybinding2 keys)
   ;;(c-display "get-displayable-keybinding2. keys:" keys)
   (define (getit pre)
@@ -409,6 +461,17 @@
                                  
   (define focus-keys (getit "FOCUS_"))
   (define mouse-keys (getit "MOUSE_"))
+  (define midi-key (get-displayable-midi-key keys))
+  (define qualifier-keys
+    (if midi-key
+        (remove (lambda (key)
+                  (or (midi-note-token? key)
+                      (midi-device-token? key)))
+                (remove-focus-and-mouse-from-keys keys))
+        (remove-focus-and-mouse-from-keys (cdr keys))))
+  (define main-key
+    (or midi-key
+        (get-key-name (car keys))))
 
   (string-join (append (if (null? focus-keys)
                            '()
@@ -418,8 +481,8 @@
                            '()
                            (list (<-> "Mouse pointer inside the "
                                       (string-join mouse-keys " or the "))))
-                       (map ra:get-qualifier-name (remove-focus-and-mouse-from-keys (cdr keys)))
-                       (list (get-key-name (car keys))))
+                       (map ra:get-qualifier-name qualifier-keys)
+                       (list main-key))
                " + "))
 
 #!!
@@ -813,10 +876,14 @@ Examples:
                            ret)))
 
   (define key (car keys))
+  (define midi-note (find-first keys midi-note-token?))
+  (define midi-device (find-first keys midi-device-token?))
 
   (define qualifiers (remove (lambda (key)
                                (or (member? key focus-keys)
-                                   (member? key mouse-keys)))
+                                   (member? key mouse-keys)
+                                   (midi-note-token? key)
+                                   (midi-device-token? key)))
                              (cdr keys)))
 
   (define ret '())
@@ -826,12 +893,16 @@ Examples:
       (let loop2 ((mouse-keys mouse-keys))
         (if (null? mouse-keys)
             (loop1 (cdr focus-keys))
-            (let ((keys-string (string-join (cons key
-                                                  (sort (cons (car focus-keys)
-                                                              (cons (car mouse-keys)
-                                                                    qualifiers))
-                                                        string<=?))
-                                            " ")))
+            (let* ((qualifier-keys (sort (cons (car focus-keys)
+                                               (cons (car mouse-keys)
+                                                     qualifiers))
+                                         string<=?))
+                   (keys-without-midi (if midi-note
+                                          (append (list midi-note)
+                                                  (if midi-device (list midi-device) '())
+                                                  qualifier-keys)
+                                          (cons key qualifier-keys)))
+                   (keys-string (string-join keys-without-midi " ")))
               (define command (<ra> :get-keybinding-from-keys keys-string))
               ;;(c-display "command:" command ". keybinding: " keybinding)
               (if (not (string=? "" command))
@@ -876,7 +947,7 @@ Examples:
                          (apply <-> (map (lambda (keybinding)
                                            (define splitted (string-split (prepared :command) #\space))
                                            (<-> "<tr>\n"
-                                                "  <td> <font color=\"green\"> " keybinding " </font> </td>\n"
+                                                "  <td> <font color=\"green\"> " (get-displayable-keybinding2 (string-split keybinding #\space)) " </font> </td>\n"
                                                 "  <td> <font color=\"green\">" (car splitted) "</font> </td>\n"
                                                 (if (= (length splitted) 1)
                                                     "  <td></td>\n"
@@ -934,7 +1005,7 @@ Examples:
            
   (define grab-gui (<gui> :vertical-layout))
   
-  (define wait-text (mid-horizontal-layout (<gui> :text "Waiting for key....")))
+  (define wait-text (mid-horizontal-layout (<gui> :text "Waiting for key or MIDI note....")))
   (<gui> :add grab-gui wait-text)
   
   (define focus-layout (<gui> :horizontal-layout))
@@ -1254,7 +1325,17 @@ Examples:
              (<gui> :set-text save+reload-button (<-> "*" save+reload-button-text))))
     
     (<gui> :set-size (text-editor :gui) (round (/ (<gui> :width -1) 1.3)) (round (/ (<gui> :height -1) 1.3)))
-    
+
+    ;; Clear the cache when the editor is closed. The Gui is only marked as
+    ;; closed after this callback has run, so without this a quick reopen could
+    ;; show the closing window again, and the next Close click would fail with
+    ;; "Gui #... has already been closed".
+    (<gui> :add-close-callback (text-editor :gui)
+           (lambda (radium-runs-custom-exec)
+             (when (eq? *keybindings-editor* text-editor)
+               (set! *keybindings-editor* #f))
+             #t))
+
     (text-editor :show-window)
 
     text-editor))

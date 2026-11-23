@@ -126,6 +126,27 @@ def key_is_qualifier(key):
     return key!=0 and key<tuple_has_key(keysub,"FIRST_NON_QUALIFIER")
 
 
+MIDI_NOTE_PREFIX = "MIDI_NOTE_"
+MIDI_DEVICE_PREFIX = "MIDI_DEVICE_"
+
+def is_valid_percent_encoded_device_name(string):
+    lokke = 0
+    while lokke < len(string):
+        if string[lokke] == "%":
+            if lokke + 2 >= len(string):
+                return False
+            high = string[lokke + 1].lower()
+            low = string[lokke + 2].lower()
+            if high not in "0123456789abcdef" or low not in "0123456789abcdef":
+                return False
+            lokke += 3
+        else:
+            if string[lokke] in " \t":
+                return False
+            lokke += 1
+    return True
+
+
 def isSpace(char):
     if char==" " or char=="\t": return true
     return false
@@ -236,7 +257,33 @@ class Parser:
         self.focusMixerKey = tuple_has_key(keysub,"FOCUS_MIXER")
         self.focusMixerStripsKey = tuple_has_key(keysub,"FOCUS_MIXERSTRIPS")
         self.focusSequencerKey = tuple_has_key(keysub,"FOCUS_SEQUENCER")
-        
+        self.midi_allowed_qualifiers = [
+            self.mouseEditorKey,
+            self.mouseMixerKey,
+            self.mouseMixerStripsKey,
+            self.mouseSequencerKey,
+            self.focusEditorKey,
+            self.focusMixerKey,
+            self.focusMixerStripsKey,
+            self.focusSequencerKey,
+        ]
+        self.midi_note_token = None
+        self.midi_device_token = None
+
+    def error(self, message):
+        print message
+        ra.addMessage(message)
+        self.linetype="ERROR"
+
+    def is_midi(self):
+        return self.midi_note_token is not None
+
+    def getMidiNoteToken(self):
+        return self.midi_note_token
+
+    def getMidiDeviceToken(self):
+        return self.midi_device_token
+
     def readLine(self):
         self.linenum+=1
 #        print "----------------line: %d " % self.linenum
@@ -364,15 +411,49 @@ class Parser:
                         keys=parts[:lokke]
                         self.command=parts[lokke+1:]
                         break
+
+                self.midi_note_token = None
+                self.midi_device_token = None
+
                 lokke=0
                 while lokke<len(keys):
-                    key=tuple_has_key(keysub,keys[lokke])
+                    token=keys[lokke]
+
+                    if token.startswith(MIDI_NOTE_PREFIX):
+                        if self.midi_note_token is not None:
+                            self.error("More than one MIDI note in line %d in keyconfig file." % self.linenum)
+                            return "OK"
+                        note_string = token[len(MIDI_NOTE_PREFIX):]
+                        if not note_string.isdigit():
+                            self.error("Invalid MIDI note \"%s\" in line %d in keyconfig file." % (token, self.linenum))
+                            return "OK"
+                        note = int(note_string)
+                        if note < 0 or note > 127:
+                            self.error("MIDI note must be between 0 and 127 in line %d in keyconfig file." % self.linenum)
+                            return "OK"
+                        self.midi_note_token = "%s%d" % (MIDI_NOTE_PREFIX, note)
+                        del keys[lokke]
+                        continue
+
+                    if token.startswith(MIDI_DEVICE_PREFIX):
+                        if self.midi_device_token is not None:
+                            self.error("More than one MIDI device in line %d in keyconfig file." % self.linenum)
+                            return "OK"
+                        device_string = token[len(MIDI_DEVICE_PREFIX):]
+                        if device_string=="" or not is_valid_percent_encoded_device_name(device_string):
+                            self.error("Invalid MIDI device \"%s\" in line %d in keyconfig file." % (token, self.linenum))
+                            return "OK"
+                        self.midi_device_token = token
+                        del keys[lokke]
+                        continue
+
+                    key=tuple_has_key(keysub,token)
                     if key==-1:
-                        key=tuple_has_key(qualsub,keys[lokke])
+                        key=tuple_has_key(qualsub,token)
                         if(key!=-1):
                             key+=tuple_has_key(keysub,"CTRL_L")
                     if key==-1:
-                        message = "Unknown key \""+keys[lokke] +"\" in line %d in keyconfig file." % self.linenum
+                        message = "Unknown key \""+token +"\" in line %d in keyconfig file." % self.linenum
                         print message
                         ra.addMessage(message)
                         del keys[lokke]
@@ -381,6 +462,15 @@ class Parser:
                     else:
                         keys[lokke]=key
                         lokke+=1
+
+                if self.midi_note_token is not None or self.midi_device_token is not None:
+                    if self.midi_note_token is None or self.midi_device_token is None:
+                        self.error("MIDI keybindings must contain both a MIDI note and a MIDI device in line %d in keyconfig file." % self.linenum)
+                        return "OK"
+                    for key in keys:
+                        if key not in self.midi_allowed_qualifiers:
+                            self.error("MIDI keybindings can only be combined with FOCUS_ and MOUSE_ qualifiers in line %d in keyconfig file." % self.linenum)
+                            return "OK"
 
                 keys.sort()
                 new_keys = []
@@ -395,7 +485,9 @@ class Parser:
                 new_keys.sort()
                 self.qualifiers.sort()
                 
-                if len(keys)>len(self.qualifiers): # ????????
+                if self.is_midi():
+                    self.keys=[]
+                elif len(keys)>len(self.qualifiers): # ????????
                     self.keys=new_keys
                         
                 if self.linetype!="GOINGTOINSERTCODE":
@@ -559,6 +651,26 @@ def putCode(keyhandles,parser,commands,added_qualifiers):
     return True
 
 
+# The resulting key string must match get_midi_keybinding_keys() in api/api_various.cpp.
+def putMidiCode(parser, commands, added_qualifiers):
+    qualifier_names = []
+    for key in parser.getQualifiersWithoutFocusAndMouse() + added_qualifiers:
+        qualifier_names.append(keysub[key])
+
+    qualifier_names.sort()
+
+    keybinding = parser.getMidiNoteToken() + " " + parser.getMidiDeviceToken()
+    if len(qualifier_names) > 0:
+        keybinding += " " + " ".join(qualifier_names)
+
+    command = " ".join(commands)
+    pythoncall = commands[0] + "(" + ",".join(commands[1:]) + ")"
+
+    midikeyhandles[keybinding] = compile(pythoncall,'<string>','single')
+
+    ra.addKeybinding(command, keybinding)
+
+
 def printsak(file,keyhandles,parser,codestring):
     if 1:
         keys=parser.getKeys()+parser.getQualifiers()
@@ -575,9 +687,19 @@ def printsak(file,keyhandles,parser,codestring):
 def addIt2(keyhandles, parser, commands, extra):
     for focusQualifier in parser.getFocusQualifiers():
         putCode(keyhandles, parser, commands, extra + [focusQualifier])
-    
-    
+
+
+def addIt2Midi(parser, commands, extra):
+    for focusQualifier in parser.getFocusQualifiers():
+        putMidiCode(parser, commands, extra + [focusQualifier])
+
+
 def addIt(keyhandles, parser, commands):
+    if parser.is_midi():
+        for mouseQualifier in parser.getMouseQualifiers():
+            addIt2Midi(parser, commands, [mouseQualifier])
+        return
+
     for mouseQualifier in parser.getMouseQualifiers():
         addIt2(keyhandles, parser, commands, [mouseQualifier])
 
@@ -620,11 +742,18 @@ def getKeyHandler(num):
 
 keyhandles = False
 
+midikeyhandles = {}
+
 def resetKeyHandles():
     global keyhandles
     keyhandles=map(getKeyHandler,range(len(keysub)))
 
+def resetMidiKeyHandles():
+    global midikeyhandles
+    midikeyhandles = {}
+
 resetKeyHandles()
+resetMidiKeyHandles()
 
 # key and keys are constants!
 def gotKey(windownum,key,keys):
@@ -635,6 +764,20 @@ def gotKey(windownum,key,keys):
     except:
         traceback.print_exc(file=sys.stdout)
         ra.addMessage("Keybinding error.\n\nBacktrace:<pre>" + traceback.format_exc() + "</pre>")
+        return True
+
+# keybinding is a constant
+def gotMidiKey(keybinding):
+    try:
+        global midikeyhandles
+        handler = midikeyhandles.get(keybinding)
+        if handler is None:
+            return False
+        eval(handler)
+        return True
+    except:
+        traceback.print_exc(file=sys.stdout)
+        ra.addMessage("MIDI keybinding error.\n\nBacktrace:<pre>" + traceback.format_exc() + "</pre>")
         return True
 
 filename1 = ""
@@ -775,6 +918,7 @@ def parse():
 
 def parse_and_show_errors():
     global keyhandles
+    global midikeyhandles
     
     old_stdout = sys.stdout
     old_stderr = sys.stderr
@@ -785,8 +929,10 @@ def parse_and_show_errors():
     ret = False
     
     old_keyhandles = keyhandles
+    old_midikeyhandles = midikeyhandles
     try:
         resetKeyHandles()
+        resetMidiKeyHandles()
         ret = parse()
     except:
         print sys.exc_info()
@@ -797,6 +943,7 @@ def parse_and_show_errors():
         #        for m in message.split("\n"):
         ra.addMessage("Couldn't parse keybindings file.\n\nBacktrace:<pre>"+message+"</pre>")
         keyhandles = old_keyhandles
+        midikeyhandles = old_midikeyhandles
 
     if platform.system() != "Linux": # and os.isatty(sys.stdout.fileno()):
         sys.stdout = old_stdout

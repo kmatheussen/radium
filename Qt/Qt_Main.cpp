@@ -171,6 +171,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleReader_proc.h"
 #include "../audio/Peaks.hpp"
 
+#include "../midi/midi_instrument_proc.h"
+
 #include "../common/OS_Bs_edit_proc.h"
 //#include "../X11/X11_Ptask2Mtask_proc.h"
 #include "../posix/posix_Player_proc.h"
@@ -4622,6 +4624,10 @@ int radium_main(const char *arg){
   updateWidgetRecursively(g_main_window);
 
   schedule_set_editor_focus(100);
+
+  QTimer::singleShot(100, []{
+      MIDI_handle_missing_editor_input_ports();
+    });
 
 #if defined(FOR_WINDWS)
   // Probably makes no difference.

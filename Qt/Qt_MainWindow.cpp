@@ -1419,13 +1419,15 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
   QAbstractButton *clicked_button = msgBox->clickedButton();
 
   if (buttons != NULL) {
-    for(int i=0;i<buttons->num_elements;i++)
-      if(QString((char*)buttons->elements[i])==clicked_button->text()) // This will probably fail if that buggy KDE library is loaded.
-        return i;
+    if (clicked_button != NULL) {
+      for(int i=0;i<buttons->num_elements;i++)
+        if(QString((char*)buttons->elements[i])==clicked_button->text()) // This will probably fail if that buggy KDE library is loaded.
+          return i;
 
-    for(int i=0;i<buttons->num_elements;i++)
-      if(QString((char*)buttons->elements[i]).contains(clicked_button->text())) // Workaround for buggy KDE library. Not a good workaround though.
-        return i;
+      for(int i=0;i<buttons->num_elements;i++)
+        if(QString((char*)buttons->elements[i]).contains(clicked_button->text())) // Workaround for buggy KDE library. Not a good workaround though.
+          return i;
+    }
 
     fprintf(stderr,"******************** \n\n\n\n  ******************* \n\n\n ******** Somethings not working in GFX_Message *************** \n\n\n");
 

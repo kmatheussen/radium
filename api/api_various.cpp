@@ -39,6 +39,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QThread>
 #include <QTimer>
 #include <QCoreApplication>
+#include <QUrl>
+#include <QStringList>
 #include <QUuid>
 #include <QClipboard>
 
@@ -76,6 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/eventreciever_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_system_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
 #include "../common/player_proc.h"
@@ -4231,6 +4234,51 @@ static const_char* getKeyName(int keynum){
 
 static radium::ProtectedS7Extra<func_t*> g_grab_callback = radium::ProtectedS7Extra<func_t*>("grab_callback");
 
+static QString get_midi_device_token(const char *port_name)
+{
+	return QString("MIDI_DEVICE_") + QString::fromUtf8(QUrl::toPercentEncoding(QString::fromUtf8(port_name)));
+}
+
+static void add_midi_keybinding_focus_and_mouse_qualifiers(QStringList &qualifiers)
+{
+	const uint32_t keyswitch = OS_SYSTEM_add_mouse_keyswitches(0);
+
+	if (keyswitch & EVENT_MOUSE_EDITOR2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_MOUSE_EDITOR));
+	if (keyswitch & EVENT_MOUSE_MIXER2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_MOUSE_MIXER));
+	if (keyswitch & EVENT_MOUSE_SEQUENCER2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_MOUSE_SEQUENCER));
+	if (keyswitch & EVENT_MOUSE_MIXERSTRIPS2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_MOUSE_MIXERSTRIPS));
+
+	if (keyswitch & EVENT_FOCUS_EDITOR2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_FOCUS_EDITOR));
+	if (keyswitch & EVENT_FOCUS_MIXER2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_FOCUS_MIXER));
+	if (keyswitch & EVENT_FOCUS_SEQUENCER2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_FOCUS_SEQUENCER));
+	if (keyswitch & EVENT_FOCUS_MIXERSTRIPS2)
+		qualifiers << QString::fromLatin1(getKeyName(EVENT_FOCUS_MIXERSTRIPS));
+}
+
+// The result must match the key string created by putMidiCode() in bin/keybindingsparser.py.
+static QString get_midi_keybinding_keys(const char *port_name, int note)
+{
+	QStringList qualifiers;
+
+	add_midi_keybinding_focus_and_mouse_qualifiers(qualifiers);
+
+	qualifiers.sort();
+
+	QString ret = QString("MIDI_NOTE_%1 %2").arg(note).arg(get_midi_device_token(port_name));
+
+	if (!qualifiers.isEmpty())
+		ret += " " + qualifiers.join(" ");
+
+	return ret;
+}
+
 void API_has_grabbed_keybinding(int key, int *qualifiers, int len_qualifiers){
   R_ASSERT_RETURN_IF_FALSE(g_grab_callback.v != NULL);
 
@@ -4242,6 +4290,44 @@ void API_has_grabbed_keybinding(int key, int *qualifiers, int len_qualifiers){
   S7CALL(void_charpointer,g_grab_callback.v,keybinding);
 
   g_grab_callback.set(NULL);
+  MIDI_set_keybinding_grab_active(false);
+}
+
+void API_has_grabbed_midi_keybinding(const char *port_name, int note)
+{
+	R_ASSERT_RETURN_IF_FALSE(g_grab_callback.v != NULL);
+
+	const QString keybinding = get_midi_keybinding_keys(port_name, note);
+
+	S7CALL(void_charpointer,g_grab_callback.v,keybinding.toUtf8().constData());
+
+	g_grab_callback.set(NULL);
+	g_grab_next_eventreceiver_key = false;
+	MIDI_set_keybinding_grab_active(false);
+}
+
+bool API_handle_midi_keybinding(const char *port_name, int note)
+{
+	if (!THREADING_is_main_thread())
+		return false;
+
+	if (note < 0 || note > 127)
+		return false;
+
+	const QString keys = get_midi_keybinding_keys(port_name, note);
+
+	const char *command = getKeybindingFromKeys(keys.toUtf8().constData());
+
+	if (command == NULL || command[0] == '\0')
+		return false;
+
+	QString escaped = keys;
+	escaped.replace("\\", "\\\\");
+	escaped.replace("\"", "\\\"");
+
+	evalPython(talloc_format("keybindingsparser.gotMidiKey(\"%s\")", escaped.toUtf8().constData()));
+
+	return true;
 }
 
 void grabKeybinding(func_t *callback){
@@ -4255,11 +4341,13 @@ void grabKeybinding(func_t *callback){
 
   g_grab_callback.set(callback);
   g_grab_next_eventreceiver_key = true;
+  MIDI_set_keybinding_grab_active(true);
 }
 
 void cancelGrabKeybinding(void){
   g_grab_next_eventreceiver_key = false;
   g_grab_callback.set(NULL);
+  MIDI_set_keybinding_grab_active(false);
 }
 
 const_char* getQualifierName(const_char *qualifier){

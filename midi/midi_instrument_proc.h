@@ -66,6 +66,8 @@ extern LANGSPEC int MIDILocalKeyboardOff( void );
 extern LANGSPEC int MIDIAllNotesOff( void );
 extern LANGSPEC int MIDIAllSoundsOff( void );
 extern LANGSPEC int MIDISetInputPort(bool program_state_is_valid);
+extern LANGSPEC bool MIDI_assign_editor_input_port_interactive(const char *old_name, bool program_state_is_valid);
+extern LANGSPEC void MIDI_handle_missing_editor_input_ports(void);
 
 #endif
 

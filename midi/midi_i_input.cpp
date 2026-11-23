@@ -67,6 +67,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 
 #include "../api/api_midi_proc.h"
+#include "../api/api_various_proc.h"
 
 #include "midi_instrument.h"
 #include "midi_instrument_proc.h"
@@ -92,10 +93,47 @@ struct StepRecordingMidiMsg{
   bool polyphonic;
 };
 
+struct MidiKeybindingMsg
+{
+	const symbol_t *port_name;
+	int note;
+	bool is_grab;
+};
+
 } // anonymous namespace
 
 // Allocate since static variables are not good for the GC.
 static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<StepRecordingMidiMsg, boost::lockfree::capacity<2048> > ;
+
+static auto *g_midi_keybinding_queue = new boost::lockfree::queue<MidiKeybindingMsg, boost::lockfree::capacity<2048> > ;
+
+static DEFINE_ATOMIC(bool, g_midi_keybinding_grab_active) = false;
+static DEFINE_ATOMIC(int, g_grabbed_note) = -1;
+static DEFINE_ATOMIC(const symbol_t *, g_grabbed_port) = NULL;
+
+void MIDI_set_keybinding_grab_active(bool active)
+{
+	ATOMIC_SET(g_midi_keybinding_grab_active, active);
+}
+
+static void clear_grabbed_note(void)
+{
+	ATOMIC_SET(g_grabbed_note, -1);
+	ATOMIC_SET(g_grabbed_port, NULL);
+}
+
+static bool queue_midi_keybinding_event(const symbol_t *port_name, int note, bool is_grab)
+{
+	MidiKeybindingMsg msg;
+
+	msg.port_name = port_name;
+	msg.note = note;
+	msg.is_grab = is_grab;
+
+	return g_midi_keybinding_queue->bounded_push(msg);
+}
+
+
 
 
 static radium::Mutex g_midi_learns_mutex;
@@ -1178,6 +1216,22 @@ static bool maybe_fix_incremental_mode_for_msg(const symbol_t *port_name, uint32
   return true;
 }
 
+static bool must_suppress_grabbed_note_off(const symbol_t *port_name, uint32_t msg)
+{
+	if (!msg_is_note_off(msg))
+		return false;
+
+	if (ATOMIC_GET(g_grabbed_note) != MIDI_msg_byte2(msg))
+		return false;
+
+	if (ATOMIC_GET(g_grabbed_port) != port_name)
+		return false;
+
+	clear_grabbed_note();
+
+	return true;
+}
+
 // Can be called from any thread
 void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2, bool is_keyboard)
 {
@@ -1214,7 +1268,35 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
 	
 	if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
 		return;
-	
+
+	{
+		const int note = MIDI_msg_byte2(msg);
+
+		if (msg_is_note_on(msg)) {
+
+			if (ATOMIC_GET(g_grabbed_note) == note && ATOMIC_GET(g_grabbed_port) == port_name)
+				clear_grabbed_note();
+
+			const bool is_grab = ATOMIC_GET(g_midi_keybinding_grab_active);
+
+			if (!queue_midi_keybinding_event(port_name, note, is_grab)) {
+#if !defined(RELEASE)
+				printf("MIDI keybinding queue full. Dropping note %d from \"%s\".\n", note, port_name->name);
+#endif
+			}
+
+			if (is_grab) {
+				ATOMIC_SET(g_grabbed_note, note);
+				ATOMIC_SET(g_grabbed_port, port_name);
+				return;
+			}
+
+		} else if (must_suppress_grabbed_note_off(port_name, msg)) {
+
+			return;
+		}
+	}
+
 	add_event_to_play_buffer(port_name, msg, is_keyboard);
 
 	// Notes from a non-keyboard port are still passed to the MIDI learn
@@ -1256,10 +1338,28 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
  *************************************************************/
 
 
+static void handle_midi_keybinding_messages(void)
+{
+	MidiKeybindingMsg msg;
+	int num_handled = 0;
+
+	while (num_handled < 256 && g_midi_keybinding_queue->pop(msg)) {
+
+		if (msg.is_grab)
+			API_has_grabbed_midi_keybinding(msg.port_name->name, msg.note);
+		else
+			API_handle_midi_keybinding(msg.port_name->name, msg.note);
+
+		num_handled++;
+	}
+}
+
 // called very often from the main thread
 void MIDI_HandleInputMessage(void)
 {
 	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
+
+	handle_midi_keybinding_messages();
 
 	int num_messages = 0;
 	const int max_num_messages = 128;

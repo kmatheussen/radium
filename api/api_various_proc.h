@@ -3,6 +3,8 @@
 
 extern LANGSPEC void API_initialize_sequencer_in_mixer(void);
 extern LANGSPEC void API_has_grabbed_keybinding(int key, int *qualifiers, int len_qualifiers);
+extern LANGSPEC void API_has_grabbed_midi_keybinding(const char *port_name, int note);
+extern LANGSPEC bool API_handle_midi_keybinding(const char *port_name, int note);
 extern LANGSPEC void API_call_very_often(void);
 
 extern LANGSPEC bool alsaXrunDetectionEnabled(void);

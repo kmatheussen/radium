@@ -481,6 +481,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   public:
     int64_t _guinum;
 
+    // Meters with the same group can be removed together. This is used by the
+    // Tracks tab, which recreates its meters while scrolling.
+    int64_t _group = 0;
+
     QRect _clip_rect;
     
   private:
@@ -501,6 +505,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       _width=x2-x1;
       _height=y2-y1;
       _rect = QRectF(x1, y1, _width, _height).toAlignedRect();
+    }
+
+    QRect getRect() const {
+      return _rect;
     }
 
   private:
@@ -7416,13 +7424,13 @@ const_char* gui_getFont(int64_t guinum){
   if (gui==NULL)
     return "";
 
-  if(QTextEdit *text_edit = dynamic_cast<QTextEdit*>(gui->_widget.data()))
+  if(QTextEdit *text_edit = dynamic_cast<QTextEdit*>(gui->_widget.data())) // [NO_IF_=_WARNING]
     return talloc_strdup(text_edit->document()->defaultFont().toString().toUtf8().constData());
 
-  if(QLineEdit *line_edit = dynamic_cast<QLineEdit*>(gui->_widget.data()))
+  if(QLineEdit *line_edit = dynamic_cast<QLineEdit*>(gui->_widget.data())) // [NO_IF_=_WARNING]
     return talloc_strdup(line_edit->font().toString().toUtf8().constData());
 
-  if(QLabel *label = dynamic_cast<QLabel*>(gui->_widget.data()))
+  if(QLabel *label = dynamic_cast<QLabel*>(gui->_widget.data())) // [NO_IF_=_WARNING]
     return talloc_strdup(label->font().toString().toUtf8().constData());
 
   QPainter *painter = gui->get_painter();
@@ -7458,7 +7466,7 @@ void gui_setFont(int64_t guinum, const_char* char_fontdescr){
   // QTextEdit/QTextBrowser does not use a painter font. Handle these widgets
   // before calling get_painter(), since creating a painter for them makes Qt
   // try to use their paintEngine and print paintEngine warnings.
-  if(QTextEdit *text_edit = dynamic_cast<QTextEdit*>(gui->_widget.data())){
+  if(QTextEdit *text_edit = dynamic_cast<QTextEdit*>(gui->_widget.data())){ // [NO_IF_=_WARNING]
     text_edit->setFont(font);
     text_edit->document()->setDefaultFont(font);
 
@@ -7473,12 +7481,12 @@ void gui_setFont(int64_t guinum, const_char* char_fontdescr){
 
   // QLineEdit and QLabel are real Qt widgets and must get the font on the
   // widget itself. Creating a painter for them can leave them blank.
-  if(QLineEdit *line_edit = dynamic_cast<QLineEdit*>(gui->_widget.data())){
+  if(QLineEdit *line_edit = dynamic_cast<QLineEdit*>(gui->_widget.data())){ // [NO_IF_=_WARNING]
     line_edit->setFont(font);
     return;
   }
 
-  if(QLabel *label = dynamic_cast<QLabel*>(gui->_widget.data())){
+  if(QLabel *label = dynamic_cast<QLabel*>(gui->_widget.data())){ // [NO_IF_=_WARNING]
     label->setFont(font);
     return;
   }
@@ -7858,7 +7866,7 @@ int64_t gui_verticalAudioMeter(instrument_t instrument_id, dyn_t note_event_inst
   return (new VerticalAudioMeter(patch, note_event_patch))->get_gui_num();
 }
 
-int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, double x1, double y1, double x2, double y2, dyn_t note_event_instrument_id2){
+int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, double x1, double y1, double x2, double y2, dyn_t note_event_instrument_id2, int64_t group){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return -1;
@@ -7890,6 +7898,7 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, do
   y2 = floor(y2);
   
   auto *vamp = gui->createVamp(patch, note_event_patch, x1, y1, x2, y2);
+  vamp->_group = group;
   gui_update(guinum, x1, y1, x2, y2);
   
   return vamp->_id;
@@ -7897,6 +7906,32 @@ int64_t gui_addVerticalAudioMeter(int64_t guinum, instrument_t instrument_id, do
 
 static VerticalAudioMeterPainter *get_vamp(int64_t vap){
   return g_active_vertical_audio_meters.get(vap, NULL);
+}
+
+bool gui_setVerticalAudioMeterRect(int64_t vap, double x1, double y1, double x2, double y2){
+  auto *vamp = get_vamp(vap);
+
+  if (vamp==NULL)
+    return false;
+
+  // We get garbage graphics when the coordinates are not integers. See gui_addVerticalAudioMeter.
+  x1 = floor(x1);
+  y1 = floor(y1);
+  x2 = floor(x2);
+  y2 = floor(y2);
+
+  QRect old_rect = vamp->getRect();
+
+  vamp->setPos(x1, y1, x2, y2);
+
+  // Update both the old and the new position.
+  gui_update(vamp->_guinum,
+             R_MIN(old_rect.x(), x1),
+             R_MIN(old_rect.y(), y1),
+             R_MAX(old_rect.x() + old_rect.width(), x2),
+             R_MAX(old_rect.y() + old_rect.height(), y2));
+
+  return true;
 }
                 
 bool gui_removeVerticalAudioMeter(int64_t vap, bool throw_error_if_not_found){
@@ -7946,6 +7981,24 @@ int gui_removeAllVerticalAudioMeters(int64_t guinum){
     gui->deleteVamp(gui->_vamps.value(0));
 
   return ret;
+}
+
+int gui_removeAllVerticalAudioMetersInGroup(int64_t guinum, int64_t group){
+  Gui *gui = get_gui(guinum);
+  if (gui==NULL)
+    return 0;
+
+  int num_removed = 0;
+
+  for(int i=gui->_vamps.size()-1 ; i>=0 ; i--){
+    auto *vamp = gui->_vamps.at(i);
+    if (vamp->_group == group){
+      gui->deleteVamp(vamp);
+      num_removed++;
+    }
+  }
+
+  return num_removed;
 }
                                
 void gui_addAudioMeterPeakCallback(int64_t guinum, func_t* func){

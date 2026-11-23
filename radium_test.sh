@@ -34,21 +34,27 @@
 #
 # Environment:
 #   RADIUM_TEST_STATE               Default state directory
-#   RADIUM_TEST_START_TIMEOUT=180   Seconds to wait for the server and window
+#   RADIUM_TEST_START_TIMEOUT=180   Seconds to wait for the control server
+#   RADIUM_TEST_WINDOW_TIMEOUT=30   Seconds to wait for the editor window
 #   RADIUM_TEST_SETTLE=2            Extra seconds after the window appears
 #   RADIUM_TEST_STOP_TIMEOUT=45     Seconds to wait for the helper to stop
 #   RADIUM_XVFB_STOP_TIMEOUT=30     Seconds the helper waits after SIGTERM before
 #                                   it kills Radium
+#   RADIUM_CONTROL_PORT             First control port to try (never 5080)
 #   RADIUM_XVFB_BACKEND, RADIUM_XVFB_FALLBACK, RADIUM_XVFB_KEEP_HOME
 #                                   Defaults for the options above
+#
+# The matching command-line options are preferred. An "NAME=value
+# ./radium_test.sh ..." prefix does not match the permission rule below and
+# forces manual approval, so use the options instead.
 #
 # The low-level work is done by radium_xvfb.sh. This wrapper adds a persistent
 # state directory, so each step of a test is a single short command instead of
 # an ad-hoc shell script with background jobs, loops and exported variables.
 # That is also why it lives outside bin/: install.sh must not ship it.
 #
-# Every invocation starts with "./radium_test.sh ...", so one permission rule
-# ("./radium_test.sh *") covers the whole test workflow.
+# Every allowed invocation starts with "./radium_test.sh ...", so one permission
+# rule ("./radium_test.sh *") covers the whole test workflow.
 
 set -euo pipefail
 
@@ -59,10 +65,56 @@ state="${RADIUM_TEST_STATE:-/tmp/opencode/radium-test}"
 backend="${RADIUM_XVFB_BACKEND:-opengl}"
 fallback="${RADIUM_XVFB_FALLBACK:-0}"
 keep_home="${RADIUM_XVFB_KEEP_HOME:-0}"
+start_timeout="${RADIUM_TEST_START_TIMEOUT:-180}"
+window_timeout="${RADIUM_TEST_WINDOW_TIMEOUT:-30}"
+settle="${RADIUM_TEST_SETTLE:-2}"
+stop_timeout="${RADIUM_TEST_STOP_TIMEOUT:-45}"
+xvfb_stop_timeout="${RADIUM_XVFB_STOP_TIMEOUT:-30}"
+xvfb_stop_timeout_set=0
+if [ "${RADIUM_XVFB_STOP_TIMEOUT+set}" = set ]; then
+  xvfb_stop_timeout_set=1
+fi
+control_port="${RADIUM_CONTROL_PORT:-}"
 
 die() {
   printf 'radium_test: %s\n' "$*" >&2
   exit 1
+}
+
+require_positive_int() {
+  local name="$1" value="$2"
+  case "$value" in
+    ''|*[!0-9]*)
+      die "$name must be a whole number of seconds"
+      ;;
+  esac
+  if [ "$value" -lt 1 ]; then
+    die "$name must be at least 1 second"
+  fi
+}
+
+require_nonnegative_number() {
+  local name="$1" value="$2"
+  case "$value" in
+    ''|*[!0-9.]*|*.*.*|.*|*.)
+      die "$name must be a number of seconds"
+      ;;
+  esac
+}
+
+require_control_port() {
+  local port="$1"
+  case "$port" in
+    ''|*[!0-9]*)
+      die "control port must be a number between 1 and 65535"
+      ;;
+  esac
+  if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    die "control port must be a number between 1 and 65535"
+  fi
+  if [ "$port" -eq 5080 ]; then
+    die "port 5080 is reserved for the developer's Radium instance; use another port"
+  fi
 }
 
 usage() {
@@ -95,8 +147,18 @@ Global options (before the command):
   --backend opengl|null    GPU backend (default opengl)
   --fallback               Use the current $DISPLAY instead of Xvfb
   --keep-home              Keep the throwaway HOME directory
+  --start-timeout SECONDS  Wait this long for the control server (default 180)
+  --window-timeout SECONDS Wait this long for the editor window (default 30)
+  --settle SECONDS         Extra wait after the window appears (default 2)
+  --stop-timeout SECONDS   Wait this long for the helper during stop (default 45)
+  --xvfb-stop-timeout SECONDS
+                           Seconds the helper waits after SIGTERM before it
+                           kills Radium (default 30)
+  --port PORT              First control port to try (never 5080)
 
-See the header of this script for the environment variables.
+The matching environment variables are still accepted as defaults, but prefer
+the options: "NAME=value ./radium_test.sh ..." does not match the
+"./radium_test.sh *" permission rule.
 EOF
 }
 
@@ -126,6 +188,62 @@ while [ $# -gt 0 ]; do
       ;;
     --keep-home)
       keep_home=1
+      shift
+      ;;
+    --start-timeout)
+      [ $# -ge 2 ] || die "--start-timeout needs a number of seconds"
+      start_timeout="$2"
+      shift 2
+      ;;
+    --start-timeout=*)
+      start_timeout="${1#--start-timeout=}"
+      shift
+      ;;
+    --window-timeout)
+      [ $# -ge 2 ] || die "--window-timeout needs a number of seconds"
+      window_timeout="$2"
+      shift 2
+      ;;
+    --window-timeout=*)
+      window_timeout="${1#--window-timeout=}"
+      shift
+      ;;
+    --settle)
+      [ $# -ge 2 ] || die "--settle needs a number of seconds"
+      settle="$2"
+      shift 2
+      ;;
+    --settle=*)
+      settle="${1#--settle=}"
+      shift
+      ;;
+    --stop-timeout)
+      [ $# -ge 2 ] || die "--stop-timeout needs a number of seconds"
+      stop_timeout="$2"
+      shift 2
+      ;;
+    --stop-timeout=*)
+      stop_timeout="${1#--stop-timeout=}"
+      shift
+      ;;
+    --xvfb-stop-timeout)
+      [ $# -ge 2 ] || die "--xvfb-stop-timeout needs a number of seconds"
+      xvfb_stop_timeout="$2"
+      xvfb_stop_timeout_set=1
+      shift 2
+      ;;
+    --xvfb-stop-timeout=*)
+      xvfb_stop_timeout="${1#--xvfb-stop-timeout=}"
+      xvfb_stop_timeout_set=1
+      shift
+      ;;
+    --port)
+      [ $# -ge 2 ] || die "--port needs a number"
+      control_port="$2"
+      shift 2
+      ;;
+    --port=*)
+      control_port="${1#--port=}"
       shift
       ;;
     -h|--help)
@@ -163,6 +281,15 @@ esac
 [ "$keep_home" = 0 ] || [ "$keep_home" = 1 ] ||
   die "keep-home must be 0 or 1"
 
+require_positive_int "start timeout" "$start_timeout"
+require_positive_int "window timeout" "$window_timeout"
+require_nonnegative_number "settle time" "$settle"
+require_positive_int "stop timeout" "$stop_timeout"
+require_positive_int "xvfb stop timeout" "$xvfb_stop_timeout"
+if [ -n "$control_port" ]; then
+  require_control_port "$control_port"
+fi
+
 mkdir -p "$state"
 state="$(cd "$state" && pwd)"
 
@@ -174,6 +301,7 @@ exitstatusfile="$state/exit-status"
 debugger_log="$state/debugger.log"
 logfile="$state/radium.log"
 default_shot="$state/screenshot.png"
+xvfb_stop_timeout_file="$state/xvfb-stop-timeout"
 
 helper_pid() {
   [ -s "$pidfile" ] || return 1
@@ -252,8 +380,8 @@ report_exit_status() {
       printf 'Radium exited cleanly (status 0)\n'
       ;;
     137)
-      printf 'radium_test: Radium was killed by SIGKILL, not crashed. The wrapper gave up after RADIUM_XVFB_STOP_TIMEOUT=%ss; raise it if Radium needs longer to shut down.\n' \
-        "${RADIUM_XVFB_STOP_TIMEOUT:-30}" >&2
+      printf 'radium_test: Radium was killed by SIGKILL, not crashed. The wrapper gave up after %ss; raise --xvfb-stop-timeout if Radium needs longer to shut down.\n' \
+        "$xvfb_stop_timeout" >&2
       ;;
     1)
       printf 'radium_test: Radium exited with status 1, which usually means the crash reporter handled a crash. See %s\n' "$logfile" >&2
@@ -271,7 +399,8 @@ report_exit_status() {
 }
 
 clear_run_files() {
-  rm -f "$pidfile" "$portfile" "$displayfile" "$radium_pidfile"
+  rm -f "$pidfile" "$portfile" "$displayfile" "$radium_pidfile" \
+    "$xvfb_stop_timeout_file"
 }
 
 require_port() {
@@ -312,20 +441,23 @@ do_start() {
   clear_run_files
   rm -f "$exitstatusfile" "$debugger_log"
   : >"$logfile"
+  printf '%s\n' "$xvfb_stop_timeout" >"$xvfb_stop_timeout_file"
 
   RADIUM_CONTROL_PORT_FILE="$portfile" \
+  RADIUM_CONTROL_PORT="$control_port" \
   RADIUM_XVFB_DISPLAY_FILE="$displayfile" \
   RADIUM_XVFB_RADIUM_PID_FILE="$radium_pidfile" \
   RADIUM_XVFB_EXIT_STATUS_FILE="$exitstatusfile" \
   RADIUM_XVFB_BACKEND="$backend" \
   RADIUM_XVFB_FALLBACK="$fallback" \
   RADIUM_XVFB_KEEP_HOME="$keep_home" \
+  RADIUM_XVFB_STOP_TIMEOUT="$xvfb_stop_timeout" \
     nohup "$xvfb" "$@" >"$logfile" 2>&1 &
 
   local pid=$!
   printf '%s\n' "$pid" >"$pidfile"
 
-  local timeout="${RADIUM_TEST_START_TIMEOUT:-180}"
+  local timeout="$start_timeout"
   local started=$SECONDS
   local port="" display=""
 
@@ -357,7 +489,6 @@ do_start() {
 
   # Wait for the editor window. This is best effort: a missing xdotool or an
   # unexpected window class should not fail an otherwise healthy start.
-  local window_timeout="${RADIUM_TEST_WINDOW_TIMEOUT:-30}"
   local window_deadline=$((SECONDS + window_timeout))
   while ! window_exists "$display" &&
         [ "$SECONDS" -lt "$window_deadline" ] &&
@@ -378,7 +509,6 @@ do_start() {
     printf 'radium_test: check ./radium_test.sh windows and ./radium_test.sh shot\n' >&2
   fi
 
-  local settle="${RADIUM_TEST_SETTLE:-2}"
   if [ "$settle" != 0 ]; then
     sleep "$settle"
   fi
@@ -389,6 +519,18 @@ do_start() {
 
 do_stop() {
   local pid radium_pid stopped=0 killed=0
+
+  # Reuse the timeout the instance was started with unless this invocation
+  # overrides it explicitly.
+  if [ "$xvfb_stop_timeout_set" = 0 ] && [ -s "$xvfb_stop_timeout_file" ]; then
+    local saved_xvfb_stop_timeout
+    saved_xvfb_stop_timeout="$(cat "$xvfb_stop_timeout_file")"
+    case "$saved_xvfb_stop_timeout" in
+      ''|*[!0-9]*) ;;
+      *) xvfb_stop_timeout="$saved_xvfb_stop_timeout" ;;
+    esac
+  fi
+
   if pid="$(helper_pid)"; then
     stopped=1
 
@@ -398,7 +540,7 @@ do_stop() {
     if radium_pid="$(read_radium_pid)"; then
       kill -TERM "$radium_pid" 2>/dev/null || true
 
-      local radium_timeout="${RADIUM_XVFB_STOP_TIMEOUT:-30}"
+      local radium_timeout="$xvfb_stop_timeout"
       local radium_deadline=$((SECONDS + radium_timeout))
       while kill -0 "$radium_pid" 2>/dev/null && [ "$SECONDS" -lt "$radium_deadline" ]; do
         sleep 0.05
@@ -417,7 +559,7 @@ do_stop() {
     fi
 
     # The wrapper exits as soon as Radium is gone.
-    local timeout="${RADIUM_TEST_STOP_TIMEOUT:-45}"
+    local timeout="$stop_timeout"
     local deadline=$((SECONDS + timeout))
     while kill -0 "$pid" 2>/dev/null && [ "$SECONDS" -lt "$deadline" ]; do
       sleep 0.1
