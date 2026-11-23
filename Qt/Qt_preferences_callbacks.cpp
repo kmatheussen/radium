@@ -409,71 +409,24 @@ public:
 
   QString name;
   bool is_open;
-  QPushButton *is_keyboard_button = NULL;
   QHBoxLayout layout;
 
   MidiInput(QWidget *parent, QString name)
     : QWidget(parent)
     , name(name)
     , layout(this)
-<<<<<<< HEAD
 	{
 		layout.setSpacing(1);
 		layout.setContentsMargins(1,1,1,1);
 
-		QLabel *label = new QLabel(name, this);
+		is_open = MIDI_editor_input_port_is_open(name.toUtf8().constData());
+
+		QLabel *label = new QLabel(is_open ? name : name + " (not connected)", this);
 		label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
 		label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 		layout.addWidget(label);
 
 		layout.addSpacing(10);
-=======
-  {
-    layout.setSpacing(1);
-    layout.setContentsMargins(1,1,1,1);
-
-    is_open = MIDI_editor_input_port_is_open(name.toUtf8().constData());
-                       
-    QLabel *label = new QLabel(is_open ? name : name + " (not connected)", this);
-    label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    layout.addWidget(label);
-
-    layout.addSpacing(10);
-
-    const bool is_keyboard = MIDI_editor_input_port_is_keyboard(name.toUtf8().constData());
-
-    is_keyboard_button = new QPushButton(this);
-    is_keyboard_button->setCheckable(true);
-    is_keyboard_button->setChecked(is_keyboard);
-    is_keyboard_button->setText(QStringLiteral("\u2713 Use for editing notes in the editor"));
-    is_keyboard_button->setFixedWidth(is_keyboard_button->sizeHint().width());
-    is_keyboard_button->setText(is_keyboard ? QStringLiteral("\u2713 Use for editing notes in the editor") : QStringLiteral("Use for editing notes in the editor"));
-    is_keyboard_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    layout.addWidget(is_keyboard_button);
-
-    layout.addSpacing(10);
-
-    if (!is_open) {
-      QPushButton *assign_button = new QPushButton("Assign...", this);
-      assign_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-      assign_button->setToolTip("Assign a currently available MIDI input port to this saved port entry.");
-      layout.addWidget(assign_button);
-
-      layout.addSpacing(10);
-
-      connect(assign_button, SIGNAL(released()), this, SLOT(assign_released()));
-    }
-    
-    QPushButton *button = new QPushButton("Delete", this);
-    button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    layout.addWidget(button);
-
-    layout.addSpacing(10);
-        
-    connect(is_keyboard_button, SIGNAL(toggled(bool)), this, SLOT(is_keyboard_toggled(bool)));
-    connect(button, SIGNAL(released()), this, SLOT(delete_released()));
->>>>>>> origin/master
 
 		QCheckBox *notes = new QCheckBox("Notes", this);
 		notes->setToolTip("Use this MIDI port for editing notes in the editor.");
@@ -490,6 +443,17 @@ public:
 		layout.addWidget(mcu);
 
 		layout.addSpacing(10);
+
+		if (!is_open) {
+			QPushButton *assign_button = new QPushButton("Assign...", this);
+			assign_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
+			assign_button->setToolTip("Assign a currently available MIDI input port to this saved port entry.");
+			layout.addWidget(assign_button);
+
+			layout.addSpacing(10);
+
+			connect(assign_button, SIGNAL(released()), this, SLOT(assign_released()));
+		}
 
 		QPushButton *button = new QPushButton("Delete", this);
 		button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
@@ -511,11 +475,6 @@ public:
     
 
   public slots:
-
-  void is_keyboard_toggled(bool is_keyboard){
-    is_keyboard_button->setText(is_keyboard ? QStringLiteral("\u2713 Use for editing notes in the editor") : QStringLiteral("Use for editing notes in the editor"));
-    MIDI_set_editor_input_port_is_keyboard(name.toUtf8().constData(), is_keyboard);
-  }
 
   void assign_released(){
     MIDI_assign_editor_input_port_interactive(name.toUtf8().constData(), true);

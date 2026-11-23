@@ -125,11 +125,7 @@ bool MIDI_editor_input_port_is_open(const char *name);
 bool MIDI_editor_input_port_try_open(const char *name);
 void MIDI_add_editor_input_port(const char *name);
 void MIDI_remove_editor_input_port(const char *name);
-<<<<<<< HEAD
-void MIDI_handle_missing_editor_input_ports(void);
-=======
 bool MIDI_assign_editor_input_port(const char *old_name, const char *new_name);
->>>>>>> origin/master
 const char **MIDIPORT_get_editor_input_ports(int *retsize);
 bool MIDI_editor_input_port_is_keyboard(const char *name);
 void MIDI_set_editor_input_port_is_keyboard(const char *name, bool is_keyboard);

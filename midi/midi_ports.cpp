@@ -495,6 +495,7 @@ namespace{
 struct EditorInputPort{
   const symbol_t *_port_name;
   bool _is_keyboard;
+  bool _is_mcu;
   radium::MidiInputPort *_port; // NULL if the port is not currently available.
 };
 }
@@ -513,15 +514,10 @@ static void update_editor_ports_config_settings(void){
   SETTINGS_write_int("midi_num_inports", g_editor_inports.size());
   
   for(int i = 0 ; i < g_editor_inports.size() ; i++) {
-<<<<<<< HEAD
-    SETTINGS_write_string(talloc_format("midi_input_port_%d",i), g_editor_inports[i]->_port_name->name);
-    SETTINGS_write_bool(talloc_format("midi_input_port_%d_is_keyboard",i), ATOMIC_GET(g_editor_inports[i]->_is_keyboard));
-    SETTINGS_write_bool(talloc_format("midi_input_port_%d_is_mcu",i), ATOMIC_GET(g_editor_inports[i]->_is_mcu));
-=======
     const EditorInputPort &port = g_editor_inports.at(i);
     SETTINGS_write_string(talloc_format("midi_input_port_%d",i), port._port_name->name);
     SETTINGS_write_bool(talloc_format("midi_input_port_%d_is_keyboard",i), port._is_keyboard);
->>>>>>> origin/master
+    SETTINGS_write_bool(talloc_format("midi_input_port_%d_is_mcu",i), port._is_mcu);
   }
 }
 
@@ -553,7 +549,7 @@ static void editor_midi_input_callback(const symbol_t *port_name, const radium::
 static bool try_open_editor_input_port(EditorInputPort &port){
   R_ASSERT_RETURN_IF_FALSE2(port._port==NULL, true);
 
-  radium::MidiInputPort *midi_port = MIDIPORT_open_input(port._port_name->name, editor_midi_input_callback, NULL, false, port._is_keyboard);
+  radium::MidiInputPort *midi_port = MIDIPORT_open_input(port._port_name->name, editor_midi_input_callback, NULL, false, port._is_keyboard, port._is_mcu);
 
   if (midi_port==NULL)
     return false;
@@ -561,6 +557,9 @@ static bool try_open_editor_input_port(EditorInputPort &port){
   R_ASSERT_NON_RELEASE(midi_port->_port_name==port._port_name);
 
   port._port = midi_port;
+
+  if (port._is_mcu)
+    MCU_add_port(port._port_name->name);
 
   return true;
 }
@@ -592,44 +591,27 @@ bool MIDI_editor_input_port_try_open(const char *name){
   return try_open_editor_input_port(port);
 }
 
-<<<<<<< HEAD
-static bool add_editor_input_port(const char *name, bool is_keyboard, bool is_mcu)
-{
-	if (MIDI_has_editor_input_port(name))
-	{
-		R_ASSERT_NON_RELEASE(false);
-		return false;
-	}
-=======
-static bool add_editor_input_port(const char *name, bool is_keyboard){
+static bool add_editor_input_port(const char *name, bool is_keyboard, bool is_mcu){
   if (MIDI_has_editor_input_port(name)){
     R_ASSERT_NON_RELEASE(false);
     return false;
   }
-      
-  radium::MidiInputPort *port = MIDIPORT_open_input(name, editor_midi_input_callback, NULL, true, is_keyboard);
-  
+
+  radium::MidiInputPort *port = MIDIPORT_open_input(name, editor_midi_input_callback, NULL, true, is_keyboard, is_mcu);
+
   if (port==NULL)
     return false;
 
-  EditorInputPort editor_port = {port->_port_name, is_keyboard, port};
+  EditorInputPort editor_port = {port->_port_name, is_keyboard, is_mcu, port};
 
   g_editor_inports.push_back(editor_port);
->>>>>>> origin/master
 
-	radium::MidiInputPort *port = MIDIPORT_open_input(name, editor_midi_input_callback, NULL, true, is_keyboard, is_mcu);
+  if (is_mcu)
+    MCU_add_port(name);
 
-	R_ASSERT_RETURN_IF_FALSE2(port!=NULL, false);
-
-	g_editor_inports.push_back(port);
-
-	if (is_mcu)
-		MCU_add_port(name);
-
-	return true;
+  return true;
 }
 
-<<<<<<< HEAD
 void MIDI_add_editor_input_port(const char *name)
 {
 	if (add_editor_input_port(name, true, false))
@@ -639,44 +621,6 @@ void MIDI_add_editor_input_port(const char *name)
 	}
 }
 
-void MIDI_handle_missing_editor_input_ports(void)
-{
-	int num_inports = SETTINGS_read_int("midi_num_inports",0);
-	for(int i = 0 ; i < num_inports ; i++)
-	{
-		const char *name = SETTINGS_read_string(talloc_format("midi_input_port_%d",i),NULL);
-		if(name==NULL || MIDI_has_editor_input_port(name))
-			continue;
-
-		bool is_keyboard = SETTINGS_read_bool(talloc_format("midi_input_port_%d_is_keyboard",i), true);
-		bool is_mcu = SETTINGS_read_bool(talloc_format("midi_input_port_%d_is_mcu",i), false);
-		add_editor_input_port(name, is_keyboard, is_mcu);
-	}
-}
-
-void MIDI_remove_editor_input_port(const char *name)
-{
-	for(radium::MidiInputPort *port : g_editor_inports)
-	{
-
-		if (!strcmp(port->_port_name->name, name))
-		{
-
-			if (ATOMIC_GET(port->_is_mcu))
-				MCU_remove_port(name);
-
-			MIDIPORT_close_input(port);
-			g_editor_inports.remove(port);
-
-			update_editor_ports_config_settings();
-
-			return;
-		}
-
-	}
-
-	R_ASSERT(false);
-=======
 void MIDI_remove_editor_input_port(const char *name){
   int pos = find_editor_input_port_pos(name);
 
@@ -686,6 +630,9 @@ void MIDI_remove_editor_input_port(const char *name){
   }
 
   EditorInputPort &port = g_editor_inports.at_ref(pos);
+
+  if (port._is_mcu)
+    MCU_remove_port(name);
 
   if (port._port != NULL)
     MIDIPORT_close_input(port._port);
@@ -713,13 +660,18 @@ bool MIDI_assign_editor_input_port(const char *old_name, const char *new_name){
 
   EditorInputPort &old_port = g_editor_inports.at_ref(old_pos);
 
-  radium::MidiInputPort *new_midi_port = MIDIPORT_open_input(new_name, editor_midi_input_callback, NULL, false, old_port._is_keyboard);
+  radium::MidiInputPort *new_midi_port = MIDIPORT_open_input(new_name, editor_midi_input_callback, NULL, false, old_port._is_keyboard, old_port._is_mcu);
 
   if (new_midi_port==NULL)
     return false;
 
   if (old_port._port != NULL)
     MIDIPORT_close_input(old_port._port);
+
+  if (old_port._is_mcu) {
+    MCU_remove_port(old_name);
+    MCU_add_port(new_name);
+  }
 
   old_port._port_name = new_port_name;
   old_port._port = new_midi_port;
@@ -728,7 +680,6 @@ bool MIDI_assign_editor_input_port(const char *old_name, const char *new_name){
   PREFERENCES_update();
 
   return true;
->>>>>>> origin/master
 }
 
 const char **MIDIPORT_get_editor_input_ports(int *retsize){
@@ -781,9 +732,10 @@ bool MIDI_editor_input_port_is_mcu(const char *name)
 {
 	R_ASSERT(THREADING_is_main_thread());
 
-	for(const radium::MidiInputPort *port : g_editor_inports)
-		if (!strcmp(port->_port_name->name, name))
-			return ATOMIC_GET(port->_is_mcu);
+	int pos = find_editor_input_port_pos(name);
+
+	if (pos >= 0)
+		return g_editor_inports.at(pos)._is_mcu;
 
 	R_ASSERT_NON_RELEASE(false);
 	return false;
@@ -793,23 +745,31 @@ void MIDI_set_editor_input_port_is_mcu(const char *name, bool is_mcu)
 {
 	R_ASSERT(THREADING_is_main_thread());
 
-	for(radium::MidiInputPort *port : g_editor_inports)
+	int pos = find_editor_input_port_pos(name);
+
+	if (pos >= 0)
 	{
-		if (!strcmp(port->_port_name->name, name))
+		EditorInputPort &port = g_editor_inports.at_ref(pos);
+
+		if (port._is_mcu == is_mcu)
+			return;
+
+		port._is_mcu = is_mcu;
+
+		if (port._port != NULL)
+			ATOMIC_SET(port._port->_is_mcu, is_mcu);
+
+		update_editor_ports_config_settings();
+
+		if (port._port != NULL)
 		{
-			if (ATOMIC_GET(port->_is_mcu) == is_mcu)
-				return;
-
-			ATOMIC_SET(port->_is_mcu, is_mcu);
-			update_editor_ports_config_settings();
-
 			if (is_mcu)
 				MCU_add_port(name);
 			else
 				MCU_remove_port(name);
-
-			return;
 		}
+
+		return;
 	}
 
 	R_ASSERT_NON_RELEASE(false);
@@ -829,14 +789,12 @@ void MIDIPORT_init(void){
   else
     s_has_inited = true;
 
-<<<<<<< HEAD
-  MIDI_handle_missing_editor_input_ports();
-=======
   int num_inports = SETTINGS_read_int("midi_num_inports",0);
   for(int i = 0 ; i < num_inports ; i++){
     const char *name = SETTINGS_read_string(talloc_format("midi_input_port_%d",i),NULL);
     if(name!=NULL){
       bool is_keyboard = SETTINGS_read_bool(talloc_format("midi_input_port_%d_is_keyboard",i), true);
+      bool is_mcu = SETTINGS_read_bool(talloc_format("midi_input_port_%d_is_mcu",i), false);
       const symbol_t *port_name = MIDI_OS_get_port_name(name);
 
       if (find_editor_input_port_pos(port_name->name) >= 0){
@@ -844,7 +802,7 @@ void MIDIPORT_init(void){
         continue;
       }
 
-      EditorInputPort port = {port_name, is_keyboard, NULL};
+      EditorInputPort port = {port_name, is_keyboard, is_mcu, NULL};
 
       g_editor_inports.push_back(port);
     }
@@ -856,7 +814,6 @@ void MIDIPORT_init(void){
   // missing.
   for(int i = 0 ; i < g_editor_inports.size() ; i++)
     try_open_editor_input_port(g_editor_inports.at_ref(i));
->>>>>>> origin/master
 }
 
 void MIDIPORT_shut_down(void){
