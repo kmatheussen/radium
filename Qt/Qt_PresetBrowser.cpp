@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QTreeView>
 #include <QFileSystemModel>
+#include <QDir>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -272,6 +273,8 @@ class PresetBrowser : public QWidget
     deletePresetDemoInstrument();
   };
 
+  bool ensurePresetFolderExists(void);
+
   public slots:
     void usePreset(const QModelIndex & index);
     void playPreset(const QModelIndex & index);
@@ -328,11 +331,36 @@ void PresetBrowser::deletePresetDemoInstrument() {
   }
 }
 
+bool PresetBrowser::ensurePresetFolderExists(void)
+{
+	QDir dir(presetFolder);
+
+	if (dir.exists())
+		return true;
+
+	QString dirname = dir.absolutePath();
+
+	if (QDir::root().mkpath(dirname) == false)
+	{
+		GFX_Message(NULL, "Unable to create preset folder \"%s\".", dirname.toUtf8().constData());
+		return false;
+	}
+
+	// The folder did not exist when the tree model was set up, so tell the
+	// model about it now that it has been created.
+	QModelIndex root_index = model.setRootPath(presetFolder);
+	tree->setRootIndex(filterModel.mapFromSource(root_index));
+
+	return true;
+}
+
 void PresetBrowser::setPresetFolder(const QString &presetRootFolder) {
   presetFolder = presetRootFolder;
   filterModel.setPresetFolder(presetFolder);
   model.setRootPath(presetFolder);
   tree->setRootIndex(filterModel.mapFromSource(model.index(presetFolder)));
+  if (isVisible())
+    ensurePresetFolderExists();
 }
 
 
@@ -495,6 +523,12 @@ void setPresetBrowserRootFolder(const QString &folder) {
   }
 }
 
+void ensurePresetBrowserFolderExists(void)
+{
+	if (g_presetbrowser_widget)
+		dynamic_cast<PresetBrowser *>(g_presetbrowser_widget)->ensurePresetFolderExists();
+}
+
 
 void hidePresetBrowserAtStartup(void){
   if (g_presetbrowser_widget_frame){
@@ -508,6 +542,8 @@ void showHidePresetBrowser(void){
     const bool new_value = !g_presetbrowser_widget_frame->isVisible();
     g_presetbrowser_widget_frame->setVisible(new_value);
     SETTINGS_write_bool("preset_browser_visible", new_value);
+    if (new_value)
+      ensurePresetBrowserFolderExists();
   }
 }
 
