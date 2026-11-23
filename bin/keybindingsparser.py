@@ -129,6 +129,12 @@ def key_is_qualifier(key):
 MIDI_NOTE_PREFIX = "MIDI_NOTE_"
 MIDI_DEVICE_PREFIX = "MIDI_DEVICE_"
 
+# MIDI keybindings are written as comments so that older Radium versions,
+# which do not understand MIDI note keybindings, ignore them instead of
+# reporting an unknown key. Must match MIDI_KEYBINDING_PREFIX in
+# keybindings_changer.py.
+MIDI_KEYBINDING_PREFIX = "#MIDI:"
+
 def is_valid_percent_encoded_device_name(string):
     lokke = 0
     while lokke < len(string):
@@ -311,8 +317,15 @@ class Parser:
 
         self.currline=string.rstrip(self.currline)
 
-        while self.currline=="" or self.currline=="\n" or self.currline[0:1]=="#":
-            return self.readNextLine()
+        if self.currline.startswith(MIDI_KEYBINDING_PREFIX):
+            midi_line = self.currline[len(MIDI_KEYBINDING_PREFIX):].lstrip()
+            if midi_line.startswith(MIDI_NOTE_PREFIX) or midi_line.startswith(MIDI_DEVICE_PREFIX):
+                self.currline = midi_line
+            else:
+                return self.readNextLine()
+        else:
+            while self.currline=="" or self.currline=="\n" or self.currline[0:1]=="#":
+                return self.readNextLine()
 
         if self.currline[0:4]=="?out":
             self.outlinenum+=1
