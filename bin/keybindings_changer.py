@@ -42,6 +42,33 @@ else:
 ra = radium
 
 
+# Must match the constants in keybindingsparser.py.
+MIDI_NOTE_PREFIX = "MIDI_NOTE_"
+MIDI_DEVICE_PREFIX = "MIDI_DEVICE_"
+MIDI_KEYBINDING_PREFIX = "#MIDI:"
+
+
+def strip_midi_keybinding_prefix(line):
+    if line.startswith(MIDI_KEYBINDING_PREFIX):
+        stripped = line[len(MIDI_KEYBINDING_PREFIX):].lstrip()
+        if stripped.startswith(MIDI_NOTE_PREFIX) or stripped.startswith(MIDI_DEVICE_PREFIX):
+            return stripped
+    return line
+
+
+def is_midi_keybinding_line(line):
+    line = strip_midi_keybinding_prefix(line).lstrip()
+    return line.startswith(MIDI_NOTE_PREFIX) or line.startswith(MIDI_DEVICE_PREFIX)
+
+
+def add_midi_keybinding_prefix_if_needed(line):
+    if line.startswith(MIDI_KEYBINDING_PREFIX):
+        return line
+    if is_midi_keybinding_line(line):
+        return MIDI_KEYBINDING_PREFIX + " " + line.lstrip()
+    return line
+
+
 def get_filename():
     return ra.appendFilePaths(ra.getHomePath(),
                               ra.appendFilePaths(ra.getPath(".radium"),
@@ -73,6 +100,7 @@ def write_lines(lines):
     disk = ra.openFileForWriting(filename)
 
     for line in lines:
+        line = add_midi_keybinding_prefix_if_needed(line)
         print "line:",line
         ra.writeToFile(disk, line + "\n")
 
@@ -112,6 +140,7 @@ def has_line(line, lines):
 
 
 def get_keybinding_and_command(line):
+    line = strip_midi_keybinding_prefix(line)
     stripped = line.strip()
     if len(stripped)==0 or stripped[0]=="#":
         return ["",""]
