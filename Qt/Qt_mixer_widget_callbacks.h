@@ -335,8 +335,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
       S7CALL2(void_void,"FROM_C-show-mixer-all-strips-width-popup-menu");
     };
 
-    widen_all_strips->_statusbar_text = "Make all mixer strips wide";
-    narrow_all_strips->_statusbar_text = "Make all mixer strips narrow";
+    widen_all_strips->_statusbar_text = "Widen all tracks";
+    narrow_all_strips->_statusbar_text = "Narrow all tracks";
 
     widen_all_strips->setText("widen-all-strips.svg");
     narrow_all_strips->setText("narrow-all-strips.svg");
@@ -945,11 +945,11 @@ public slots:
       change_num_mixerstrips_rows(4);
   }
 
-  void on_widen_all_strips_clicked(){
+  void on_widen_all_strips_pressed(){
     S7CALL2(void_void,"FROM_C-make-all-mixer-strips-wide");
   }
 
-  void on_narrow_all_strips_clicked(){
+  void on_narrow_all_strips_pressed(){
     S7CALL2(void_void,"FROM_C-make-all-mixer-strips-narrow");
   }
 
