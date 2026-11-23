@@ -74,6 +74,22 @@
        </widget>
       </item>
       <item>
+       <spacer name="ab_settings_to_ab_gap">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <widget class="QCheckBox" name="ab_a">
         <property name="toolTip">
          <string>Select setting A</string>
@@ -181,6 +197,22 @@
        </widget>
       </item>
       <item>
+       <spacer name="ab_h_to_window_gap">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -238,6 +270,22 @@
          <string>S</string>
         </property>
        </widget>
+      </item>
+      <item>
+       <spacer name="sequencer_to_strips_gap">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
       </item>
       <item>
        <spacer name="horizontalSpacer">
@@ -302,6 +350,22 @@
             <string notr="true">buttonGroup_4</string>
            </attribute>
           </widget>
+         </item>
+         <item>
+          <spacer name="strips_ratio_rows_gap">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
          <item>
           <spacer name="strips_spacer1">
