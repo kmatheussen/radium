@@ -1110,6 +1110,7 @@ Examples:
                                                            :focus-keybinding ;; Can be either FOCUS_EDITOR, FOCUS_MIXER, FOCUS_SEQUENCER, a combination of those (separate them with space), or an empty string (all). If not set, it will be set automatically from where gui-or-area is placed. It will be set automatically when the user right-clicks so you don't have to set parent gui before calling this function. If gui-or-area is not set, current focus will be used.
                                                            :gui-or-area ;; if this one is set, and focus-keybinding is #f, focus-keybinding will be set automatically from gui-or-area.
                                                            :ra-funcname-is-in-python-format
+                                                           :display-name ;; Optional name to show in the menu instead of the technical function name and arguments.
                                                            )
 
   (when (and (not ra-funcname-is-in-python-format)
@@ -1126,10 +1127,11 @@ Examples:
                                  ra-funcname
                                  (get-python-ra-funcname ra-funcname)))
   
-  (define command (<-> python-ra-funcname
-                       (apply <-> (map (lambda (arg)
-                                         (<-> " " (get-python-arg-string arg)))
-                                       args))))
+  (define command (or display-name
+                      (<-> python-ra-funcname
+                           (apply <-> (map (lambda (arg)
+                                             (<-> " " (get-python-arg-string arg)))
+                                           args)))))
 
   (when (not (string? focus-keybinding))
     (if (not (<ra> :release-mode))

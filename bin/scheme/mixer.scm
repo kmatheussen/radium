@@ -268,6 +268,18 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+(define (FROM_C-show-mixer-all-strips-width-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries :ra-funcname "make-all-mixer-strips-wide"
+                                                    :focus-keybinding "FOCUS_MIXER"
+                                                    :display-name "widen all mixer strips")
+   (get-keybinding-configuration-popup-menu-entries :ra-funcname "make-no-mixer-strips-wide"
+                                                    :focus-keybinding "FOCUS_MIXER"
+                                                    :display-name "narrow all mixer strips")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
 
 ;; Note: Used for shortcut
 (delafina (insert-new-sound-object-in-mixer :x (<ra> :get-curr-mixer-slot-x)
