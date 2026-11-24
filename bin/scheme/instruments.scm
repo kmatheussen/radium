@@ -576,6 +576,12 @@
   (no-inputs-or-outputs :contains id))
 
 
+(define (get-mixer-instruments-in-visual-order)
+  (let ((cat-instruments (<new> :get-cat-instruments)))
+    (append (sort-instruments-by-mixer-position-and-connections (cat-instruments :instrument-instruments))
+            (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments)))))
+
+
 (define (move-connections-to-new-instrument id-old-instrument id-new-instrument)
   (define changes '())
   

@@ -66,6 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 #include <algorithm>
 #include <set>
+#include <vector>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -104,6 +105,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern EditorWidget *g_editor;
+
+static int get_mixer_strip_number(instrument_t instrument_id)
+{
+	static std::vector<instrument_t> instruments;
+	static int64_t last_update = -100000;
+
+	const int64_t now = (int64_t)TIME_get_ms();
+
+	if (now - last_update >= 1000)
+	{
+		last_update = now;
+		instruments.clear();
+
+		dyn_t mixer_instruments = S7CALL2(dyn_void, "get-mixer-instruments-in-visual-order");
+
+		if (mixer_instruments.type == ARRAY_TYPE && mixer_instruments.array != NULL)
+		{
+			for(int i = 0 ; i < mixer_instruments.array->num_elements ; i++)
+			{
+				dyn_t element = mixer_instruments.array->elements[i];
+
+				if (element.type == INSTRUMENT_TYPE)
+					instruments.push_back(element.instrument);
+			}
+		}
+	}
+
+	for(size_t i = 0 ; i < instruments.size() ; i++)
+		if (instruments[i].id == instrument_id.id)
+			return (int)i + 1;
+
+	return 0;
+}
 
 //
 // eport/econnection means "event port"/"event connection".
@@ -2264,7 +2298,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       
     } else  {
       
-      _name_text = patch->name;
+      const int mixer_strip_number = get_mixer_strip_number(patch->id);
+
+      if (mixer_strip_number > 0)
+        _name_text = QString::number(mixer_strip_number) + ". " + QString::fromUtf8(patch->name);
+      else
+        _name_text = patch->name;
       
     }
 

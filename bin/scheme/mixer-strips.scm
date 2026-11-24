@@ -316,16 +316,34 @@
                             (lambda (on/off automation)
                               (<gui> :update gui)))))
   
+(define (get-mixer-strip-number instrument-id)
+  (let loop ((instruments (get-mixer-instruments-in-visual-order))
+             (number 1))
+    (cond ((null? instruments)
+           #f)
+          ((equal? (car instruments) instrument-id)
+           number)
+          (else
+           (loop (cdr instruments) (1+ number))))))
+
+(define (get-mixer-strip-number-or-0 instrument-id)
+  (or (get-mixer-strip-number instrument-id)
+      0))
+
 (define (get-mixer-strip-name instrument-id strips-config)
   (let* ((name (<ra> :get-instrument-name instrument-id))
          (name2 (if (or (not strips-config)
                         (strips-config :is-unique instrument-id)
                         (strips-config :is-standalone instrument-id))            
                     name
-                    (<-> "[" name "]"))))
+                    (<-> "[" name "]")))
+         (instrument-num (get-mixer-strip-number instrument-id))
+         (name3 (if instrument-num
+                    (<-> instrument-num ". " name2)
+                    name2)))
     (if (<ra> :instrument-is-selected instrument-id)
-        (<-> name2 " (S)")
-        name2)))
+        (<-> name3 " (S)")
+        name3)))
 
 
 ;; STRIPS-CONFIG

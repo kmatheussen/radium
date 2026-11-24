@@ -18,6 +18,7 @@ extern void MCU_call_very_often(void);
 // Called when keyboard focus changes.
 extern void MCU_set_sequencer_has_focus(bool has_focus);
 extern void MCU_set_editor_has_focus(bool has_focus);
+extern void MCU_set_mixer_has_focus(bool has_focus);
 
 // Global MCU settings.
 extern bool MCU_jog_moves_by_bars(void);
