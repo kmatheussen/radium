@@ -75143,341 +75143,353 @@ STRING_TYPE
 line
 213
 STRING_TYPE
-#X connect 0 0 24 0;
+#X obj 2300 500 min 64;
 line
 214
 STRING_TYPE
-#X connect 0 0 25 0;
+#X obj 2300 540 min 64;
 line
 215
 STRING_TYPE
-#X connect 0 0 32 0;
+#X connect 0 0 24 0;
 line
 216
 STRING_TYPE
-#X connect 0 0 4 0;
+#X connect 0 0 25 0;
 line
 217
 STRING_TYPE
-#X connect 4 0 60 0;
+#X connect 0 0 32 0;
 line
 218
 STRING_TYPE
-#X connect 4 1 48 0;
+#X connect 0 0 4 0;
 line
 219
 STRING_TYPE
-#X connect 6 0 7 0;
+#X connect 4 0 60 0;
 line
 220
 STRING_TYPE
-#X connect 6 0 64 1;
+#X connect 4 1 48 0;
 line
 221
 STRING_TYPE
-#X connect 6 0 65 1;
+#X connect 6 0 7 0;
 line
 222
 STRING_TYPE
-#X connect 8 0 55 0;
+#X connect 6 0 64 1;
 line
 223
 STRING_TYPE
-#X connect 9 0 56 0;
+#X connect 6 0 65 1;
 line
 224
 STRING_TYPE
-#X connect 11 0 12 0;
+#X connect 8 0 55 0;
 line
 225
 STRING_TYPE
-#X connect 13 0 14 0;
+#X connect 9 0 56 0;
 line
 226
 STRING_TYPE
-#X connect 13 0 20 0;
+#X connect 11 0 12 0;
 line
 227
 STRING_TYPE
-#X connect 13 1 15 0;
+#X connect 13 0 14 0;
 line
 228
 STRING_TYPE
-#X connect 13 2 16 0;
+#X connect 13 0 20 0;
 line
 229
 STRING_TYPE
-#X connect 17 0 22 0;
+#X connect 13 1 15 0;
 line
 230
 STRING_TYPE
-#X connect 17 0 52 0;
+#X connect 13 2 16 0;
 line
 231
 STRING_TYPE
-#X connect 17 0 58 0;
+#X connect 17 0 22 0;
 line
 232
 STRING_TYPE
-#X connect 17 1 20 0;
+#X connect 17 0 52 0;
 line
 233
 STRING_TYPE
-#X connect 18 0 3 0;
+#X connect 17 0 58 0;
 line
 234
 STRING_TYPE
-#X connect 19 0 2 0;
+#X connect 17 1 20 0;
 line
 235
 STRING_TYPE
-#X connect 20 0 21 0;
+#X connect 18 0 3 0;
 line
 236
 STRING_TYPE
-#X connect 21 0 18 1;
+#X connect 19 0 2 0;
 line
 237
 STRING_TYPE
-#X connect 21 0 19 1;
+#X connect 20 0 21 0;
 line
 238
 STRING_TYPE
-#X connect 22 0 63 0;
+#X connect 21 0 18 1;
 line
 239
 STRING_TYPE
-#X connect 24 0 19 0;
+#X connect 21 0 19 1;
 line
 240
 STRING_TYPE
-#X connect 25 0 18 0;
+#X connect 22 0 63 0;
 line
 241
 STRING_TYPE
-#X connect 26 0 30 0;
+#X connect 24 0 19 0;
 line
 242
 STRING_TYPE
-#X connect 27 0 29 0;
+#X connect 25 0 18 0;
 line
 243
 STRING_TYPE
-#X connect 28 0 4 4;
+#X connect 26 0 30 0;
 line
 244
 STRING_TYPE
-#X connect 29 0 4 2;
+#X connect 27 0 29 0;
 line
 245
 STRING_TYPE
-#X connect 30 0 25 2;
+#X connect 28 0 4 4;
 line
 246
 STRING_TYPE
-#X connect 30 0 24 2;
+#X connect 29 0 4 2;
 line
 247
 STRING_TYPE
-#X connect 31 0 35 1;
+#X connect 30 0 25 2;
 line
 248
 STRING_TYPE
-#X connect 32 0 35 0;
+#X connect 30 0 24 2;
 line
 249
 STRING_TYPE
-#X connect 32 0 39 0;
+#X connect 31 0 35 1;
 line
 250
 STRING_TYPE
-#X connect 33 0 34 0;
+#X connect 32 0 35 0;
 line
 251
 STRING_TYPE
-#X connect 34 0 53 1;
+#X connect 32 0 39 0;
 line
 252
 STRING_TYPE
-#X connect 34 0 54 1;
+#X connect 33 0 34 0;
 line
 253
 STRING_TYPE
-#X connect 35 0 36 0;
+#X connect 34 0 53 1;
 line
 254
 STRING_TYPE
-#X connect 36 0 42 0;
+#X connect 34 0 54 1;
 line
 255
 STRING_TYPE
-#X connect 37 0 66 0;
+#X connect 35 0 36 0;
 line
 256
 STRING_TYPE
-#X connect 38 0 39 1;
+#X connect 36 0 42 0;
 line
 257
 STRING_TYPE
-#X connect 39 0 40 0;
+#X connect 37 0 66 0;
 line
 258
 STRING_TYPE
-#X connect 40 0 45 0;
+#X connect 38 0 39 1;
 line
 259
 STRING_TYPE
-#X connect 41 0 67 0;
+#X connect 39 0 40 0;
 line
 260
 STRING_TYPE
-#X connect 42 0 43 0;
+#X connect 40 0 45 0;
 line
 261
 STRING_TYPE
-#X connect 43 0 44 0;
+#X connect 41 0 67 0;
 line
 262
 STRING_TYPE
-#X connect 43 0 61 0;
+#X connect 42 0 43 0;
 line
 263
 STRING_TYPE
-#X connect 45 0 46 0;
+#X connect 43 0 44 0;
 line
 264
 STRING_TYPE
-#X connect 46 0 47 0;
+#X connect 43 0 69 0;
 line
 265
 STRING_TYPE
-#X connect 46 0 49 0;
+#X connect 45 0 46 0;
 line
 266
 STRING_TYPE
-#X connect 47 0 41 1;
+#X connect 46 0 70 0;
 line
 267
 STRING_TYPE
-#X connect 48 0 54 0;
+#X connect 46 0 49 0;
 line
 268
 STRING_TYPE
-#X connect 48 0 65 0;
+#X connect 47 0 41 1;
 line
 269
 STRING_TYPE
-#X connect 50 0 57 0;
+#X connect 48 0 54 0;
 line
 270
 STRING_TYPE
-#X connect 50 1 57 1;
+#X connect 48 0 65 0;
 line
 271
 STRING_TYPE
-#X connect 52 0 57 0;
+#X connect 50 0 57 0;
 line
 272
 STRING_TYPE
-#X connect 52 0 8 0;
+#X connect 50 1 57 1;
 line
 273
 STRING_TYPE
-#X connect 52 0 9 0;
+#X connect 52 0 57 0;
 line
 274
 STRING_TYPE
-#X connect 53 0 31 0;
+#X connect 52 0 8 0;
 line
 275
 STRING_TYPE
-#X connect 54 0 38 0;
+#X connect 52 0 9 0;
 line
 276
 STRING_TYPE
-#X connect 55 0 4 1;
+#X connect 53 0 31 0;
 line
 277
 STRING_TYPE
-#X connect 56 0 4 3;
+#X connect 54 0 38 0;
 line
 278
 STRING_TYPE
-#X connect 57 0 8 1;
+#X connect 55 0 4 1;
 line
 279
 STRING_TYPE
-#X connect 57 0 9 1;
+#X connect 56 0 4 3;
 line
 280
 STRING_TYPE
-#X connect 57 0 51 0;
+#X connect 57 0 8 1;
 line
 281
 STRING_TYPE
-#X connect 58 0 61 1;
+#X connect 57 0 9 1;
 line
 282
 STRING_TYPE
-#X connect 58 0 47 1;
+#X connect 57 0 51 0;
 line
 283
 STRING_TYPE
-#X connect 60 0 53 0;
+#X connect 58 0 47 1;
 line
 284
 STRING_TYPE
-#X connect 60 0 64 0;
+#X connect 60 0 53 0;
 line
 285
 STRING_TYPE
-#X connect 61 0 37 1;
+#X connect 60 0 64 0;
 line
 286
 STRING_TYPE
-#X connect 62 0 68 0;
+#X connect 61 0 37 1;
 line
 287
 STRING_TYPE
-#X connect 63 0 21 1;
+#X connect 62 0 68 0;
 line
 288
 STRING_TYPE
-#X connect 64 0 37 0;
+#X connect 63 0 21 1;
 line
 289
 STRING_TYPE
-#X connect 65 0 41 0;
+#X connect 64 0 37 0;
 line
 290
 STRING_TYPE
-#X connect 66 0 24 1;
+#X connect 65 0 41 0;
 line
 291
 STRING_TYPE
-#X connect 67 0 25 1;
+#X connect 66 0 24 1;
 line
 292
 STRING_TYPE
-#X connect 68 0 50 0;
+#X connect 67 0 25 1;
 line
 293
 STRING_TYPE
-#X restore 147 127 pd BassFX;
+#X connect 68 0 50 0;
 line
 294
 STRING_TYPE
-#X connect 0 0 3 0;
+#X connect 69 0 61 0;
 line
 295
 STRING_TYPE
-#X connect 0 1 3 0;
+#X connect 70 0 47 0;
 line
 296
 STRING_TYPE
-#X connect 3 0 1 0;
+#X restore 147 127 pd BassFX;
 line
 297
+STRING_TYPE
+#X connect 0 0 3 0;
+line
+298
+STRING_TYPE
+#X connect 0 1 3 0;
+line
+299
+STRING_TYPE
+#X connect 3 0 1 0;
+line
+300
 STRING_TYPE
 #X connect 3 1 1 1;
 max_value
@@ -75963,7 +75975,7 @@ STRING_TYPE
 num_lines
 0
 INT_TYPE
-298
+301
 type
 0
 INT_TYPE
@@ -144283,341 +144295,353 @@ STRING_TYPE
 line
 213
 STRING_TYPE
-#X connect 0 0 24 0;
+#X obj 2300 500 min 64;
 line
 214
 STRING_TYPE
-#X connect 0 0 25 0;
+#X obj 2300 540 min 64;
 line
 215
 STRING_TYPE
-#X connect 0 0 32 0;
+#X connect 0 0 24 0;
 line
 216
 STRING_TYPE
-#X connect 0 0 4 0;
+#X connect 0 0 25 0;
 line
 217
 STRING_TYPE
-#X connect 4 0 60 0;
+#X connect 0 0 32 0;
 line
 218
 STRING_TYPE
-#X connect 4 1 48 0;
+#X connect 0 0 4 0;
 line
 219
 STRING_TYPE
-#X connect 6 0 7 0;
+#X connect 4 0 60 0;
 line
 220
 STRING_TYPE
-#X connect 6 0 64 1;
+#X connect 4 1 48 0;
 line
 221
 STRING_TYPE
-#X connect 6 0 65 1;
+#X connect 6 0 7 0;
 line
 222
 STRING_TYPE
-#X connect 8 0 55 0;
+#X connect 6 0 64 1;
 line
 223
 STRING_TYPE
-#X connect 9 0 56 0;
+#X connect 6 0 65 1;
 line
 224
 STRING_TYPE
-#X connect 11 0 12 0;
+#X connect 8 0 55 0;
 line
 225
 STRING_TYPE
-#X connect 13 0 14 0;
+#X connect 9 0 56 0;
 line
 226
 STRING_TYPE
-#X connect 13 0 20 0;
+#X connect 11 0 12 0;
 line
 227
 STRING_TYPE
-#X connect 13 1 15 0;
+#X connect 13 0 14 0;
 line
 228
 STRING_TYPE
-#X connect 13 2 16 0;
+#X connect 13 0 20 0;
 line
 229
 STRING_TYPE
-#X connect 17 0 22 0;
+#X connect 13 1 15 0;
 line
 230
 STRING_TYPE
-#X connect 17 0 52 0;
+#X connect 13 2 16 0;
 line
 231
 STRING_TYPE
-#X connect 17 0 58 0;
+#X connect 17 0 22 0;
 line
 232
 STRING_TYPE
-#X connect 17 1 20 0;
+#X connect 17 0 52 0;
 line
 233
 STRING_TYPE
-#X connect 18 0 3 0;
+#X connect 17 0 58 0;
 line
 234
 STRING_TYPE
-#X connect 19 0 2 0;
+#X connect 17 1 20 0;
 line
 235
 STRING_TYPE
-#X connect 20 0 21 0;
+#X connect 18 0 3 0;
 line
 236
 STRING_TYPE
-#X connect 21 0 18 1;
+#X connect 19 0 2 0;
 line
 237
 STRING_TYPE
-#X connect 21 0 19 1;
+#X connect 20 0 21 0;
 line
 238
 STRING_TYPE
-#X connect 22 0 63 0;
+#X connect 21 0 18 1;
 line
 239
 STRING_TYPE
-#X connect 24 0 19 0;
+#X connect 21 0 19 1;
 line
 240
 STRING_TYPE
-#X connect 25 0 18 0;
+#X connect 22 0 63 0;
 line
 241
 STRING_TYPE
-#X connect 26 0 30 0;
+#X connect 24 0 19 0;
 line
 242
 STRING_TYPE
-#X connect 27 0 29 0;
+#X connect 25 0 18 0;
 line
 243
 STRING_TYPE
-#X connect 28 0 4 4;
+#X connect 26 0 30 0;
 line
 244
 STRING_TYPE
-#X connect 29 0 4 2;
+#X connect 27 0 29 0;
 line
 245
 STRING_TYPE
-#X connect 30 0 25 2;
+#X connect 28 0 4 4;
 line
 246
 STRING_TYPE
-#X connect 30 0 24 2;
+#X connect 29 0 4 2;
 line
 247
 STRING_TYPE
-#X connect 31 0 35 1;
+#X connect 30 0 25 2;
 line
 248
 STRING_TYPE
-#X connect 32 0 35 0;
+#X connect 30 0 24 2;
 line
 249
 STRING_TYPE
-#X connect 32 0 39 0;
+#X connect 31 0 35 1;
 line
 250
 STRING_TYPE
-#X connect 33 0 34 0;
+#X connect 32 0 35 0;
 line
 251
 STRING_TYPE
-#X connect 34 0 53 1;
+#X connect 32 0 39 0;
 line
 252
 STRING_TYPE
-#X connect 34 0 54 1;
+#X connect 33 0 34 0;
 line
 253
 STRING_TYPE
-#X connect 35 0 36 0;
+#X connect 34 0 53 1;
 line
 254
 STRING_TYPE
-#X connect 36 0 42 0;
+#X connect 34 0 54 1;
 line
 255
 STRING_TYPE
-#X connect 37 0 66 0;
+#X connect 35 0 36 0;
 line
 256
 STRING_TYPE
-#X connect 38 0 39 1;
+#X connect 36 0 42 0;
 line
 257
 STRING_TYPE
-#X connect 39 0 40 0;
+#X connect 37 0 66 0;
 line
 258
 STRING_TYPE
-#X connect 40 0 45 0;
+#X connect 38 0 39 1;
 line
 259
 STRING_TYPE
-#X connect 41 0 67 0;
+#X connect 39 0 40 0;
 line
 260
 STRING_TYPE
-#X connect 42 0 43 0;
+#X connect 40 0 45 0;
 line
 261
 STRING_TYPE
-#X connect 43 0 44 0;
+#X connect 41 0 67 0;
 line
 262
 STRING_TYPE
-#X connect 43 0 61 0;
+#X connect 42 0 43 0;
 line
 263
 STRING_TYPE
-#X connect 45 0 46 0;
+#X connect 43 0 44 0;
 line
 264
 STRING_TYPE
-#X connect 46 0 47 0;
+#X connect 43 0 69 0;
 line
 265
 STRING_TYPE
-#X connect 46 0 49 0;
+#X connect 45 0 46 0;
 line
 266
 STRING_TYPE
-#X connect 47 0 41 1;
+#X connect 46 0 70 0;
 line
 267
 STRING_TYPE
-#X connect 48 0 54 0;
+#X connect 46 0 49 0;
 line
 268
 STRING_TYPE
-#X connect 48 0 65 0;
+#X connect 47 0 41 1;
 line
 269
 STRING_TYPE
-#X connect 50 0 57 0;
+#X connect 48 0 54 0;
 line
 270
 STRING_TYPE
-#X connect 50 1 57 1;
+#X connect 48 0 65 0;
 line
 271
 STRING_TYPE
-#X connect 52 0 57 0;
+#X connect 50 0 57 0;
 line
 272
 STRING_TYPE
-#X connect 52 0 8 0;
+#X connect 50 1 57 1;
 line
 273
 STRING_TYPE
-#X connect 52 0 9 0;
+#X connect 52 0 57 0;
 line
 274
 STRING_TYPE
-#X connect 53 0 31 0;
+#X connect 52 0 8 0;
 line
 275
 STRING_TYPE
-#X connect 54 0 38 0;
+#X connect 52 0 9 0;
 line
 276
 STRING_TYPE
-#X connect 55 0 4 1;
+#X connect 53 0 31 0;
 line
 277
 STRING_TYPE
-#X connect 56 0 4 3;
+#X connect 54 0 38 0;
 line
 278
 STRING_TYPE
-#X connect 57 0 8 1;
+#X connect 55 0 4 1;
 line
 279
 STRING_TYPE
-#X connect 57 0 9 1;
+#X connect 56 0 4 3;
 line
 280
 STRING_TYPE
-#X connect 57 0 51 0;
+#X connect 57 0 8 1;
 line
 281
 STRING_TYPE
-#X connect 58 0 61 1;
+#X connect 57 0 9 1;
 line
 282
 STRING_TYPE
-#X connect 58 0 47 1;
+#X connect 57 0 51 0;
 line
 283
 STRING_TYPE
-#X connect 60 0 53 0;
+#X connect 58 0 47 1;
 line
 284
 STRING_TYPE
-#X connect 60 0 64 0;
+#X connect 60 0 53 0;
 line
 285
 STRING_TYPE
-#X connect 61 0 37 1;
+#X connect 60 0 64 0;
 line
 286
 STRING_TYPE
-#X connect 62 0 68 0;
+#X connect 61 0 37 1;
 line
 287
 STRING_TYPE
-#X connect 63 0 21 1;
+#X connect 62 0 68 0;
 line
 288
 STRING_TYPE
-#X connect 64 0 37 0;
+#X connect 63 0 21 1;
 line
 289
 STRING_TYPE
-#X connect 65 0 41 0;
+#X connect 64 0 37 0;
 line
 290
 STRING_TYPE
-#X connect 66 0 24 1;
+#X connect 65 0 41 0;
 line
 291
 STRING_TYPE
-#X connect 67 0 25 1;
+#X connect 66 0 24 1;
 line
 292
 STRING_TYPE
-#X connect 68 0 50 0;
+#X connect 67 0 25 1;
 line
 293
 STRING_TYPE
-#X restore 147 127 pd BassFX;
+#X connect 68 0 50 0;
 line
 294
 STRING_TYPE
-#X connect 0 0 3 0;
+#X connect 69 0 61 0;
 line
 295
 STRING_TYPE
-#X connect 0 1 3 0;
+#X connect 70 0 47 0;
 line
 296
 STRING_TYPE
-#X connect 3 0 1 0;
+#X restore 147 127 pd BassFX;
 line
 297
+STRING_TYPE
+#X connect 0 0 3 0;
+line
+298
+STRING_TYPE
+#X connect 0 1 3 0;
+line
+299
+STRING_TYPE
+#X connect 3 0 1 0;
+line
+300
 STRING_TYPE
 #X connect 3 1 1 1;
 max_value
@@ -145103,7 +145127,7 @@ STRING_TYPE
 num_lines
 0
 INT_TYPE
-298
+301
 type
 0
 INT_TYPE
