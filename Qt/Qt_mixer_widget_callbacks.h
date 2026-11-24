@@ -302,10 +302,6 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
       S7CALL2(void_void,"FROM_C-show-mixer-rotate-popup-menu");
     };
 
-    help_button->_show_popup_menu = [](){
-      S7CALL2(void_void,"FROM_C-show-mixer-help-popup-menu");
-    };
-
     ratio13->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-ratio13-popup-menu");
     };
@@ -1046,10 +1042,6 @@ public slots:
   }
   void on_zoomreset_button_clicked(){
     view->reset_zoom();
-  }
-
-  void on_help_button_clicked(){
-    showMixerHelpWindow();
   }
 
 };
