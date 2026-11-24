@@ -7145,15 +7145,21 @@
            (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
              (<ra> :paste-seqblocks seqtracknum pos))))
 
-   (list "Duplicate seqblock and block"
-         :enabled seqblocknum
-         :shortcut duplicate-seqblock-and-block
-         (lambda ()
-           (duplicate-seqblock-and-block seqblockid)))
-                                        ;           (if (and seqblocknum
-;                    (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-;               (<ra> :select-seqblock #t seqblocknum seqtracknum))
-;           (<ra> :copy-selected-seqblocks)))
+   (if (or blocknum (<ra> :seqtrack-for-audiofiles seqtracknum))
+       (list "Duplicate"
+             :enabled seqblocknum
+             :shortcut duplicate-seqblock
+             (lambda ()
+               (duplicate-seqblock seqblockid)))
+       #f)
+
+   (if blocknum
+       (list "Duplicate seqblock and block"
+             :enabled seqblocknum
+             :shortcut duplicate-seqblock-and-block
+             (lambda ()
+               (duplicate-seqblock-and-block seqblockid)))
+       #f)
 
    "------------------"
    
