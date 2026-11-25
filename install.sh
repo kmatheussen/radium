@@ -84,7 +84,7 @@ can_copy() {
 GENERATED_FILES="radium|radium_linux.bin|radium.bin.exe|radium_check_jack_status|radium_check_jack_status.exe|radium_check_recent_libxcb|radium_crashreporter|radium_crashreporter.exe|radium_error_message|radium_error_message.exe|radium_plugin_scanner|radium_plugin_scanner.exe|radium_progress_window|radium_progress_window.exe|radium_show_message|keybindingsparser.pyc|keysubids.pyc|protoconfparser.pyc|color.frag.qsb|color.vert.qsb|texture_fragment.qsb|texture_vertex.qsb|llvm_math.ll|protos.conf|pd/externals/*|sounds/8067__annannienann__low-d-arh.wav.radium_peaks|sounds/711620__joshstovall__cymbal-roll.wav.radium_peaks|scheme/api_protos.scm"
 
 # I.e. NOT included
-IGNORED_FILES="s7webserver/moc_s7webserver.cpp|*.rej|*.orig|ladspa_macos|*.radium_peaks"
+IGNORED_FILES="s7webserver/moc_s7webserver.cpp|*.rej|*.orig|ladspa_macos|*.radium_peaks|scheme/testing.scm"
 
 matches_pattern() {
     local item="$1" pattern
