@@ -997,7 +997,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 	    
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
-      show_main_menu_bar->setChecked(SETTINGS_read_bool("show_main_menu_bar", false));
+      show_main_menu_bar->setChecked(SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR));
 
       if(showMixerStripOnLeftSide())
         show_mixer_strip_on_the_left->setChecked(true);

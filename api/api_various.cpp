@@ -786,7 +786,7 @@ void showHideMixerStrip(int windownum){
 }
 
 void showHideMenuBar(int windownum){
-  if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
+  if (SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   if (GFX_MenuVisible(window))
     GFX_HideMenu(window);
@@ -795,19 +795,19 @@ void showHideMenuBar(int windownum){
 }
 
 void hideMenuBar(int windownum){
-  if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
+  if (SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_HideMenu(window);
 }
 
 void showMenuBar(int windownum){
-  if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
+  if (SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_ShowMenu(window);
 }
 
 bool mainMenuBarIsEnabled(void){
-  return SETTINGS_read_bool("show_main_menu_bar", false);
+  return SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR);
 }
 
 // Toggles the same setting as the "Show main menu bar" checkbox in

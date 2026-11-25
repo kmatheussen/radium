@@ -32,6 +32,8 @@ namespace radium{
 }
 #endif
 
+#define DEFAULT_SHOW_MAIN_MENU_BAR true
+
 extern LANGSPEC bool SETTINGS_has_key(const char *key);
 
 extern LANGSPEC bool SETTINGS_read_bool(const char *key, bool def);
