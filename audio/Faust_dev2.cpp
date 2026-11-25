@@ -537,6 +537,7 @@ static void perform_compile_completion(instrument_t patch_id,
 									   FaustDev2SoundfileData *soundfile_data,
 									   MyQTemporaryDir *svg_dir,
 									   const QString &compile_code,
+									   bool compile_use_interpreter,
 									   int retries_left)
 {
 	if (g_faust_is_shutting_down){
@@ -577,8 +578,8 @@ static void perform_compile_completion(instrument_t patch_id,
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 	devdata->is_compiling = false;
 
-	// Discard if code changed while this compilation was running
-	if (devdata->code != compile_code){
+	// Discard if code or backend selection changed while this compilation was running
+	if (devdata->code != compile_code || devdata->use_interpreter_backend != compile_use_interpreter){
 		delete_factory(
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 					   llvm_factory,
@@ -630,6 +631,7 @@ static void perform_compile_completion(instrument_t patch_id,
 							   soundfile_data,
 							   svg_dir,
 							   compile_code,
+							   compile_use_interpreter,
 							   retries_left_m1 = retries_left-1]()
 			{
 				perform_compile_completion(patch_id,
@@ -641,6 +643,7 @@ static void perform_compile_completion(instrument_t patch_id,
 										   soundfile_data,
 										   svg_dir,
 										   compile_code,
+										   compile_use_interpreter,
 										   retries_left_m1);
 		});
 		return;
@@ -863,7 +866,8 @@ public:
 
 			THREADING_run_on_main_thread_async([patch_id = _patch_id,
 												error_message,
-												compile_code = _code]()
+												compile_code = _code,
+												use_interpreter = _use_interpreter]()
 				{
 					struct Patch *patch = PATCH_get_from_id(patch_id);
 					
@@ -882,8 +886,8 @@ public:
 					devdata->ready.svg_is_ready = true;
 					devdata->ready.svg_succeeded = false;
 
-					// Recompile if code changed while this compilation was running.
-					if (devdata->code != compile_code)
+					// Recompile if code or backend selection changed while this compilation was running.
+					if (devdata->code != compile_code || devdata->use_interpreter_backend != use_interpreter)
 						start_compilation(plugin);
 				});
 			
@@ -898,7 +902,8 @@ public:
 											interp_factory,
 											soundfile_data,
 											svg_dir,
-											compile_code = _code](){
+											compile_code = _code,
+											use_interpreter = _use_interpreter](){
 			perform_compile_completion(patch_id, factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 									   llvm_factory,
@@ -907,6 +912,7 @@ public:
 									   soundfile_data,
 									   svg_dir,
 									   compile_code,
+									   use_interpreter,
 									   FADE_POLL_RETRIES);
 		});
 	}
@@ -1752,7 +1758,7 @@ void FAUST2_start_compilation(SoundPlugin *plugin)
 		return;
 
 	if (devdata->is_compiling)
-		return; // A compile is already running. When it finishes, it will recompile the latest code if it has changed.
+		return; // A compile is already running. When it finishes, it will recompile the latest code or backend if it has changed.
 
 	devdata->is_compiling = true;
 
@@ -1819,7 +1825,10 @@ bool FAUST2_set_use_interpreter_backend(SoundPlugin *plugin, bool use_interprete
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 	if (!use_interpreter && (OS_running_under_rosetta() || OS_running_under_vm()))
 		return false;
+	if (devdata->use_interpreter_backend == use_interpreter)
+		return false;
 	devdata->use_interpreter_backend = use_interpreter;
+	start_compilation(plugin);
 	return true;
 #endif
 }
