@@ -434,22 +434,26 @@ const char **MIDI_getPortNames(int *retsize, bool is_input){
 
 extern struct Root *root;
 
-const char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input, bool program_state_is_valid){
+static const char *MIDIrequestPortName2(struct Tracker_Windows *window, ReqType reqtype, bool is_input, bool program_state_is_valid, bool filter_out_existing_editor_input_ports){
   int num_ports;
 
   const char **portnames=MIDI_getPortNames(&num_ports, is_input);
   vector_t v={};
   int i;
 
+  for(i=0;i<num_ports;i++){
+    if (filter_out_existing_editor_input_ports && MIDI_has_editor_input_port(portnames[i]))
+      continue;
+    VECTOR_push_back(&v,portnames[i]);
+  }
+
 #if defined(FOR_WINDOWS)
-  if(num_ports==0)
+  if(v.num_elements==0)
     return NULL;
 #endif
 
-  for(i=0;i<num_ports;i++)
-    VECTOR_push_back(&v,portnames[i]);
-
 #if !defined(FOR_WINDOWS)
+  int num_selectable_ports = v.num_elements;
   VECTOR_push_back(&v,"Create new port");
 #endif
 
@@ -457,10 +461,16 @@ const char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype,
   if(sel==-1)
     return NULL;
 
-  if(sel==num_ports)
+#if !defined(FOR_WINDOWS)
+  if(sel==num_selectable_ports)
     return GFX_GetString(NULL,reqtype,"Name: ",program_state_is_valid);
+#endif
 
-  return portnames[sel];
+  return (const char*)v.elements[sel];
+}
+
+const char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype, bool is_input, bool program_state_is_valid){
+  return MIDIrequestPortName2(window, reqtype, is_input, program_state_is_valid, false);
 }
 
 // This function must never return NULL.
@@ -790,7 +800,7 @@ int MIDIAllSoundsOff( void )
 }
 
 int MIDISetInputPort(bool program_state_is_valid){
-  const char *portname = MIDIrequestPortName(root->song->tracker_windows,NULL,true,program_state_is_valid);
+  const char *portname = MIDIrequestPortName2(root->song->tracker_windows,NULL,true,program_state_is_valid,true);
   if(portname!=NULL){
     if (!MIDI_has_editor_input_port(portname))
       MIDI_add_editor_input_port(portname);

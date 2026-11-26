@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFile>
 #include <QTextStream>
 #include <QDir>
+#include <QHeaderView>
+#include <QTableWidget>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -397,89 +399,6 @@ public:
 
 };
 
-struct MidiInput : public QWidget{
-  Q_OBJECT
-
-public:
-
-  QString name;
-  bool is_open;
-  QPushButton *is_keyboard_button = NULL;
-  QHBoxLayout layout;
-
-  MidiInput(QWidget *parent, QString name)
-    : QWidget(parent)
-    , name(name)
-    , layout(this)
-  {
-    layout.setSpacing(1);
-    layout.setContentsMargins(1,1,1,1);
-
-    is_open = MIDI_editor_input_port_is_open(name.toUtf8().constData());
-                       
-    QLabel *label = new QLabel(is_open ? name : name + " (not connected)", this);
-    label->setFrameStyle(QFrame::StyledPanel | QFrame::Sunken);
-    label->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    layout.addWidget(label);
-
-    layout.addSpacing(10);
-
-    const bool is_keyboard = MIDI_editor_input_port_is_keyboard(name.toUtf8().constData());
-
-    is_keyboard_button = new QPushButton(this);
-    is_keyboard_button->setCheckable(true);
-    is_keyboard_button->setChecked(is_keyboard);
-    is_keyboard_button->setText(QStringLiteral("\u2713 Use for editing notes in the editor"));
-    is_keyboard_button->setFixedWidth(is_keyboard_button->sizeHint().width());
-    is_keyboard_button->setText(is_keyboard ? QStringLiteral("\u2713 Use for editing notes in the editor") : QStringLiteral("Use for editing notes in the editor"));
-    is_keyboard_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    layout.addWidget(is_keyboard_button);
-
-    layout.addSpacing(10);
-
-    if (!is_open) {
-      QPushButton *assign_button = new QPushButton("Assign...", this);
-      assign_button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-      assign_button->setToolTip("Assign a currently available MIDI input port to this saved port entry.");
-      layout.addWidget(assign_button);
-
-      layout.addSpacing(10);
-
-      connect(assign_button, SIGNAL(released()), this, SLOT(assign_released()));
-    }
-    
-    QPushButton *button = new QPushButton("Delete", this);
-    button->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::MinimumExpanding);
-    layout.addWidget(button);
-
-    layout.addSpacing(10);
-        
-    connect(is_keyboard_button, SIGNAL(toggled(bool)), this, SLOT(is_keyboard_toggled(bool)));
-    connect(button, SIGNAL(released()), this, SLOT(delete_released()));
-
-  }
-    
-
-  public slots:
-
-  void is_keyboard_toggled(bool is_keyboard){
-    is_keyboard_button->setText(is_keyboard ? QStringLiteral("\u2713 Use for editing notes in the editor") : QStringLiteral("Use for editing notes in the editor"));
-    MIDI_set_editor_input_port_is_keyboard(name.toUtf8().constData(), is_keyboard);
-  }
-
-  void assign_released(){
-    MIDI_assign_editor_input_port_interactive(name.toUtf8().constData(), true);
-    PREFERENCES_update();
-  }
-
-  void delete_released(){
-    printf("%s deleted\n",name.toUtf8().constData());
-    MIDI_remove_editor_input_port(name.toUtf8().constData());
-    PREFERENCES_update();
-  }
-};
-
-  
 class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
   Q_OBJECT
 
@@ -503,8 +422,33 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     
     scrollArea->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
     scrollArea->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
-    scrollArea_2->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
-    scrollArea_2->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+
+    midi_input_table->setColumnCount(3);
+    midi_input_table->setHorizontalHeaderLabels({QStringLiteral("Port name"), QStringLiteral("Editor"), QString()});
+    midi_input_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    midi_input_table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    midi_input_table->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+    midi_input_table->horizontalHeader()->setSectionsClickable(false);
+    midi_input_table->verticalHeader()->hide();
+    midi_input_table->setSelectionMode(QAbstractItemView::NoSelection);
+    midi_input_table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    midi_input_table->setShowGrid(true);
+    midi_input_table->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
+    midi_input_table->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
+
+    {
+      QPushButton delete_button(QStringLiteral("Delete"));
+      midi_input_table->setColumnWidth(2, delete_button.sizeHint().width() + 16);
+    }
+
+    connect(midi_input_table, &QTableWidget::itemChanged, this, [this](QTableWidgetItem *item)
+    {
+      if (_is_updating_widgets || _initing || item->column() != 1)
+        return;
+
+      const QString name = item->data(Qt::UserRole).toString();
+      MIDI_set_editor_input_port_is_keyboard(name.toUtf8().constData(), item->checkState() == Qt::Checked);
+    });
 
     updateWidgets();
 
@@ -1055,30 +999,64 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       use_current_track_midi_channel->setChecked(doUseTrackChannelForMidiInput());
       send_midi_input_to_current_instrument->setChecked(isSendingMidiInputToCurrentInstrument());
         
-      while(midi_input_layout->count() > 0)
-        delete midi_input_layout->itemAt(0)->widget();
+      midi_input_table->setRowCount(0);
 
       int num_input_ports;
       const char **input_port_names = MIDIPORT_get_editor_input_ports(&num_input_ports);
+      midi_input_table->setRowCount(num_input_ports);
+
+      int row_height = 0;
+
       for(int i=0;i<num_input_ports;i++){
-        MidiInput *l = new MidiInput(this, input_port_names[i]);
-        midi_input_layout->addWidget(l);
+        const char *port_name = input_port_names[i];
+        const QString name = QString::fromUtf8(port_name);
+        const bool is_open = MIDI_editor_input_port_is_open(port_name);
+
+        QWidget *name_widget = new QWidget(midi_input_table);
+        QHBoxLayout *name_layout = new QHBoxLayout(name_widget);
+        name_layout->setContentsMargins(4, 0, 4, 0);
+        name_layout->setSpacing(6);
+
+        QLabel *name_label = new QLabel(is_open ? name : name + QStringLiteral(" (not connected)"), name_widget);
+        name_layout->addWidget(name_label);
+
+        if (!is_open) {
+          QPushButton *assign_button = new QPushButton(QStringLiteral("Assign..."), name_widget);
+          assign_button->setToolTip(QStringLiteral("Assign a currently available MIDI input port to this saved port entry."));
+          name_layout->addWidget(assign_button);
+          connect(assign_button, &QPushButton::released, midi_input_table, [name](){
+            MIDI_assign_editor_input_port_interactive(name.toUtf8().constData(), true);
+            PREFERENCES_update();
+          });
+          row_height = qMax(row_height, assign_button->sizeHint().height());
+        }
+
+        name_layout->addStretch(1);
+
+        midi_input_table->setCellWidget(i, 0, name_widget);
+        row_height = qMax(row_height, name_widget->sizeHint().height());
+
+        QTableWidgetItem *editor_item = new QTableWidgetItem();
+        editor_item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsUserCheckable);
+        editor_item->setCheckState(MIDI_editor_input_port_is_keyboard(port_name) ? Qt::Checked : Qt::Unchecked);
+        editor_item->setToolTip(QStringLiteral("Use this port for editing notes in the editor."));
+        editor_item->setData(Qt::UserRole, name);
+        midi_input_table->setItem(i, 1, editor_item);
+
+        QPushButton *delete_button = new QPushButton(QStringLiteral("Delete"), midi_input_table);
+        connect(delete_button, &QPushButton::released, midi_input_table, [name](){
+          MIDI_remove_editor_input_port(name.toUtf8().constData());
+          PREFERENCES_update();
+        });
+        midi_input_table->setCellWidget(i, 2, delete_button);
+        row_height = qMax(row_height, delete_button->sizeHint().height());
+        midi_input_table->setColumnWidth(2, delete_button->sizeHint().width() + 16);
       }
-              
-      /*
-      {
-        static int a = 0;
-        a++;
-        MidiInput *l = new MidiInput(this, "hello1 "+QString::number(a));
-        midi_input_layout->addWidget(l);
-        
-        MidiInput *l2 = new MidiInput(this, "hello2");
-        midi_input_layout->addWidget(l2);
-        
-        MidiInput *l3 = new MidiInput(this, "hello3");
-        midi_input_layout->addWidget(l3);
+
+      if (row_height > 0) {
+        for(int i=0;i<num_input_ports;i++)
+          midi_input_table->setRowHeight(i, row_height + 2);
       }
-      */
     }
 
     // VST
