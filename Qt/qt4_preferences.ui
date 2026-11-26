@@ -3038,8 +3038,12 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>When on, notes played at the same time become a chord. When off, a new note replaces the note at the cursor; hold Shift to add a chord. (Shortcut: Tab)</string>
+           </property>
            <property name="text">
-            <string>Polyphonic note input</string>
+            <string>Polyphonic note input (default)
+Notes played together become a chord. When off, a new note replaces the note at the cursor; hold Shift to add a chord.</string>
            </property>
            <property name="checked">
             <bool>true</bool>

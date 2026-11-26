@@ -50,6 +50,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_PopupMenu_proc.h"
 
+#include "../api/radium_proc.h"
+
 
 
 class Bottom_bar_widget;
@@ -85,6 +87,9 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     if (this->edit_onoff->isChecked() != ATOMIC_GET(root->editonoff))
       this->edit_onoff->setChecked(ATOMIC_GET(root->editonoff));
+
+    if (this->polyphonic_note_input_onoff->isChecked() != doPolyphonicNoteInput())
+      this->polyphonic_note_input_onoff->setChecked(doPolyphonicNoteInput());
 
     bool clickonoff = ATOMIC_GET_RELAXED(root->clickonoff);
     if (this->click_onoff->isChecked() != clickonoff)
@@ -322,6 +327,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     drunk_velocity_onoff->hide();
     
     edit_onoff->hide();
+    polyphonic_note_input_onoff->hide();
     
     octave_label->hide();
     octave_up_button->hide();
@@ -528,6 +534,11 @@ public slots:
       switchEditOnOff();
   }
 
+  void on_polyphonic_note_input_onoff_toggled(bool val){
+    if(val!=doPolyphonicNoteInput())
+      setPolyphonicNoteInput(val);
+  }
+
   void on_click_onoff_toggled(bool val){
     enableMetronome(val);
   }
@@ -680,6 +691,10 @@ bool EDITOR_switch_drunk_velocity(void){
   
 QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool include_navigator){
   auto *ret = new Bottom_bar_widget(parent, include_navigator);
+
+  ret->edit_onoff->_selected_color = "edit_mode";
+  ret->polyphonic_note_input_onoff->_selected_color = "polyphonic_input";
+
   if(!include_editor_elements)
     ret->remove_editor_elements();
 

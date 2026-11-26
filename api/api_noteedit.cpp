@@ -274,12 +274,17 @@ bool doPolyphonicNoteInput(void){
 void setPolyphonicNoteInput(bool doit){
   g_do_polyphonic_note_input = doit;
   SETTINGS_write_bool("polyphonic_note_input", doit);
+
+  GFX_SetStatusBar(doit
+                   ? "Polyphonic note input: On. Notes played together become a chord."
+                   : "Polyphonic note input: Off. New notes replace the note at the cursor; hold Shift to add a chord.");
+
+  if (root != NULL && root->song != NULL && root->song->tracker_windows != NULL)
+    root->song->tracker_windows->must_redraw = true;
 }
 
 void switchPolyphonicNoteInputOnOff(void){
   setPolyphonicNoteInput(!doPolyphonicNoteInput());
-
-  GFX_SetStatusBar(doPolyphonicNoteInput() ? "Polyphonic mode On" : "Polyphonic mode Off");
 }
 
 
