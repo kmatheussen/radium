@@ -3251,7 +3251,18 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
 static void create_cursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   
   const GE_Conf conf(Z_STATIC, NO_SCISSORS);
-  GE_Context c = GE_z(GE_alpha(GE_get_rgb(ATOMIC_GET(root->editonoff)?CURSOR_EDIT_ON_COLOR_NUM:CURSOR_EDIT_OFF_COLOR_NUM), 0.2), conf);
+
+  const bool edit_on = ATOMIC_GET(root->editonoff);
+  enum ColorNums cursor_color;
+
+  if (edit_on == false)
+    cursor_color = CURSOR_EDIT_OFF_COLOR_NUM;
+  else if (doPolyphonicNoteInput())
+    cursor_color = POLYPHONIC_INPUT_COLOR_NUM;
+  else
+    cursor_color = CURSOR_EDIT_ON_COLOR_NUM;
+
+  GE_Context c = GE_z(GE_alpha(GE_get_rgb(cursor_color), 0.2), conf);
 
   NInt track    = window->curr_track;
   int  subtrack = window->curr_track_sub;
