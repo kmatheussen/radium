@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1712</width>
-    <height>69</height>
+    <height>85</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -217,7 +217,7 @@
        <number>0</number>
       </property>
       <property name="sizeConstraint">
-       <enum>QLayout::SetMinimumSize</enum>
+       <enum>QLayout::SizeConstraint::SetMinimumSize</enum>
       </property>
       <property name="leftMargin">
        <number>0</number>
@@ -269,7 +269,7 @@
               </sizepolicy>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>0</number>
@@ -278,7 +278,7 @@
               <string/>
              </property>
              <property name="textFormat">
-              <enum>Qt::AutoText</enum>
+              <enum>Qt::TextFormat::AutoText</enum>
              </property>
             </widget>
            </item>
@@ -419,15 +419,6 @@
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -443,6 +434,15 @@
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -574,15 +574,6 @@
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -598,6 +589,15 @@
                    <red>92</red>
                    <green>92</green>
                    <blue>92</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -729,15 +729,6 @@
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -756,11 +747,20 @@
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -769,7 +769,7 @@
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
             </widget>
            </item>
@@ -794,7 +794,7 @@
               <number>10000</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -934,15 +934,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -958,6 +949,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -1089,15 +1089,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -1113,6 +1104,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -1244,15 +1244,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -1271,11 +1262,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -1284,7 +1284,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -1352,7 +1352,7 @@
             <bool>false</bool>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -1411,10 +1411,10 @@
             <bool>false</bool>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="minimum">
             <number>2</number>
@@ -1480,10 +1480,10 @@
             <bool>false</bool>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
            <property name="buttonSymbols">
-            <enum>QAbstractSpinBox::NoButtons</enum>
+            <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
            </property>
            <property name="minimum">
             <number>1</number>
@@ -1627,15 +1627,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -1651,6 +1642,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -1782,15 +1782,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -1806,6 +1797,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -1937,15 +1937,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -1964,11 +1955,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -1977,7 +1977,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -2172,15 +2172,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -2196,6 +2187,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -2327,15 +2327,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -2351,6 +2342,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -2482,15 +2482,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -2509,11 +2500,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -2522,7 +2522,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -2572,7 +2572,7 @@
          <number>4000</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
        </widget>
       </item>
@@ -2591,7 +2591,7 @@
          <number>10000</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Horizontal</enum>
+         <enum>Qt::Orientation::Horizontal</enum>
         </property>
        </widget>
       </item>
@@ -2726,15 +2726,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -2750,6 +2741,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -2881,15 +2881,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -2905,6 +2896,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -3036,15 +3036,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -3063,11 +3054,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -3076,7 +3076,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -3101,7 +3101,7 @@
          <string>0</string>
         </property>
         <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
         </property>
        </widget>
       </item>
@@ -3275,15 +3275,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -3299,6 +3290,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -3430,15 +3430,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -3454,6 +3445,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -3585,15 +3585,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -3612,11 +3603,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -3625,7 +3625,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -3644,7 +3644,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>Edit mode: When on, notes played on the keyboard or from midi are recorded into the editor, when off, notes are played back, but not inserted into the editor.</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit mode:&lt;/p&gt;&lt;p&gt;* When on, notes played on the keyboard or from midi are recorded into the editor&lt;/p&gt;&lt;p&gt;* When off, notes are played back, but not inserted into the editor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Edit</string>
@@ -3669,7 +3669,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>Polyphonic note input (Tab): When on, notes played at the same time become a chord. When off, a new note replaces the note at the cursor; hold Shift to add a chord.</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Polyphonic note input (Tab):&lt;/p&gt;&lt;p&gt;* When on, notes played at the same time become a chord.&lt;/p&gt;&lt;p&gt;* When off, a new note replaces the note at the cursor; hold Shift to add a chord.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Poly</string>
@@ -3897,15 +3897,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -3921,6 +3912,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -4052,15 +4052,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -4076,6 +4067,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -4207,15 +4207,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -4234,11 +4225,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -4247,7 +4247,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -4285,10 +4285,10 @@
          <bool>false</bool>
         </property>
         <property name="alignment">
-         <set>Qt::AlignCenter</set>
+         <set>Qt::AlignmentFlag::AlignCenter</set>
         </property>
         <property name="buttonSymbols">
-         <enum>QAbstractSpinBox::NoButtons</enum>
+         <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
         </property>
         <property name="minimum">
          <number>0</number>
@@ -4426,15 +4426,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -4450,6 +4441,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -4581,15 +4581,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -4605,6 +4596,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -4736,15 +4736,6 @@
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -4763,11 +4754,20 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -4776,7 +4776,7 @@
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
@@ -4818,7 +4818,7 @@ Scrolling too often can be tiresome for the eyes.</string>
          <bool>false</bool>
         </property>
         <property name="buttonSymbols">
-         <enum>QAbstractSpinBox::NoButtons</enum>
+         <enum>QAbstractSpinBox::ButtonSymbols::NoButtons</enum>
         </property>
         <property name="minimum">
          <number>1</number>
@@ -4956,15 +4956,6 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -4980,6 +4971,15 @@ Scrolling too often can be tiresome for the eyes.</string>
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -5111,15 +5111,6 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -5135,6 +5126,15 @@ Scrolling too often can be tiresome for the eyes.</string>
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>48</red>
+              <green>140</green>
+              <blue>198</blue>
              </color>
             </brush>
            </colorrole>
@@ -5266,15 +5266,6 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
-           <colorrole role="NoRole">
-            <brush brushstyle="SolidPattern">
-             <color alpha="255">
-              <red>113</red>
-              <green>113</green>
-              <blue>113</blue>
-             </color>
-            </brush>
-           </colorrole>
            <colorrole role="ToolTipBase">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
@@ -5293,11 +5284,20 @@ Scrolling too often can be tiresome for the eyes.</string>
              </color>
             </brush>
            </colorrole>
+           <colorrole role="Accent">
+            <brush brushstyle="SolidPattern">
+             <color alpha="255">
+              <red>145</red>
+              <green>145</green>
+              <blue>145</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>1</number>
@@ -5306,7 +5306,7 @@ Scrolling too often can be tiresome for the eyes.</string>
          <number>0</number>
         </property>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Orientation::Vertical</enum>
         </property>
        </widget>
       </item>
