@@ -279,7 +279,8 @@ public:
 				// Give the keyboard back to the editor when pressing Return.
 				set_editor_focus();
 
-				if (QWidget *widget = qobject_cast<QWidget*>(watched))
+				QWidget *widget = qobject_cast<QWidget*>(watched);
+				if (widget != NULL)
 					widget->clearFocus();
 
 				release_keyboard_focus();
