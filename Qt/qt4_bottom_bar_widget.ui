@@ -3644,7 +3644,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit mode:&lt;/p&gt;&lt;p&gt;* When on, notes played on the keyboard or from midi are recorded into the editor&lt;/p&gt;&lt;p&gt;* When off, notes are played back, but not inserted into the editor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Edit mode (Esc):&lt;/p&gt;&lt;p&gt;* When on, notes played on the keyboard or from midi are recorded into the editor&lt;/p&gt;&lt;p&gt;* When off, notes are played back, but not inserted into the editor.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Edit</string>
