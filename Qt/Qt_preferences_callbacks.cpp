@@ -27,6 +27,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <gc.h>
 
+#include <QAbstractSpinBox>
+#include <QApplication>
+#include <QKeyEvent>
+#include <QLineEdit>
 #include <QPushButton>
 #include <QColorDialog>
 #include <QInputDialog>
@@ -233,7 +237,24 @@ struct Separator : public QWidget{
   }
   
 };
- 
+
+static QLineEdit *get_color_dialog_html_line_edit(QColorDialog *color_dialog)
+{
+	QLineEdit *line_edit = color_dialog->findChild<QLineEdit *>("qt_colorname_lineedit");
+	if (line_edit != NULL)
+		return line_edit;
+
+	// Fallback for Qt versions where the HTML line edit doesn't have a name.
+	// It is the only QLineEdit in QColorDialog that isn't part of a spin box.
+	for(QLineEdit *candidate : color_dialog->findChildren<QLineEdit *>())
+	{
+		if (qobject_cast<QAbstractSpinBox *>(candidate->parentWidget()) == NULL)
+			return candidate;
+	}
+
+	return NULL;
+}
+
 struct MyColorDialog : public QColorDialog
 {
 
@@ -242,6 +263,32 @@ public:
 	MyColorDialog()
 	{
 		setOption(QColorDialog::NoButtons); // Avoid crash on macos sierra. (https://bugreports.qt.io/browse/QTBUG-56448)
+
+		QLineEdit *html_line_edit = get_color_dialog_html_line_edit(this);
+		if (html_line_edit != NULL)
+			html_line_edit->installEventFilter(this);
+	}
+
+	bool eventFilter(QObject *watched, QEvent *event) override
+	{
+		if (event->type()==QEvent::KeyPress)
+		{
+			QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
+			if (key_event->key()==Qt::Key_Return || key_event->key()==Qt::Key_Enter)
+			{
+				// Give the keyboard back to the editor when pressing Return.
+				set_editor_focus();
+
+				if (QWidget *widget = qobject_cast<QWidget*>(watched))
+					widget->clearFocus();
+
+				release_keyboard_focus();
+
+				return true;
+			}
+		}
+
+		return QColorDialog::eventFilter(watched, event);
 	}
 
 	void mouseReleaseEvent(QMouseEvent *event) override
@@ -479,6 +526,21 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       connect(&_color_dialog, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
       connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(current_tab_changed(int)));
+
+      // The color dialog's widgets (for instance the HTML line edit) are
+      // plain Qt widgets, not FocusSniffer widgets. If another FocusSniffer
+      // widget releases the keyboard while this tab is current (e.g. the New
+      // or Rename color configuration requester), we must therefore take the
+      // keyboard back when focus returns here. Otherwise keys are sent to the
+      // editor and notes are added while typing in the HTML field.
+      connect(qApp, &QApplication::focusChanged, this, [this](QWidget *, QWidget *now)
+      {
+        if (now != NULL
+            && isVisible()
+            && tabWidget->currentWidget() == colors
+            && (now->window() == this || now->window() == &_color_dialog))
+          obtain_keyboard_focus_without_greying();
+      });
 
       scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
       scrollArea->setWidgetResizable(true);
