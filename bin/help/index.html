@@ -952,10 +952,10 @@ F12          : ra.showMixerHelpWindow
 
   <p>
     As with ordinary MIDI input, a note used as a keybinding is still sent to
-    the editor and instruments unless the corresponding MIDI input port has
-    <i>Use for editing notes in the editor</i> disabled in
+    the editor and instruments unless the <i>Editor</i> checkbox for the
+    corresponding MIDI input port is unchecked in
     <i>Preferences -&gt; MIDI</i>. If the device is only used as a shortcut
-    controller, disable that option.
+    controller, uncheck that option.
 
   <p>
     If you edit the keybindings file manually, restart Radium or select
@@ -2527,6 +2527,7 @@ Right-click an editor seqblock to get a popup menu with operations such as:
 <UL>
   <LI><b>Copy</b>, <b>Cut</b>, <b>Paste</b>, and <b>Delete all selected</b> seqblocks.
   <LI><b>Duplicate seqblock and block</b>: Creates a new copy of the block and inserts it right after this seqblock.
+  <LI><b>Duplicate</b>: Inserts a copy of this seqblock right after it, using the same block.
   <LI><b>Rename...</b> and <b>Configure color...</b>.
   <LI><b>Replace block</b>: Replaces the block in the seqblock with another block.
   <LI><b>Set gain...</b>: Sets the volume gain of the seqblock.
@@ -2590,6 +2591,7 @@ Right-click an audio seqblock and select "<b>Edit audio seqblock</b>" to open a 
 Tips:
 <UL>
   <LI>Hold <b>Alt</b> and drag an audio seqblock to quickly copy it.
+  <LI>Right-click an audio seqblock and select <b>Duplicate</b> to insert a copy of it right after it.
   <LI>Right-click an audio seqtrack to set the number of audio channels and where to get audio from when recording.
 </UL>
 `;

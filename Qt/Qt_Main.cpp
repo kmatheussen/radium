@@ -1615,12 +1615,12 @@ protected:
                  && (OS_GFX_main_window_has_focus()
                      // Also open the hamburger popup when the sequencer or mixer runs in its
                      // own window and has keyboard focus.
-                     || (SETTINGS_read_bool("show_main_menu_bar", false)==false
+                     || (SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false
                          && GFX_ActiveWindowHasHamburgerButton()))){
 
         //printf(   " last_key_was_alt: %d. Time now: %f. last time: %f. press: %d. Menu active: %d.  Duration: %f\n", last_released_key_was_lalt, TIME_get_ms(), _time_of_last_alt, is_key_press, GFX_MenuActive(), TIME_get_ms()- _time_of_last_alt);
 
-        if (SETTINGS_read_bool("show_main_menu_bar", false)==false) {
+        if (SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false) {
 
           // The main menu bar is disabled. Left alt opens the hamburger popup menu instead.
           last_key_was_lalt = false;

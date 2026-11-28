@@ -263,7 +263,6 @@
   area)
 
 
-
 (def-area-subclass (<editor-lower-part-area> :gui :x1 :y1 :x2 :y2)
   (define (add-sub-areas!)
     (define reltempo-x1 (<ra> :get-reltempo-slider-x1))

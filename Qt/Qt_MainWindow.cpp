@@ -1047,14 +1047,14 @@ void SetupMainWindow(void){
     // hamburger button with a pulsing highlight and show a hint pointing at it. This is to
     // make new (and older) users discover that the program has menus.
     if (hamburger_button != NULL
-        && SETTINGS_read_bool("show_main_menu_bar", false)==false
+        && SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false
         && SETTINGS_read_bool("main_menu_popup_has_been_opened", false)==false)
     {
       hamburger_button->set_attention(true);
 
       QTimer::singleShot(1500, hamburger_button, [hamburger_button](){
         if (SETTINGS_read_bool("main_menu_popup_has_been_opened", false)==false
-            && SETTINGS_read_bool("show_main_menu_bar", false)==false
+            && SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false
             && hamburger_button->isVisible())
         {
           const QPoint pos = hamburger_button->mapToGlobal(QPoint(0, 0));
@@ -1106,7 +1106,7 @@ void SetupMainWindow(void){
 
   mainLayout->insertWidget(0, menubar_container, 0); // position 0, stretch 1.
 
-  if (SETTINGS_read_bool("show_main_menu_bar", false)==false)
+  if (SETTINGS_read_bool("show_main_menu_bar", DEFAULT_SHOW_MAIN_MENU_BAR)==false)
     GFX_HideMenu(NULL);
 
   

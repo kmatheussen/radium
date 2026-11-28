@@ -151,6 +151,9 @@ static const ColorConfig g_colorconfig[] = {
 
   {BUTTONS_TEXT_COLOR_NUM,                  "buttons_text", "Button Text", false},
 
+  {POLYPHONIC_INPUT_COLOR_NUM,  "polyphonic_input",   "Polyphonic input", false},
+  {EDIT_MODE_COLOR_NUM,  "edit_mode",   "Edit mode", false},
+
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM,                  "color14", "Portamento note text", false},
   {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM,                  "portamento_end_note_text", "Portamento end note text", false},
   {VELOCITY_TEXT_COLOR_NUM,     "velocity_text", "Velocity text, first", false},
@@ -1300,6 +1303,12 @@ static int get_legacy_color_pass(enum ColorNums colornum)
 
 	if (colornum == MENU_SEARCH_COLOR_NUM)
 		return 2; // Added later, comes after MENU_CURRENT_ENTRY_COLOR_NUM.
+
+	if (colornum == POLYPHONIC_INPUT_COLOR_NUM)
+		return 2; // Added later, comes after all legacy colors.
+
+	if (colornum == EDIT_MODE_COLOR_NUM)
+		return 2; // Added later, comes after all legacy colors.
 
 	return 0;
 }

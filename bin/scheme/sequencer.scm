@@ -2254,12 +2254,37 @@
   (when seqblock-id
     ;;(c-display "----------seqblock-id:" seqblock-id)
     (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (when (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+      (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+      (undo-block
+       (lambda ()
+         (clone-seqblock-block seqblock-id)
+         (define new-blocknum (- (<ra> :get-num-blocks) 1))
+         (<ra> :create-seqblock seqtracknum new-blocknum (<ra> :get-seqblock-end-time seqblocknum seqtracknum)))))))
+
+
+;; Note: used for shortcut. For editor seqblocks, only the seqblock is
+;; duplicated; the block is not copied.
+(delafina (duplicate-seqblock :seqblock-id (and *current-seqblock-info*
+                                                (*current-seqblock-info* :id)))
+  (when seqblock-id
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
     (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
-    (undo-block
-     (lambda ()
-       (clone-seqblock-block seqblock-id)
-       (define new-blocknum (- (<ra> :get-num-blocks) 1))
-       (<ra> :create-seqblock seqtracknum new-blocknum (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))))
+    (when (or (<ra> :seqblock-holds-block seqblocknum seqtracknum)
+              (<ra> :seqtrack-for-audiofiles seqtracknum))
+      (define state (<ra> :get-seqblock-state seqblocknum seqtracknum))
+      (when state
+        (define start-time (state :start-time))
+        (define end-time (state :end-time))
+        (define duration (- end-time start-time))
+        (undo-block
+         (lambda ()
+           (<ra> :undo-sequencer)
+           (<ra> :create-seqblock-from-state
+            (copy-hash state
+                       :id -1
+                       :start-time end-time
+                       :end-time (+ end-time duration)))))))))
     
     
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)

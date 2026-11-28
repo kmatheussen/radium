@@ -1,5 +1,5 @@
 >> HASH MAP V5 BEGIN
-146
+148
 amount_of_gradient
 0
 FLOAT_TYPE
@@ -87,11 +87,11 @@ STRING_TYPE
 color_color5
 0
 STRING_TYPE
-#ff5a3734
+#ff3b3c53
 color_color6
 0
 STRING_TYPE
-#ff6b88b4
+#ff919eb4
 color_color7
 0
 STRING_TYPE
@@ -136,6 +136,10 @@ color_dialog_help_text
 0
 STRING_TYPE
 #ff000000
+color_edit_mode
+0
+STRING_TYPE
+#ff0680cb
 color_editor_grayed_out
 0
 STRING_TYPE
@@ -288,6 +292,10 @@ color_playlist_current_entries_border
 0
 STRING_TYPE
 #ffffffff
+color_polyphonic_input
+0
+STRING_TYPE
+#ff023512
 color_portamento_end_note_text
 0
 STRING_TYPE

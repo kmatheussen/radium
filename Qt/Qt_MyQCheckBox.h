@@ -74,9 +74,14 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
   void init(void){
     setMouseTracking(true);
+    _selected_color = "check_box_selected_v2";
   }
   
   QString vertical_text;
+
+  // Used instead of the global "Selected check box" color when non-empty.
+  QString _selected_color;
+  radium::GcHolder<const wchar_t> _selected_color_to_draw;
 
   // Set to false for checkboxes that are clickable but represent something
   // that is currently disabled/impossible, e.g. a bus send that would create
@@ -161,6 +166,9 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
                                         if (_text_to_draw.data()==NULL || QString::fromWCharArray(_text_to_draw.data())!=text2)
                                           _text_to_draw.set(STRING_create(text2));
 
+                                        if (_selected_color_to_draw.data()==NULL || QString::fromWCharArray(_selected_color_to_draw.data())!=_selected_color)
+                                          _selected_color_to_draw.set(STRING_create(_selected_color));
+
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
 
                                         bool do_gradient = false;
@@ -198,7 +206,10 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
                                                                        
                                                                        DYN_create_symbol_dont_copy(":background-color"),
                                                                        DYN_create_string_dont_copy(L"check_box_unselected_v2"),
-                                                                           
+
+                                                                       DYN_create_symbol_dont_copy(":selected-color"),
+                                                                       DYN_create_string_dont_copy(_selected_color_to_draw.data()),
+
                                                                        DYN_create_symbol_dont_copy(":is-hovering"),
                                                                        DYN_create_bool(_is_hovered && isEnabled()),
                                                                        

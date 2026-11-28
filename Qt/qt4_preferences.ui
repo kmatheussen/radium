@@ -3038,8 +3038,12 @@
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
+           <property name="toolTip">
+            <string>When on, notes played at the same time become a chord. When off, a new note replaces the note at the cursor; hold Shift to add a chord. (Shortcut: Tab)</string>
+           </property>
            <property name="text">
-            <string>Polyphonic note input</string>
+            <string>Polyphonic note input (default)
+Notes played together become a chord. When off, a new note replaces the note at the cursor; hold Shift to add a chord.</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -6432,69 +6436,41 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
          <property name="title">
           <string>Input ports</string>
          </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_8">
+         <layout class="QVBoxLayout" name="midi_input_ports_layout">
           <item>
-           <widget class="QScrollArea" name="scrollArea_2">
-            <property name="frameShape">
-             <enum>QFrame::Shape::NoFrame</enum>
-            </property>
-            <property name="frameShadow">
-             <enum>QFrame::Shadow::Plain</enum>
-            </property>
-            <property name="lineWidth">
-             <number>0</number>
-            </property>
-            <property name="widgetResizable">
-             <bool>true</bool>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
-            </property>
-            <widget class="QWidget" name="scrollAreaWidgetContents">
-             <property name="geometry">
-              <rect>
-               <x>0</x>
-               <y>0</y>
-               <width>100</width>
-               <height>30</height>
-              </rect>
-             </property>
-             <layout class="QVBoxLayout" name="midi_input_layout">
-              <property name="leftMargin">
-               <number>1</number>
+           <layout class="QHBoxLayout" name="midi_add_button_layout">
+            <item>
+             <widget class="QPushButton" name="set_input_port">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
               </property>
-              <property name="topMargin">
-               <number>1</number>
+              <property name="text">
+               <string>Add...</string>
               </property>
-              <property name="rightMargin">
-               <number>1</number>
+             </widget>
+            </item>
+            <item>
+             <spacer name="midi_add_button_spacer">
+              <property name="orientation">
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
-              <property name="bottomMargin">
-               <number>1</number>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
               </property>
-             </layout>
-            </widget>
-           </widget>
+             </spacer>
+            </item>
+           </layout>
           </item>
           <item>
-           <widget class="QPushButton" name="set_input_port">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="MinimumExpanding">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string/>
-            </property>
-            <property name="text">
-             <string>Add...</string>
+           <widget class="QTableWidget" name="midi_input_table">
+            <property name="frameShape">
+             <enum>QFrame::Shape::NoFrame</enum>
             </property>
            </widget>
           </item>
